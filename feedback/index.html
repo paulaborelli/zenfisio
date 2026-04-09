@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registro de Feedback — ZenFisio</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #F2F4F0;
+    --surface: #FFFFFF;
+    --surface2: #F7F8F5;
+    --border: #DDE0D8;
+    --border-focus: #4A7C59;
+    --text: #1C201A;
+    --text-muted: #5E6659;
+    --text-hint: #9AA394;
+    --accent: #4A7C59;
+    --accent-light: #EAF2EC;
+    --accent-text: #2D5438;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 2.5rem 1rem 5rem;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  .page-wrap { max-width: 680px; margin: 0 auto; }
+
+  /* Header */
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .brand-icon {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .brand-icon img {
+    width: 100%; height: 100%; object-fit: cover;
+  }
+  .brand-text { display: flex; flex-direction: column; gap: 1px; }
+  .brand-name {
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px;
+    color: var(--text);
+    letter-spacing: -0.3px;
+  }
+  .brand-sub {
+    font-size: 12px;
+    color: var(--text-hint);
+    font-weight: 400;
+  }
+  .rec-id {
+    font-size: 11px;
+    color: var(--text-hint);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    letter-spacing: 0.05em;
+  }
+
+  /* Divider label */
+  .section-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-hint);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 0.85rem;
+    margin-top: 0.25rem;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Card */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  /* Grids */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+  /* Fields */
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field + .field { margin-top: 12px; }
+  .field label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+  }
+  .field input,
+  .field select,
+  .field textarea {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 13px;
+    outline: none;
+    width: 100%;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .field input:focus,
+  .field select:focus,
+  .field textarea:focus {
+    border-color: var(--border-focus);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(74,124,89,0.1);
+  }
+  .field select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239AA394' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-color: var(--surface2);
+    padding-right: 32px;
+    cursor: pointer;
+  }
+  .field textarea {
+    resize: vertical;
+    min-height: 110px;
+    line-height: 1.6;
+  }
+  .field textarea.tall { min-height: 140px; }
+
+  .field-hint {
+    font-size: 12px;
+    color: var(--text-hint);
+    font-style: italic;
+    margin-top: 2px;
+  }
+
+  /* Ciência botões */
+  .science-opts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+  .science-btn {
+    padding: 8px 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface2);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.12s;
+    user-select: none;
+  }
+  .science-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .science-btn.on { background: var(--accent-light); border-color: var(--accent); color: var(--accent-text); font-weight: 500; }
+
+  /* Footer */
+  .form-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 1.5rem;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .btn-group { display: flex; gap: 8px; }
+  .btn {
+    padding: 10px 22px;
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.12s;
+    border: 1px solid transparent;
+  }
+  .btn-ghost { background: var(--surface); border-color: var(--border); color: var(--text-muted); }
+  .btn-ghost:hover { background: var(--surface2); }
+  .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn-primary:hover { opacity: 0.88; }
+  .btn-danger { background: transparent; border-color: var(--border); color: #943030; font-size: 13px; padding: 7px 16px; }
+  .btn-danger:hover { background: #FEF2F2; border-color: #943030; }
+
+  /* Histórico */
+  .historico-section { margin-top: 2.5rem; }
+  .historico-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+  .historico-title {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--text-hint);
+  }
+  .count-badge {
+    background: var(--accent-light); color: var(--accent-text);
+    font-size: 11px; font-weight: 600;
+    padding: 2px 10px; border-radius: 999px;
+  }
+  .empty-state {
+    text-align: center; padding: 2rem;
+    color: var(--text-hint); font-size: 13px;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+  .hist-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.1rem 1.25rem;
+    margin-bottom: 8px;
+    position: relative;
+    transition: border-color 0.12s;
+  }
+  .hist-item:hover { border-color: #C2C9BA; }
+  .hist-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+  .hist-nome { font-weight: 600; font-size: 14px; color: var(--text); }
+  .hist-tipo {
+    font-size: 11px; font-weight: 500;
+    background: var(--surface2); color: var(--text-muted);
+    padding: 2px 8px; border-radius: 4px;
+  }
+  .hist-data { font-size: 12px; color: var(--text-hint); margin-left: auto; }
+  .hist-body { font-size: 13px; color: var(--text-muted); line-height: 1.55; }
+  .hist-body b { color: var(--text); font-weight: 500; }
+  .hist-del {
+    position: absolute; top: 10px; right: 12px;
+    font-size: 17px; color: var(--text-hint);
+    cursor: pointer; background: none; border: none;
+    padding: 2px 5px; border-radius: 4px; line-height: 1;
+  }
+  .hist-del:hover { color: #943030; background: #FEF2F2; }
+
+  @media (max-width: 560px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .page-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+  }
+
+  @media print {
+    body { background: white; padding: 0; }
+    .form-footer .btn-ghost, .historico-section { display: none; }
+    .card { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page-wrap">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+          <path d="M8 12c0-2.21 1.79-4 4-4s4 1.79 4 4-1.79 4-4 4"/>
+          <line x1="12" y1="8" x2="12" y2="8.01"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <span class="brand-name">ZenFisio</span>
+        <span class="brand-sub">Registro de Feedback — Colaboradores</span>
+      </div>
+    </div>
+    <span class="rec-id" id="rec-id">—</span>
+  </div>
+
+  <!-- Identificação -->
+  <div class="card">
+    <div class="section-label">Identificação</div>
+
+    <div class="grid-3" style="margin-bottom: 12px;">
+      <div class="field">
+        <label>Data</label>
+        <input type="date" id="data">
+      </div>
+      <div class="field">
+        <label>Próximo feedback</label>
+        <input type="date" id="proximo">
+      </div>
+      <div class="field">
+        <label>Tipo de feedback</label>
+        <select id="tipo">
+          <option value="">Selecione</option>
+          <option>Feedback 1:1</option>
+          <option>Feedback de desempenho</option>
+          <option>Feedback corretivo</option>
+          <option>Feedback de reconhecimento</option>
+          <option>PDI / Desenvolvimento</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-bottom: 12px;">
+      <div class="field">
+        <label>Colaborador</label>
+        <input type="text" id="colaborador" placeholder="Nome completo">
+      </div>
+      <div class="field">
+        <label>Cargo / área</label>
+        <input type="text" id="cargo" placeholder="Ex: Fisioterapeuta – Pilates">
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="field">
+        <label>Responsável pelo feedback</label>
+        <input type="text" id="responsavel" placeholder="Quem conduz a conversa">
+      </div>
+      <div class="field">
+        <label>Formato</label>
+        <select id="formato">
+          <option value="">Selecione</option>
+          <option>Presencial</option>
+          <option>Videoconferência</option>
+          <option>Por escrito</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Motivo do feedback -->
+  <div class="card">
+    <div class="section-label">Motivo do feedback</div>
+    <div class="field">
+      <label>Por que este feedback está sendo realizado?</label>
+      <textarea id="motivo" class="tall" placeholder="Descreva o contexto que motivou este feedback: situações observadas, comportamentos, resultados ou período avaliado..."></textarea>
+      <span class="field-hint">Seja específico — exemplos concretos tornam o feedback mais claro e útil.</span>
+    </div>
+  </div>
+
+  <!-- O que ficou acertado -->
+  <div class="card">
+    <div class="section-label">O que ficou acertado</div>
+    <div class="field">
+      <label>Pontos positivos, conquistas e acordos desta conversa</label>
+      <textarea id="acertado" class="tall" placeholder="Descreva os pontos fortes observados, os resultados alcançados e os combinados definidos entre as partes..."></textarea>
+      <span class="field-hint">Inclua tanto reconhecimentos quanto próximos passos acordados.</span>
+    </div>
+  </div>
+
+  <!-- Ciência -->
+  <div class="card">
+    <div class="section-label">Ciência</div>
+
+    <div class="field">
+      <label>O colaborador tomou conhecimento deste feedback?</label>
+      <div class="science-opts">
+        <div class="science-btn" data-sci="Sim, ciente">Sim, ciente</div>
+        <div class="science-btn" data-sci="Não estava presente">Não estava presente</div>
+        <div class="science-btn" data-sci="Recebeu por escrito">Recebeu por escrito</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Observação final</label>
+      <textarea id="obs-final" placeholder="Qualquer nota adicional do responsável pelo feedback ou comentário do colaborador..."></textarea>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="form-footer">
+    <div class="btn-group">
+      <button class="btn btn-ghost" onclick="limpar()">Limpar</button>
+      <button class="btn btn-ghost" onclick="window.print()">Imprimir / PDF</button>
+    </div>
+    <button class="btn btn-primary" onclick="salvar()">Salvar no histórico ↓</button>
+  </div>
+
+  <!-- Histórico -->
+  <div class="historico-section">
+    <div class="historico-header">
+      <span class="historico-title">Histórico de registros</span>
+      <span class="count-badge" id="count-badge">0</span>
+    </div>
+    <div id="historico-lista"></div>
+    <div style="margin-top: 10px; text-align: right;">
+      <button class="btn btn-danger" onclick="exportar()">Exportar histórico (.txt)</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let cienciaVal = '';
+  let registros = JSON.parse(localStorage.getItem('zenfisio_fb') || '[]');
+
+  function gerarId() {
+    const d = new Date();
+    return 'ZF-' + d.getFullYear().toString().slice(2) +
+      String(d.getMonth()+1).padStart(2,'0') +
+      String(d.getDate()).padStart(2,'0') + '-' +
+      String(d.getHours()).padStart(2,'0') +
+      String(d.getMinutes()).padStart(2,'0');
+  }
+
+  document.getElementById('rec-id').textContent = gerarId();
+  document.getElementById('data').valueAsDate = new Date();
+
+  document.querySelectorAll('.science-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      cienciaVal = b.dataset.sci;
+      document.querySelectorAll('.science-btn').forEach(x => x.classList.remove('on'));
+      b.classList.add('on');
+    });
+  });
+
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbydGp7T9oQtr5Ii8uY08CiwCBNNd6L9rC0nYegtwzoI-otVQFZSXOKc8XzW5esGyAelVA/exec';
+
+  function salvar() {
+    const nome = document.getElementById('colaborador').value.trim();
+    const data = document.getElementById('data').value;
+    if (!nome || !data) { alert('Preencha ao menos o nome do colaborador e a data.'); return; }
+
+    const r = {
+      tipo: 'feedback',
+      id: gerarId(),
+      data,
+      proximo: document.getElementById('proximo').value,
+      tipo_feedback: document.getElementById('tipo').value || '—',
+      colaborador: nome,
+      cargo: document.getElementById('cargo').value,
+      responsavel: document.getElementById('responsavel').value,
+      formato: document.getElementById('formato').value,
+      motivo: document.getElementById('motivo').value,
+      acertado: document.getElementById('acertado').value,
+      ciencia: cienciaVal || '—',
+      obsFinal: document.getElementById('obs-final').value,
+    };
+
+    registros.unshift(r);
+    localStorage.setItem('zenfisio_fb', JSON.stringify(registros));
+    renderHistorico();
+
+    const btnSalvar = document.querySelector('.btn-primary');
+    btnSalvar.textContent = 'Enviando...';
+    btnSalvar.disabled = true;
+
+    fetch(SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(r)
+    }).then(() => {
+      btnSalvar.textContent = 'Salvo ✓';
+      btnSalvar.style.background = '#2D5438';
+      setTimeout(() => {
+        btnSalvar.textContent = 'Salvar no histórico ↓';
+        btnSalvar.style.background = '';
+        btnSalvar.disabled = false;
+      }, 3000);
+    }).catch(() => {
+      btnSalvar.textContent = 'Salvar no histórico ↓';
+      btnSalvar.disabled = false;
+    });
+
+    limpar();
+    document.getElementById('rec-id').textContent = gerarId();
+    document.querySelector('.historico-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function renderHistorico() {
+    const lista = document.getElementById('historico-lista');
+    document.getElementById('count-badge').textContent = registros.length;
+
+    if (registros.length === 0) {
+      lista.innerHTML = '<div class="empty-state">Nenhum registro ainda. Preencha o formulário acima e salve.</div>';
+      return;
+    }
+
+    lista.innerHTML = registros.map((r, idx) => {
+      const fmtData = r.data ? new Date(r.data + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
+      const fmtProx = r.proximo ? new Date(r.proximo + 'T12:00:00').toLocaleDateString('pt-BR') : null;
+      const motivo = r.motivo ? r.motivo.substring(0, 140) + (r.motivo.length > 140 ? '…' : '') : null;
+      const acertado = r.acertado ? r.acertado.substring(0, 140) + (r.acertado.length > 140 ? '…' : '') : null;
+
+      return `
+      <div class="hist-item">
+        <button class="hist-del" onclick="deletar(${idx})" title="Remover">×</button>
+        <div class="hist-top">
+          <span class="hist-nome">${r.colaborador}</span>
+          ${r.tipo !== '—' ? `<span class="hist-tipo">${r.tipo}</span>` : ''}
+          <span class="hist-data">${fmtData}${fmtProx ? ' → ' + fmtProx : ''}</span>
+        </div>
+        <div class="hist-body">
+          ${r.cargo ? `<b>Cargo:</b> ${r.cargo}${r.responsavel ? ' &nbsp;·&nbsp; <b>Resp.:</b> ' + r.responsavel : ''}<br>` : ''}
+          ${motivo ? `<b>Motivo:</b> ${motivo}<br>` : ''}
+          ${acertado ? `<b>Acertado:</b> ${acertado}<br>` : ''}
+          <b>Ciência:</b> ${r.ciencia}${r.obsFinal ? ' &nbsp;·&nbsp; ' + r.obsFinal.substring(0,80) : ''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function deletar(idx) {
+    if (!confirm('Remover este registro?')) return;
+    registros.splice(idx, 1);
+    localStorage.setItem('zenfisio_fb', JSON.stringify(registros));
+    renderHistorico();
+  }
+
+  function limpar() {
+    ['colaborador','cargo','responsavel','motivo','acertado','obs-final'].forEach(id => document.getElementById(id).value = '');
+    ['tipo','formato','proximo'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('data').valueAsDate = new Date();
+    document.querySelectorAll('.science-btn').forEach(b => b.classList.remove('on'));
+    cienciaVal = '';
+  }
+
+  function exportar() {
+    if (registros.length === 0) { alert('Nenhum registro para exportar.'); return; }
+    const txt = registros.map(r => {
+      const d = r.data ? new Date(r.data + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
+      const p = r.proximo ? new Date(r.proximo + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
+      return [
+        `=== ${r.id} ===`,
+        `Data: ${d} | Próximo: ${p} | Tipo: ${r.tipo} | Formato: ${r.formato}`,
+        `Colaborador: ${r.colaborador} | Cargo: ${r.cargo}`,
+        `Responsável: ${r.responsavel}`,
+        '',
+        `MOTIVO DO FEEDBACK\n${r.motivo || '—'}`,
+        '',
+        `O QUE FICOU ACERTADO\n${r.acertado || '—'}`,
+        '',
+        `Ciência: ${r.ciencia}`,
+        r.obsFinal ? `Observação final: ${r.obsFinal}` : '',
+      ].filter(l => l !== null).join('\n');
+    }).join('\n\n' + '─'.repeat(50) + '\n\n');
+
+    const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `feedbacks_zenfisio_${new Date().toISOString().slice(0,10)}.txt`;
+    a.click();
+  }
+
+  renderHistorico();
+</script>
+</body>
+</html>

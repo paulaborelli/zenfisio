@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manual de Conduta & Cultura — ZenFisio</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #F2F4F0;
+  --surface: #fff;
+  --border: #DDE0D8;
+  --text: #1C201A;
+  --text-muted: #5E6659;
+  --text-hint: #9AA394;
+  --accent: #4A7C59;
+  --accent-light: #EAF2EC;
+  --accent-text: #2D5438;
+  --sidebar-w: 270px;
+}
+body {
+  font-family: "DM Sans", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.7;
+}
+.layout { display: flex; min-height: 100vh; }
+.sidebar {
+  width: var(--sidebar-w); min-width: var(--sidebar-w);
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  position: fixed; top: 0; left: 0; bottom: 0;
+  overflow-y: auto; z-index: 100;
+  display: flex; flex-direction: column;
+}
+.sidebar-header {
+  padding: 1.5rem 1.25rem 1rem;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+.sidebar-logo { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.sidebar-brand { font-family: "Lora", serif; font-size: 15px; font-weight: 600; color: var(--text); line-height: 1.2; }
+.sidebar-brand small { display: block; font-family: "DM Sans", sans-serif; font-size: 11px; font-weight: 400; color: var(--text-hint); }
+.sidebar-nav { padding: 0.75rem 0; flex: 1; }
+.nav-section { padding: 0.5rem 1.25rem 0.25rem; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-hint); margin-top: 0.5rem; }
+.nav-item { display: block; padding: 0.5rem 1.25rem; font-size: 13px; color: var(--text-muted); text-decoration: none; cursor: pointer; transition: all 0.12s; border-left: 3px solid transparent; }
+.nav-item:hover { background: var(--bg); color: var(--text); }
+.nav-item.active { background: var(--accent-light); color: var(--accent-text); border-left-color: var(--accent); font-weight: 500; }
+.main { margin-left: var(--sidebar-w); flex: 1; max-width: 860px; padding: 3rem 3rem 6rem; }
+.section { display: none; }
+.section.active { display: block; }
+.doc-hero { background: var(--accent); border-radius: 14px; padding: 2.5rem; margin-bottom: 2rem; color: #fff; }
+.doc-hero h1 { font-family: "Lora", serif; font-size: 28px; font-weight: 600; letter-spacing: -0.3px; margin-bottom: 0.75rem; }
+.doc-hero p { font-size: 14px; color: rgba(255,255,255,0.8); max-width: 560px; line-height: 1.7; }
+.version-badge { display: inline-block; background: rgba(255,255,255,0.2); font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 999px; margin-bottom: 1rem; letter-spacing: 0.05em; }
+.content-block { margin-bottom: 2rem; }
+.section-title { font-family: "Lora", serif; font-size: 22px; font-weight: 600; color: var(--text); margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); }
+.subsection-title { font-size: 16px; font-weight: 500; color: var(--text); margin: 1.5rem 0 0.75rem; }
+p { margin-bottom: 0.75rem; color: var(--text-muted); }
+p:last-child { margin-bottom: 0; }
+.card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 1rem 0; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; }
+.card-icon { width: 36px; height: 36px; border-radius: 8px; background: var(--accent-light); display: flex; align-items: center; justify-content: center; margin-bottom: 0.75rem; }
+.card-title { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 0.35rem; }
+.card-desc { font-size: 13px; color: var(--text-hint); line-height: 1.5; }
+ul.styled { list-style: none; padding: 0; margin: 0.75rem 0; }
+ul.styled li { padding: 0.5rem 0 0.5rem 1.5rem; position: relative; font-size: 14px; color: var(--text-muted); border-bottom: 1px solid var(--border); }
+ul.styled li:last-child { border-bottom: none; }
+ul.styled li::before { content: ""; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.value-card { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: 0 12px 12px 0; padding: 1.25rem 1.5rem; margin-bottom: 1rem; }
+.value-name { font-size: 15px; font-weight: 500; color: var(--accent-text); margin-bottom: 0.5rem; }
+.value-desc { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+.mantra-list { margin: 0.75rem 0; }
+.mantra-item { background: var(--accent-light); border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 8px; font-size: 14px; font-style: italic; color: var(--accent-text); }
+.timeline { position: relative; padding-left: 2rem; }
+.timeline::before { content: ""; position: absolute; left: 6px; top: 0; bottom: 0; width: 2px; background: var(--border); }
+.timeline-item { position: relative; margin-bottom: 1.5rem; }
+.timeline-dot { position: absolute; left: -1.85rem; top: 4px; width: 14px; height: 14px; border-radius: 50%; background: var(--accent); border: 2px solid var(--surface); box-shadow: 0 0 0 2px var(--accent); }
+.timeline-date { font-size: 11px; font-weight: 600; color: var(--accent-text); background: var(--accent-light); display: inline-block; padding: 2px 8px; border-radius: 4px; margin-bottom: 4px; letter-spacing: 0.05em; }
+.timeline-title { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 3px; }
+.timeline-desc { font-size: 13px; color: var(--text-hint); }
+.kpi-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 0.75rem 0; }
+.kpi-badge { padding: 6px 14px; border: 1px solid var(--border); border-radius: 999px; font-size: 13px; font-weight: 500; color: var(--accent-text); background: var(--accent-light); }
+.meta-table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 14px; }
+.meta-table th { background: var(--accent); color: #fff; font-weight: 500; padding: 10px 14px; text-align: left; }
+.meta-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text-muted); }
+.meta-table tr:last-child td { border-bottom: none; }
+.meta-table tr:nth-child(even) td { background: var(--bg); }
+.alert { background: var(--accent-light); border: 1px solid rgba(74,124,89,0.3); border-radius: 10px; padding: 1rem 1.25rem; margin: 1rem 0; font-size: 14px; color: var(--accent-text); line-height: 1.6; }
+.alert strong { font-weight: 600; }
+.highlight { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; margin: 1rem 0; font-size: 14px; color: var(--text-muted); }
+.horario-box { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 1rem 0; }
+.horario-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; text-align: center; }
+.horario-periodo { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-hint); margin-bottom: 6px; }
+.horario-time { font-size: 20px; font-weight: 500; color: var(--accent-text); font-family: "Lora", serif; }
+.menu-toggle { display: none; position: fixed; top: 1rem; left: 1rem; z-index: 200; background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 8px 12px; cursor: pointer; font-size: 18px; }
+@media (max-width: 768px) {
+  .menu-toggle { display: block; }
+  .sidebar { transform: translateX(-100%); transition: transform 0.2s; }
+  .sidebar.open { transform: translateX(0); }
+  .main { margin-left: 0; padding: 4rem 1.25rem 4rem; }
+}
+</style>
+</head>
+<body>
+<button class="menu-toggle" onclick="toggleMenu()">☰</button>
+<div class="layout">
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <img src="data:image/jpeg;base64,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f4He0VHBPFcwrNBKksTjKujBgfoRUlWeknfYKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAqK6uYLSB57iVIokGWd2wB+Ncx4n8c6fou+3t8Xl6MjYh+VD/tH+g5+leWa5r2o65P5t9cF1B+SNeET6D+vWplNI8/E5jTpe7HVnc+I/iSqboNFjDnobmVeP8AgK/1P5V53f313qNwbi8uJJ5T/E7Zx7D0HtVeisXJs8KtialZ3mwoooqTAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigDT0XXtS0SXfY3LIpOWjPKN9R/XrXpnhz4g6fqWyDUAtjcnjcx/dMfY9vofzryCirU2jpoYurQ+F6dj6RBBAIOQe9LXh/hvxjqeglYlf7RaDrBIeB/un+H+XtXq3h7xNpuvxZtZds4GXgk4df8R7itYyTPew2Op19Nn2NqiiiqO0KKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiuY8V+MrHQFaBMXN/jiFTwvux7fTr/OhuxnUqwpR5puyNzU9Ss9KtGur2dYYl4yepPoB1J+leVeKvHt5qu+20/faWZ4JB/eSD3I6D2H5muc1jWL7Wrs3N9O0jfwr0VB6KOwqhWMp32PAxWYTq+7DSP4hRRRWZ5wUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABT4ZZIJUlhkaORDlWU4IPqDTKKYHpHhX4inKWuudOi3Sj/ANCA/mPy716PDLHPEksTrJG43KynII9Qa+cK3vDPirUPD0uIW861Y5e3c/Kfcf3T7/nmtIz7nq4XMpQ92rqu/X/gnulFZWga/Ya/a+dZy/Mv+sibh0PuP69K1a1PdhOM1zRd0FFFFBQUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFIxCqWYgADJJ7VFeXdvY2slzdSrFDGMs7HgV5D4y8a3Gts1pZl4NPHBGcNL7t7e35+yckjlxOLhh1rv2Nzxj8QMeZYaI/P3Xux+oT/4r8vWvNndncu7FmY5JJySaSisJSbPm69edeXNNhRRRUmIUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFAFiwvrnTrpLqzmeGZDkMp/T3HtXrfg/xtba3ttLzZb3/AEAz8sv+77+3+R45SgkEEHBHerjJo6cNip0JXjt2PpGivNvBfj7/AFen61J6LHdN+gf/AOK/P1r0gEEAg5BrZNM+koYiFePNAWiiimbhRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFUtX1S00exe8vZQkS9B3Y9gB3NM1vV7TRLB7y8k2oOFUfeduwA9a8T8SeILzxBffaLltsa5EUIPyxj+p9TUylY4cZjFQVlrIseK/FF34iusvmK0Q/uoAeB7n1NYNFFYN3PnJzlUk5Sd2FFFFIgKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACu18FeN5dKaOw1JmlsPuq/Vof8AFfbt29K4qiqTsaUqs6UuaD1Po+KSOaNJYnV43G5WU5BHqDT68Z8FeMZtBlW1ud0unO3I6mI+q+3qP8n2G2niuoI54JFkikG5XU5BFbRkmfTYXFRxEbrfqiWiiiqOoKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKz9b1e00Swe8vJNqDhVH3nbsAPWn6vqdro9hJeXkmyJOg7seygdya8R8S6/deIdQNzcfJGvEUQPEa/1PqamUrHDjMYqCsviY3xHr134gvzc3J2ovEUQPyxr6D39T3rKoorBu583KTm3KT1CiiikSFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFdV4J8XS6BOLe5LSadIfmXqYz/eX+orlaKadjSlVlSkpRep9G208V1BHPBIskUg3K6nIIqWvG/Avi99DnFneMW06Rue5hJ7j29R+P19hikSWNJI2V0cBlZTkEHoRW8ZXR9NhcVHERut+qH0UUVR1BRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAVDeXUFjay3VzKsUMS7ndugFSkgAknAFePePvFja1dGxs3I0+FuoP+uYfxfT0/P6KUrI5cXiVh4X69DO8YeJp/EV+W+aOziOIYie394+5/SsCiiudu58xOcqknKT1YUUUUiAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACu6+Hni7+zpF0rUJMWbn91Ix/wBUx7H0U/oa4WiqTszWjWlRmpx3PpKivPfhv4s+0JHot+/75Bi2kP8AGB/Cfcdvb9fQq3TvqfU4evGvDniFFFFM2CiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKK5rxx4kXw/pmIWBvpwVhGM7fVj9P5/jQ3Yzq1I0ouctkc98S/FOxX0SxkIc/8AH069h/c/x/L1rzOnSO8jtI7FnYkszHJJ9TTa55Suz5bEV5V5ucgoooqTAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKAHRu8UiyRsyOpDKynBBHQg17T4G8Trr+n+XOyjUIABKvTeO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cJ/dzRrIufQjNWK4n4U6l9q0KSxdsyWcnA/2G5H67q7auhO6ufXYer7WlGfcKKKKZsFFFFADZJEijeSRgqICzMegA6mvnrVr1tS1S6vXzmeVnwewJ4H4DivY/iFqH9n+FrvBxJcYgX/gXX/x0NXiNZVH0PCzapecYdgooorI8gKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAoorT8O6Lca9qcdlb/KD80khGQi9yf8APWmlcqMXJqK3NbwJ4XbXr/zrhWGnwH94enmN/cB/n7fUV7OiqiKiKFVRgADAAqtpen2+l2ENlapthiXA9T6k+561breMbI+nweFWHhbq9woooqjrCiiigAooooAKKKKACsjxNrtv4f0x7ub5pD8sUfd29Pp6mtC+u4LC0lu7mQRwxLuZj2rwzxTr1x4g1N7mUlYVysMXZF/xPc1MpWRw47FqhC0fif8AVzP1C9uNRvZry6kMk0rbmY/yHt2qvRXe/DbwqL2VdYvUP2eJv3CEcSMP4voD+v0rFJyZ8/SpSrz5VuzjNQsLjTpkhuk8uVo1k2HqAeRn3xVWus+J/wDyNk3/AFyT+VcnRJWZNWHJUlBdGFFFFSZhRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFAHVfDXUfsPieKJmxHdqYWyeM9V/UY/GvaK+cbeaS2uIp4m2yROHU+hByK+hrC6S9sre7j4SeNZFHoCM1tTelj3cpq3jKm+mpYooorQ9cKKKKAPMPi9fbrqw09ScIhmcZ4JJwP5H8688rd8b332/wAU6hKD8qSeUvPGF+X+YJ/GsKueTuz5PF1PaVpS8woooqTnCiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAmtLaa8uYra3jMk0rBUUdzXuHhHw9D4e0xYBte5kw08g/ib0HsO3/16xfh34VGl2y6lex/6dMvyKw5iQ/+zHv7cetdtW8I21Pfy7B+zXtZ7vbyCiiirPVCiiigAooooAKKKKACkJAGT0pa88+JXioQxvoli/71x/pMin7o/uD3Pf24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cKKKKQgooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKK3/DXhLUtfcPEnk2gPzXEgO3/gP94/5yKaTexcISm+WKuzEggluZkhgieWVzhUQZJPsK9L8J/DxICl5rYWSQYK2wOVX/ePc+3T611Xh3w1p3h+Hbax7pyMPO/Lt/gPYVs1tGFtz28LlsYe9V1fboIqhVCqAFAwAOgpaKKs9YKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigCvfWVtqFs9tdwJNC4wVcZH/1j715v4l+G80Ja40VzLH1NvIfmH+6e/0PP1r1Cik0nuc9fC06695a9+p84TQy28rRTRvHIhwyOMEH3Bple+654e0zXItt7bBpAMLKvyuv0P8AQ8V5p4g+Hup6cWlsc31sOcIMSL9V7/h+QrJwa2PCxGX1aWq1RxtFKysrFWBDA4II5FJWZwBRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUVLa2093OsFtDJNK3RI1LE/gKYEVW9N0281S5FvY27zynso4A9SegHua7jw98NZpds+sy+UvX7PGQWP1boPwz+Fei6dp9nplsLeyt44Ih/Cg6n1J6k+5q40+56WHy2pU1novxON8NfDq1s9lxq7LdTjkQr/AKtfr/e/l9a7pFVEVEUKqjAAGABTqK1SS2Pco0KdFWggooopmwUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFAGNrvhjStcUm7tgJu08fyuPx7/jmvOdd+HWqWG6WwIvoRzhRtkH/Ae/4c+1ev0VLimclfBUq2rVn3R83yxvFI0cqMjqcMrDBB9xTa+gdW0TTdYj2X9pHMQMB8Ydfow5FcJrPwxdd0mk3e8f8APK44P4MP6gfWs3TfQ8etllWGsfeR5zRV/VNG1LSZNl9Zywc4DMuVP0YcH8KoVFrHnuLi7MKKKKQgooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiitnR/C2s6xta1snER/5ayfImPXJ6/hmmk2VGEpu0VdmNVixsbvUJxBZ28s8p/hjXOPc+g969M0X4Z2cG2TVLlrl+pijyifQnqf0rtrGxtdPhENnbxQR/3Y1ABPqfU1oqfc9KjldSWtR2X4nm+h/DOeXbLq9x5K/88YSGb8W6D8M16FpWkafpEPk2FrHAp6kDLN9SeT+NXqK0SS2PXoYSlR+Fa9+oUUUUzpCiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKAGyRpLG0ciK6MMFWGQR71zGreAtC1As6QNZynndbnaP++Tx+WK6mihq5nUowqK01c8l1T4aarbbmsZ4bxB0U/u3/I8frXJX+mX+nPsvbSe3PbzEIB+h719D010WRCjqGU8EEZBqHTR51XKqcvgdvxPm+ivcNR8FaBf5LWCwOR9+3Pl4/AcfpXM6h8LV+ZtP1Ij0SdM/+PD/AAqHTZwVMsrw2V/Q81orp7/wF4hs9xFotwi/xQOGz9AcH9KwLuxu7J9l3azwN6SxlT+tS4tHHOlOHxJor0UUVJmFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUVestH1O/ANpYXMyk43JGSv59K6Cx+HWvXPMyQWo/6ayZP5LmqUWzWFGpU+GLZyNFepaf8L7KMhr6/mnP92JRGPzOc/pXUad4X0TTSDbabAHByHcb2B9i2cfhVKmztp5XWl8Wh4xpnh/V9VwbOwmkQ9HK7U/76OBXYaV8MLh9r6nfJEveOAbm/76PA/I16fRVqCR30srpR1m7/AIGFpPhDRNK2tDZJJKv/AC1m+ds+vPAP0Ardooqz0IU4U1aCsFFFFBYUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABSFQwIYAg9QaWigDJu/DOh3gIm0q1JPUpGEJ/FcGsa6+HPh+c5jS5t/aKXP/oQNdfRSaTMJYajPeK+486uPhZCSTb6rIg7CSEN+oIrNn+F+qqT5N7ZuP9ssp/ka9XopciMJZbh3srfM8Ym+HniKM4S3hl90mUfzxVSbwV4jhzu0uQ4/uOrfyNe5UUvZoxeU0ejf4f5Hgb+GddQkHSL3j0hY/wAqjPh/WgMnR9Qx/wBez/4V9AUUvZoj+yIfzM+ev7H1P/oHXn/fhv8AClXRtVYgLpl6SegEDf4V9CUUezQv7Ij/ADfgeADw9rZOP7H1D/wGf/CpE8L68+caReDH96Ij+de90UezQ/7Ih/MzxCPwN4kk6aYw/wB6VB/Nqt2/w58QS/fS2h/66S5/9BBr2Sin7NGiyqit2/6+R5Zb/C6/Y/6RqNtGP+mas/8APFadr8LbJT/pOpXEv/XNFT+ea9Aop8iNY5dh4/Zv8zlbT4feHbcfPbS3B9ZZW/8AZcCtqz0TSrIqbbTrWJl6MsS7vz61oUU7I6IYelD4YoKKKKZsFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAf//Z" alt="ZenFisio" class="sidebar-logo">
+    <div class="sidebar-brand">ZenFisio<small>Manual de Conduta</small></div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Introdução</div>
+    <a class="nav-item active" onclick="showSection('intro', this)">📄 Apresentação</a>
+    <a class="nav-item" onclick="showSection('historia', this)">🏛️ Sobre a ZenFisio</a>
+    <div class="nav-section">Cultura</div>
+    <a class="nav-item" onclick="showSection('missao', this)">🎯 Missão & Visão</a>
+    <a class="nav-item" onclick="showSection('valores', this)">💎 Valores</a>
+    <a class="nav-item" onclick="showSection('principios', this)">📐 Princípios</a>
+    <a class="nav-item" onclick="showSection('mantras', this)">✨ Mantras</a>
+    <div class="nav-section">Organização</div>
+    <a class="nav-item" onclick="showSection('estrutura', this)">🏢 Estrutura Organizacional</a>
+    <a class="nav-item" onclick="showSection('metricas', this)">📊 Métricas & Indicadores</a>
+    <a class="nav-item" onclick="showSection('metas', this)">🏆 Metas & Bonificações</a>
+    <div class="nav-section">Diretrizes</div>
+    <a class="nav-item" onclick="showSection('contratacao', this)">📝 Contratação & Benefícios</a>
+    <a class="nav-item" onclick="showSection('obrigacoes', this)">⚖️ Obrigações & Condutas</a>
+    <a class="nav-item" onclick="showSection('horarios', this)">🕐 Horários & Ponto</a>
+    <a class="nav-item" onclick="showSection('ausencias', this)">📅 Faltas, Ausências & Folgas</a>
+    <a class="nav-item" onclick="showSection('ferias', this)">🏖️ Férias</a>
+    <a class="nav-item" onclick="showSection('escritorio', this)">🏠 Normas do Escritório</a>
+    <a class="nav-item" onclick="showSection('comunicacao', this)">💬 Comunicação</a>
+    <a class="nav-item" onclick="showSection('seguranca', this)">🔒 Segurança da Informação</a>
+    <a class="nav-item" onclick="showSection('ferramentas', this)">🛠️ Ferramentas</a>
+    <div class="nav-section">Crescimento</div>
+    <a class="nav-item" onclick="showSection('partnership', this)">🤝 Partnership</a>
+  </nav>
+</aside>
+
+<main class="main">
+
+<!-- INTRO -->
+<div class="section active" id="s-intro">
+  <div class="doc-hero">
+    <span class="version-badge">Versão 1.1 · Out. 2025</span>
+    <h1>Manual de Conduta & Cultura Organizacional</h1>
+    <p>O objetivo deste documento não é definir um conjunto de regras e processos rígidos. O conteúdo descreve e transmite os mais importantes princípios e valores que compõem a ZenFisio e fazem parte do dia a dia de trabalho da equipe.</p>
+  </div>
+  <div class="content-block">
+    <div class="section-title">Sobre este manual</div>
+    <p>Ao longo da jornada de todos os integrantes do time da ZenFisio, surgem inúmeras situações que exigem empenho, atitude, compromisso, tomada de decisão e ações relevantes para o negócio. Enaltecemos continuamente que todos os colaboradores possuem <strong>liberdade, autonomia e responsabilidade</strong> no desempenho das suas funções.</p>
+    <p>Como premissas para o desempenho das atividades de todos da equipe, é necessário ter como referência os princípios e valores da ZenFisio e estar alinhado com o propósito e objetivos do negócio.</p>
+    <p>É importante destacar que o conteúdo desse documento está em constante desenvolvimento, pois entendemos que a cultura e a estrutura organizacional da empresa deve seguir em constante mudança e evolução, se moldando a partir dos desafios e aprendizados que ocorrem ao longo da jornada.</p>
+    <div class="alert"><strong>Aplicação e abrangência:</strong> Todas as informações se aplicam da mesma forma a todos os membros da equipe, independente de vínculo contratual, enquadramento profissional, cargo, gênero, idade ou tempo de empresa.</div>
+  </div>
+  <div class="content-block">
+    <div class="section-title">O que você encontra aqui</div>
+    <div class="card-grid">
+      <div class="card"><div class="card-title">História & Propósito</div><div class="card-desc">De onde viemos, onde estamos e para onde vamos</div></div>
+      <div class="card"><div class="card-title">Valores & Princípios</div><div class="card-desc">O que nos guia nas decisões e comportamentos</div></div>
+      <div class="card"><div class="card-title">Metas & Bonificações</div><div class="card-desc">Como reconhecemos e recompensamos resultados</div></div>
+      <div class="card"><div class="card-title">Diretrizes & Normas</div><div class="card-desc">Obrigações, direitos e condutas esperadas</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- HISTÓRIA -->
+<div class="section" id="s-historia">
+  <div class="content-block">
+    <div class="section-title">Sobre a ZenFisio</div>
+    <p>A ZenFisio é uma plataforma de serviços de gestão, finanças, marketing e vendas, que atende estabelecimentos e profissionais da saúde. O modelo de assinatura recorrente define de forma relevante o modelo de negócio da ZenFisio, caracterizando o negócio como um software oferecido em forma de serviço (SaaS B2B).</p>
+
+    <div class="subsection-title">Proposta de valor</div>
+    <p>A ZenFisio tem como proposta de valor central contribuir na organização, produtividade e resultados dos seus clientes, a partir de uma solução completa de gestão e marketing para estabelecimentos e profissionais da saúde.</p>
+    <p>O objetivo é oferecer ao mercado um conjunto de serviços de tecnologia que auxiliem os estabelecimentos e profissionais da saúde em relação à organização das informações, processos internos e relacionamento com os seus clientes e pacientes.</p>
+    <p>A proposta de valor da ZenFisio vai muito além da oferta de um sistema de gestão, pois contempla também o desenvolvimento dos setores de atuação e apoio em relação ao conhecimento em metodologias e boas práticas de gestão, finanças, marketing e vendas nos estabelecimentos de saúde.</p>
+
+    <div class="subsection-title">Segmentos de atuação</div>
+    <ul class="styled">
+      <li>Clínicas e consultórios de Fisioterapia</li>
+      <li>Estúdios de Pilates</li>
+      <li>Clínicas multidisciplinares em áreas da saúde</li>
+      <li>Terapeutas ocupacionais, fonoaudiólogos e psicólogos</li>
+      <li>Clínicas de estética, saúde, beleza e bem-estar</li>
+      <li>Profissionais autônomos de todas as áreas da saúde</li>
+    </ul>
+
+    <div class="subsection-title">Ecossistema de serviços</div>
+    <div class="card-grid">
+      <div class="card"><div class="card-title">ZenFisio</div><div class="card-desc">Sistema de gestão e marketing para estabelecimentos de saúde</div></div>
+      <div class="card"><div class="card-title">ZenPago</div><div class="card-desc">Serviço de pagamentos e gestão de cobranças integrado ao sistema</div></div>
+      <div class="card"><div class="card-title">FiqueZen</div><div class="card-desc">App mobile para relacionamento dos usuários com estabelecimentos de saúde</div></div>
+      <div class="card"><div class="card-title">Blog SouFisio</div><div class="card-desc">Conteúdos sobre gestão, marketing e vendas para profissionais da saúde</div></div>
+    </div>
+
+    <div class="subsection-title">Como tudo começou</div>
+    <p>A ZenFisio nasceu dentro das empresas Lumiun e 13 Bits, como uma spin-off. O início das operações ocorreu em <strong>maio de 2017</strong>. A ideia surgiu a partir do Diego, que junto com os sócios fundadores Alex, Cledison e Heini, estruturou a operação inicial. Em dezembro de 2019 foi registrada e formalizada como pessoa jurídica.</p>
+  </div>
+
+  <div class="content-block">
+    <div class="subsection-title">Linha do tempo</div>
+    <div class="timeline">
+      <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">Mai. 2017</div><div class="timeline-title">Início da ZenFisio</div><div class="timeline-desc">Publicação da primeira versão do sistema e website, início das operações</div></div>
+      <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">Set. 2018</div><div class="timeline-title">Primeiros 100 clientes</div><div class="timeline-desc">Atingida a marca de 100 clientes ativos</div></div>
+      <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">Dez. 2019</div><div class="timeline-title">Registro da ZenFisio</div><div class="timeline-desc">Abertura do CNPJ, início como empresa independente</div></div>
+      <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">Fev. 2020</div><div class="timeline-title">Stars Aceleradora</div><div class="timeline-desc">Início do processo de aceleração e rodada de investimento</div></div>
+      <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">Jul. 2020</div><div class="timeline-title">500 clientes</div><div class="timeline-desc">Alcançada a marca de 500 clientes ativos</div></div>
+      <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">Dez. 2020</div><div class="timeline-title">Primeiro escritório</div><div class="timeline-desc">Instalação no primeiro escritório próprio, com Cledison e Diego à frente</div></div>
+      <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">Jul. 2021</div><div class="timeline-title">1.000 clientes</div><div class="timeline-desc">Atingida a marca de 1.000 clientes ativos pagantes</div></div>
+      <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">Out. 2021</div><div class="timeline-title">R$ 100K de MRR</div><div class="timeline-desc">Alcançados R$ 100.000 de receita recorrente mensal</div></div>
+      <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">Jan. 2023</div><div class="timeline-title">R$ 200K de MRR</div><div class="timeline-desc">R$ 200.000 de receita recorrente mensal</div></div>
+      <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">Fev. 2023</div><div class="timeline-title">Novo escritório</div><div class="timeline-desc">Mudança para escritório mais moderno e com melhor estrutura</div></div>
+      <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">Mai. 2023</div><div class="timeline-title">2.000 clientes & ZenPago v1.0</div><div class="timeline-desc">2.000 clientes ativos e lançamento do ZenPago</div></div>
+      <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">Dez. 2023</div><div class="timeline-title">R$ 300K de MRR</div><div class="timeline-desc">R$ 300.000 de receita recorrente mensal</div></div>
+      <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">Jun. 2024</div><div class="timeline-title">FiqueZen v1.0</div><div class="timeline-desc">Lançamento do aplicativo para iOS e Android</div></div>
+      <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">Out. 2024</div><div class="timeline-title">R$ 400K e R$ 500K de MRR</div><div class="timeline-desc">Dois marcos importantes de receita recorrente no mesmo mês</div></div>
+      <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">Dez. 2024</div><div class="timeline-title">Invest Match (Caldeira)</div><div class="timeline-desc">ZenFisio entre as 30 startups do RS selecionadas</div></div>
+      <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">Fev. 2025</div><div class="timeline-title">Prêmio de Inovação & 3.000 clientes</div><div class="timeline-desc">Destaque de inovação em Ijuí-RS e 3.000 clientes ativos</div></div>
+      <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-date">Nov. 2025</div><div class="timeline-title">Novo escritório de 630m²</div><div class="timeline-desc">Espaço ainda mais moderno com estrutura ampliada para a equipe</div></div>
+    </div>
+  </div>
+
+  <div class="content-block">
+    <div class="subsection-title">Onde estamos (Jun. 2025)</div>
+    <div class="card-grid">
+      <div class="card"><div class="card-title">3.651 clientes ativos</div><div class="card-desc">Clientes pagantes na plataforma</div></div>
+      <div class="card"><div class="card-title">R$ 567.534 MRR</div><div class="card-desc">Receita recorrente mensal</div></div>
+      <div class="card"><div class="card-title">R$ 5,4M</div><div class="card-desc">Faturamento em 2025</div></div>
+      <div class="card"><div class="card-title">R$ 4,1M</div><div class="card-desc">Faturamento em 2024</div></div>
+    </div>
+
+    <div class="subsection-title">Para onde vamos</div>
+    <p>Um dos objetivos da ZenFisio é ser reconhecida até 2030 como uma das principais empresas de tecnologia e serviços na área da saúde no Brasil. O planejamento é criar um ecossistema completo de serviços para prestadores, profissionais e usuários.</p>
+    <p>Outras vias de crescimento exploradas: <strong>Internacionalização</strong> (Portugal, Angola e LATAM), <strong>Educação</strong> (plataforma de formação de profissionais) e <strong>E-commerce</strong> (marketplace de produtos).</p>
+  </div>
+</div>
+
+<!-- MISSÃO -->
+<div class="section" id="s-missao">
+  <div class="content-block">
+    <div class="section-title">Missão & Visão</div>
+    <div class="value-card">
+      <div class="value-name">🎯 Missão — Com as empresas</div>
+      <div class="value-desc">Qualificar a gestão e contribuir no desenvolvimento dos negócios e profissionais da saúde através de soluções digitais que aprimoram a eficiência, organização e o relacionamento com os pacientes.</div>
+    </div>
+    <div class="value-card">
+      <div class="value-name">🎯 Missão — Com as pessoas</div>
+      <div class="value-desc">Facilitar o acesso das pessoas a serviços de saúde e bem-estar e melhorar o relacionamento com os estabelecimentos e profissionais.</div>
+    </div>
+    <div class="value-card">
+      <div class="value-name">🔭 Visão</div>
+      <div class="value-desc">Estar entre os 10 negócios de tecnologia mais relevantes no Brasil na área de saúde e bem-estar até 2030.</div>
+    </div>
+  </div>
+</div>
+
+<!-- VALORES -->
+<div class="section" id="s-valores">
+  <div class="content-block">
+    <div class="section-title">Valores da ZenFisio</div>
+    <p>Os valores são ideais que definem a identidade, a cultura da empresa e como deve ser o comportamento dos membros da equipe. Os princípios e valores servem como pilares da cultura da empresa e como um guia de comportamento para orientar as decisões e ações dos colaboradores, auxiliando no entendimento do que é certo, do que não é correto e do que deve ser prioridade dentro do contexto do negócio.</p>
+
+    <div class="value-card">
+      <div class="value-name">Honestidade & Integridade</div>
+      <div class="value-desc">
+        Consiste em agir com transparência, ética e compromisso moral em todas as interações e decisões. É fundamental agir de forma verdadeira ao comunicar informações, no relacionamento com os clientes e entre os colegas de equipe, na definição de prazos e no cumprimento de entregas.<br><br>
+        O comportamento de todos também deve ser sustentado pela busca de justiça em todas as situações, sempre agindo com bom senso e coerência. Não é aceito qualquer comportamento com o intuito de "levar vantagem" entre membros da equipe, clientes, usuários e parceiros da ZenFisio.<br><br>
+        Na busca de transparência, também é responsabilidade dos gestores compartilhar informações relevantes sobre planejamento do negócio, estratégias, finanças e gestão de pessoas. Da mesma forma, todos os membros da equipe devem compartilhar todas as informações em relação à sua atuação, sempre que isso for relevante, necessário e requisitado por algum colega.
+      </div>
+    </div>
+
+    <div class="value-card">
+      <div class="value-name">Liberdade & Responsabilidade</div>
+      <div class="value-desc">
+        Confiamos na equipe e sabemos que todos irão fazer o seu melhor para a ZenFisio. Por isso, concedemos liberdade ao time, autonomia para tomada de decisão, incentivamos a iniciativa na busca de novas soluções, disponibilizamos tempo e acesso a conteúdos e incentivamos a busca de conhecimento e aprendizado constante.<br><br>
+        Não acreditamos em um conjunto de regras ou limites para definir como cada um deve se comportar. O que fazemos é para que todos tenham senso de responsabilidade e disciplina, porque acreditamos que a empresa e as pessoas crescem somente quando há confiança, igualdade, liberdade e, principalmente, quando todos podem fazer a diferença.<br><br>
+        Naturalmente, há exceções em nossa cultura de liberdade, pois não aceitamos comportamentos que não sejam baseados na ética, verdade e segurança. Não toleramos assédio, preconceito, constrangimento ou qualquer tipo de vazamento de informações do negócio.
+      </div>
+    </div>
+
+    <div class="value-card">
+      <div class="value-name">Envolvimento (Espírito de Dono)</div>
+      <div class="value-desc">
+        Envolvimento significa "se importar". Se importar é o compromisso genuíno e o cuidado com todas as coisas que envolvem o negócio.<br><br>
+        Ter espírito de dono é:<br>
+        • Compromisso com a satisfação dos clientes e usuários da plataforma<br>
+        • A atenção especial e respeito com os colegas<br>
+        • O capricho em cada tarefa realizada<br>
+        • É cuidar do ambiente da empresa<br>
+        • É fazer sempre algo a mais ou melhor do que se espera<br>
+        • É se dedicar um pouco mais em cada entrega<br>
+        • É o engajamento com os objetivos da equipe e da empresa<br>
+        • É a satisfação em se dedicar diariamente e contribuir com os resultados do negócio
+      </div>
+    </div>
+
+    <div class="value-card">
+      <div class="value-name">Altruísmo</div>
+      <div class="value-desc">
+        Altruísmo é, essencialmente, a inclinação natural em priorizar o bem-estar dos outros ou da empresa de forma coletiva, mesmo que isso exija certo nível de sacrifício pessoal.<br><br>
+        A colaboração entre os membros da equipe é um comportamento fundamental, com disposição para ajudar colegas e clientes sem esperar nada em troca, agindo com bondade e generosidade, compartilhando conhecimento e experiências para beneficiar o desenvolvimento da equipe como um todo.<br><br>
+        Priorizar os objetivos do grupo e da empresa em relação aos interesses pessoais, visando o sucesso coletivo.
+      </div>
+    </div>
+
+    <div class="value-card">
+      <div class="value-name">Curiosidade & Atitude</div>
+      <div class="value-desc">
+        Curiosidade é questionar o "status quo", para desaprender o que está obsoleto e aprender rapidamente o que é novo, com interesse e empolgação.<br><br>
+        Esperamos que os membros da equipe saibam identificar problemas e oportunidades de corrigir ou melhorar as coisas, propondo e implementando soluções inovadoras. Todos são criativos, por isso estimulamos a iniciativa e o compromisso com a mentalidade de mudança e melhorias contínuas.<br><br>
+        Atitude é a visão de sugerir a mudança e a coragem de assumir o compromisso com o desenvolvimento. Exercitar a curiosidade com atitude é fundamental: faça as mesmas coisas de maneira diferente, tente e teste algo novo sem medo de errar, aprenda com os erros, acerte, mas nunca deixe de evoluir.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PRINCÍPIOS -->
+<div class="section" id="s-principios">
+  <div class="content-block">
+    <div class="section-title">Princípios da ZenFisio</div>
+    <p>Os princípios são diretrizes fundamentais que orientam as operações da empresa e as decisões dos membros da equipe.</p>
+
+    <div class="value-card">
+      <div class="value-name">Meritocracia</div>
+      <div class="value-desc">
+        O ambiente de meritocracia busca promover, remunerar e reconhecer os colaboradores com base na sua dedicação, desempenho e resultados, visando motivar o desenvolvimento profissional dentro na empresa.<br><br>
+        A gestão baseada em merecimento tem como um dos objetivos principais incentivar os colaboradores a se desenvolverem continuamente, visando melhorar as suas habilidades e seus resultados. A meritocracia na ZenFisio também se baseia nos conceitos de <strong>justiça e transparência</strong>, para proporcionar um ambiente de trabalho igual para todos, onde cada profissional tem a mesma chance de progredir.<br><br>
+        As decisões na ZenFisio em relação à equipe são baseadas no comprometimento individual, qualidade do trabalho, alinhamento com o negócio, resultados alcançados e contribuição para o sucesso da empresa.
+      </div>
+    </div>
+
+    <div class="value-card">
+      <div class="value-name">Foco em resultado e crescimento</div>
+      <div class="value-desc">
+        Seguindo a visão e propósito da ZenFisio, definimos objetivos claros e mensuráveis, estruturados a partir de métricas e indicadores que representam o crescimento e resultados do negócio em todas as suas áreas.<br><br>
+        Na ZenFisio, o crescimento em número de clientes, faturamento, satisfação dos usuários e número de colaboradores é prioridade, sendo tão importante quanto o resultado financeiro do negócio. Priorizamos a eficiência, para garantir que as decisões e esforços sejam direcionados para as metas que realmente impactam o crescimento e o sucesso do negócio.
+      </div>
+    </div>
+
+    <div class="value-card">
+      <div class="value-name">Produtividade & Alto Impacto</div>
+      <div class="value-desc">
+        Produtividade e alta performance estão associadas a planejamento, conhecimento, atitude e determinação. Valorizamos a organização do trabalho e gestão do tempo, com a utilização de técnicas e ferramentas que permitem maximizar a eficiência.<br><br>
+        Acreditamos na capacidade que temos em gerar impacto no trabalho da equipe para a ZenFisio e nos nossos clientes. Por isso, decisões e esforços têm como prioridade o que tem maior relevância para os resultados. A produtividade da equipe é maior com a colaboração entre as pessoas e inteligência coletiva do time.<br><br>
+        Pensamos grande para gerar resultado aos nossos clientes, mas sabemos que isso depende de uma infinidade de pequenas coisas muito bem feitas todos os dias.
+      </div>
+    </div>
+
+    <div class="value-card">
+      <div class="value-name">Aprendizado com evolução constante</div>
+      <div class="value-desc">
+        A ZenFisio e o time estão em constante evolução. Mudanças e melhorias são sempre bem-vindas e devem estar continuamente presentes em todas as ideias, decisões e esforços da equipe.<br><br>
+        Não nos limitamos ao que já sabemos ou ao que somos bons. Tão importante quanto aprender e criar algo novo é desaprender e deixar de fazer o que pode se tornar obsoleto. Tudo na ZenFisio pode ser melhorado, não importa o quanto pareça estar bom!<br><br>
+        Aprender constantemente é a base para o sucesso profissional e o desenvolvimento da ZenFisio. Valorizamos e muito quem busca e compartilha conhecimento!
+      </div>
+    </div>
+
+    <div class="value-card">
+      <div class="value-name">Data Driven (gestão baseada em dados)</div>
+      <div class="value-desc">
+        Acreditamos na máxima: "o que não pode ser medido, não pode ser gerenciado". Por isso, buscamos mensurar a maioria dos nossos esforços para saber o que melhor contribui para os nossos resultados e identificar o que está melhorando ou piorando ao longo do tempo.<br><br>
+        Para definir as ações e os esforços na ZenFisio, seguimos prioritariamente a análise de informações, histórico de dados, métricas e indicadores, para reduzir incertezas e validar hipóteses. Coletamos dados de inúmeras fontes, feedback de clientes e métricas internas, para uma análise ampla e mais precisa de cada situação.<br><br>
+        Também buscamos ter flexibilidade, analisando constantemente os resultados das nossas ações, para ajustar rapidamente as estratégias com base em novas informações, aprendizados e mudanças do mercado.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MANTRAS -->
+<div class="section" id="s-mantras">
+  <div class="content-block">
+    <div class="section-title">Nossos Mantras</div>
+    <p>Frases que orientam nossa forma de pensar e agir no dia a dia da ZenFisio.</p>
+    <div class="mantra-list">
+      <div class="mantra-item">"O sucesso na ZenFisio depende do desenvolvimento e bem-estar das pessoas que fazem parte da equipe e da satisfação dos usuários no uso da plataforma de serviços."</div>
+      <div class="mantra-item">"Sucesso e bons resultados dependem de trabalho duro, inteligente e de longo prazo."</div>
+      <div class="mantra-item">"Você só ganha se todos ganham!"</div>
+      <div class="mantra-item">"Realizar as atividades com empenho e capricho para ter orgulho de mostrar aos outros."</div>
+      <div class="mantra-item">"Capricho e atenção aos detalhes é o que faz a diferença."</div>
+      <div class="mantra-item">"O ambiente de trabalho não precisa ser chato para ser sério."</div>
+      <div class="mantra-item">"É melhor não perder um cliente do que conquistar um cliente novo."</div>
+      <div class="mantra-item">"A jornada é muito mais importante que o destino."</div>
+    </div>
+  </div>
+</div>
+
+<!-- ESTRUTURA -->
+<div class="section" id="s-estrutura">
+  <div class="content-block">
+    <div class="section-title">Estrutura Organizacional</div>
+    <div class="card-grid">
+      <div class="card"><div class="card-title">Gestão</div><div class="card-desc">Administrativo · Financeiro · Pessoas & RH · Infraestrutura · Relação com Investidores</div></div>
+      <div class="card"><div class="card-title">Produto & Desenvolvimento</div><div class="card-desc">Gestão · Infraestrutura · Suporte · Desenvolvimento · Inovação</div></div>
+      <div class="card"><div class="card-title">Marketing</div><div class="card-desc">Digital · Conteúdo · Branding · Produto · Customer Marketing · Parceiros · Inteligência</div></div>
+      <div class="card"><div class="card-title">Comercial</div><div class="card-desc">Relacionamento com usuários em teste · Prospecção</div></div>
+      <div class="card"><div class="card-title">Customer Success</div><div class="card-desc">Onboarding · Suporte · Relacionamento · Educação · Retenção · Expansão · Dados</div></div>
+    </div>
+
+    <div class="subsection-title">Gestão</div>
+    <p>Responsável pela governança do negócio, mantendo a organização geral da empresa e a operação em bom funcionamento. Setores: Administrativo (registros, contratos, planejamento estratégico, gestão contábil), Financeiro (pagamentos, fluxo de caixa, faturamento de clientes, notas fiscais), Pessoas & RH, Infraestrutura do escritório e Relação com Investidores.</p>
+
+    <div class="subsection-title">Produto & Desenvolvimento (P&D)</div>
+    <p>Área responsável pela plataforma de sistemas. Como a ZenFisio é uma empresa de software, é a área responsável pelo produto em si. Inclui gestão de backlog, infraestrutura AWS, suporte técnico, desenvolvimento de sistemas web e mobile, e inovação com pesquisa de novas tendências.</p>
+
+    <div class="subsection-title">Marketing</div>
+    <p>Responsabilidade sobre todos os pontos de comunicação e relacionamento da ZenFisio com o mercado. Setores: Marketing Digital (jornada do cliente, funil de conversão), Conteúdo & Inbound, Branding & Comunicação, Marketing de Produto (PLG), Customer Marketing, Relacionamento com Parceiros e Inteligência de Mercado.</p>
+
+    <div class="subsection-title">Comercial</div>
+    <p>Foco na venda da assinatura. Atua no relacionamento com usuários em período de teste (7 e 14 dias) apresentando recursos, resolvendo dúvidas e negociando planos. O modelo comercial é uma venda consultiva, onde é tão importante orientar e engajar os profissionais na utilização da plataforma quanto fechar a venda.</p>
+
+    <div class="subsection-title">Customer Success (CS)</div>
+    <p>Objetivo maior é contribuir com os resultados e sucesso dos clientes. Setores: Onboarding e Implementação, Suporte Técnico, Relacionamento e Engajamento, Educação (treinamentos e capacitação), Gestão de Retenção e Renovações, Expansão (Upsell/Cross-sell) e Dados & Operações.</p>
+
+    <div class="subsection-title">Referências por assunto</div>
+    <ul class="styled">
+      <li><strong>Marketing — Juliana Nascimento:</strong> conteúdo para blog/redes sociais, materiais de divulgação, processos de marketing</li>
+      <li><strong>Customer Success — Taiz Richter:</strong> considerações de clientes, processos de atendimento, ferramentas de CS, comunicação com base de clientes</li>
+      <li><strong>CS Financeiro — Laura Agertte:</strong> pagamentos, boletos, planos, cupons de desconto, alterações e cancelamentos</li>
+      <li><strong>Produto & Desenvolvimento — Anderson Rosa e Gustavo Machado:</strong> problemas no sistema, melhorias e novos recursos, importações de dados</li>
+      <li><strong>Gestão de Pessoas — Paula Borelli:</strong> ponto, folgas, ausências, férias, comportamento, questões emocionais</li>
+      <li><strong>Gestão & Administrativo — Cledison:</strong> metas, remuneração, processos em geral, comportamento de colegas/gestores, equipamentos, segurança</li>
+    </ul>
+  </div>
+</div>
+
+<!-- MÉTRICAS -->
+<div class="section" id="s-metricas">
+  <div class="content-block">
+    <div class="section-title">Métricas & Indicadores de Desempenho</div>
+    <p>São dados que permitem avaliar o desenvolvimento do negócio, de modo geral, em áreas específicas da empresa e a performance dos colaboradores de forma individual. As informações contribuem para decisões mais precisas e auxiliam no monitoramento e na melhoria dos processos.</p>
+
+    <div class="value-card">
+      <div class="value-name">MRR — Receita Recorrente Mensal</div>
+      <div class="value-desc">A métrica mais importante para startups SaaS. Representa a previsibilidade de receita mensal gerada a partir da assinatura dos clientes ativos, considerando o pagamento mensal em todas as assinaturas. O MRR é calculado a partir da multiplicação do número de clientes ativos pelo valor médio pago mensalmente. O crescimento do MRR representa o nível de desenvolvimento do negócio e estágio de maturidade da startup.</div>
+    </div>
+
+    <div class="value-card">
+      <div class="value-name">Número de clientes</div>
+      <div class="value-desc">Representa o número de estabelecimentos com assinatura ativa e pagamento em dia. É um número diretamente relacionado ao faturamento e demonstra o percentual de crescimento do negócio. Em cada cliente ativo, estão vinculados inúmeros usuários que utilizam o sistema, conforme o plano contratado.</div>
+    </div>
+
+    <div class="value-card">
+      <div class="value-name">UpSell</div>
+      <div class="value-desc">Consiste na ampliação do plano na assinatura de um cliente, aumentando o valor recorrente pago. Ocorre quando é alterado o plano, incluído algum módulo adicional ou aumentado o limite de uso de algum recurso. É uma alavanca relevante de crescimento, pois permite a expansão do MRR a partir da base atual de clientes, com menor custo de aquisição.</div>
+    </div>
+
+    <div class="value-card">
+      <div class="value-name">DownSell</div>
+      <div class="value-desc">Consiste na redução do plano na assinatura do cliente. Pode ocorrer por insatisfação com algum recurso específico ou pela diminuição na necessidade do negócio. Também pode ser usada como estratégia para evitar cancelamentos. Mesmo com a redução do plano, manter o cliente ativo é mais importante, pois essa situação pode ser revertida.</div>
+    </div>
+
+    <div class="value-card">
+      <div class="value-name">Churn — Taxa de cancelamento</div>
+      <div class="value-desc">Indica a taxa de perda de receita e de clientes ao longo do tempo. O percentual é definido pelo valor de MRR perdido a partir do cancelamento de assinaturas mensalmente. Uma taxa elevada de Churn pode sinalizar problemas com a experiência dos usuários, satisfação dos clientes ou com o produto. Para manter o Churn saudável, é fundamental priorizar a satisfação dos clientes e identificar previamente possíveis cancelamentos.</div>
+    </div>
+
+    <div class="value-card">
+      <div class="value-name">LT e LTV (Lifetime Value)</div>
+      <div class="value-desc">LT (lifetime) representa o tempo médio que um cliente permanece com a ZenFisio antes de cancelar. O LTV é a receita total esperada de um cliente durante todo o período que ele permanece com a empresa. Essas métricas representam de forma resumida a saúde do negócio, pois mostram a capacidade da empresa de reter seus usuários e gerar receita a partir da base de clientes.</div>
+    </div>
+
+    <div class="value-card">
+      <div class="value-name">Ticket Médio</div>
+      <div class="value-desc">Representa o valor médio pago por cada cliente dentro de um período específico. É estratégia da ZenFisio a ampliação do ticket médio ao longo do tempo, a partir do desenvolvimento do produto com novos serviços e de ações para melhorar a experiência e satisfação dos clientes.</div>
+    </div>
+
+    <div class="value-card">
+      <div class="value-name">NPS — Net Promoter Score</div>
+      <div class="value-desc">Mensura o nível de satisfação e lealdade dos clientes, baseada na probabilidade de recomendação da ZenFisio. Pergunta: "Em uma escala de 0 a 10, qual a probabilidade de você recomendar a ZenFisio para um amigo ou colega?"<br><br>
+      • Promotores (9-10): altamente satisfeitos, propensos a recomendar<br>
+      • Passivos (7-8): satisfeitos, mas não necessariamente leais<br>
+      • Detratores (0-6): insatisfeitos que podem prejudicar a reputação</div>
+    </div>
+
+    <div class="value-card">
+      <div class="value-name">Health Score</div>
+      <div class="value-desc">Representa o nível de engajamento dos clientes e utilização dos recursos da plataforma pelos usuários. Avalia o quanto cada usuário explora e utiliza os recursos disponíveis na sua assinatura, bem como a intensidade e frequência de uso. Permite identificar clientes com maior engajamento (potencial de UpSell e promotores) e clientes com baixo uso (risco de cancelamento).</div>
+    </div>
+  </div>
+</div>
+
+<!-- METAS -->
+<div class="section" id="s-metas">
+  <div class="content-block">
+    <div class="section-title">Metas & Bonificações</div>
+    <p>Na ZenFisio, a estrutura de Metas & Bonificações está diretamente relacionada ao modelo do negócio e aos valores do modelo de gestão da empresa. O ciclo de planejamento e fechamento das metas é <strong>mensal</strong>.</p>
+
+    <div class="subsection-title">Metas de MRR — Coletivas para toda a equipe</div>
+    <table class="meta-table">
+      <tr><th>Nível</th><th>Crescimento mensal do MRR</th></tr>
+      <tr><td>🥉 Bronze</td><td>1% de crescimento</td></tr>
+      <tr><td>🥈 Prata</td><td>1,8% de crescimento</td></tr>
+      <tr><td>🥇 Ouro</td><td>2,6% de crescimento</td></tr>
+      <tr><td>💎 Diamante</td><td>3,4% de crescimento</td></tr>
+    </table>
+    <div class="alert">Considerando o objetivo de 40% de crescimento anual, a <strong>meta principal é de 3% de crescimento mensal</strong>. A bonificação de MRR é distribuída de forma uniforme para todos os membros da equipe.</div>
+
+    <div class="subsection-title">Regras de participação</div>
+    <ul class="styled">
+      <li>Colaboradores no <strong>1º mês</strong> não participam das bonificações coletivas de MRR</li>
+      <li>A partir do <strong>2º mês</strong>: participam das metas e bonificações de MRR</li>
+      <li>A partir do <strong>3º mês</strong>: participam das metas e bonificações dos KPIs do setor</li>
+      <li>Colaboradores em processo de desligamento não recebem bonificações no último mês</li>
+      <li>Estagiários e profissionais em formato parcial recebem <strong>50%</strong> do valor integral da bonificação</li>
+    </ul>
+
+    <div class="subsection-title">KPIs por área</div>
+
+    <p><strong>Marketing:</strong> Novo cadastro de teste (14 dias), Retorno e novo teste (7 dias), Novos clientes (número e MRR adicionado). Todas as metas são coletivas do time.</p>
+
+    <p><strong>Comercial:</strong> Novos clientes (coletivo e individual por vendedor). O percentual de bonificação por venda é definido pelo envolvimento do vendedor no processo (vendedor principal ou assistente).</p>
+
+    <p><strong>Customer Success:</strong> Churn (percentual de MRR perdido), UpSell (percentual de MRR adicionado), DownSell (valor absoluto de redução — sem meta, mas compõe o cálculo), NPS e Health Score.</p>
+
+    <p><strong>Produto & Desenvolvimento:</strong> Churn, NPS, Health Score, Custo por MRR e Custo por Usuário. Para os KPIs de custo, a meta é definida considerando a média dos últimos 3 períodos.</p>
+
+    <div class="subsection-title">Pagamento das bonificações</div>
+    <div class="highlight">O pagamento ocorre mensalmente, até o <strong>5º dia útil</strong> de cada mês, considerando o valor da bonificação de cada colaborador em relação aos resultados do mês anterior. O pagamento é realizado via cartão de benefícios <strong>Caju</strong>.</div>
+
+    <div class="subsection-title">🏝️ Desafio do Semestre</div>
+    <p>Além das metas mensais, temos o Desafio do Semestre — uma meta de crescimento do MRR em valor financeiro para toda a equipe, em dois ou três diferentes níveis de dificuldade e prêmios.</p>
+    <p>O prêmio é uma <strong>viagem ou evento</strong> com todos os custos pagos pela ZenFisio, para todos os membros que atuaram por mais de 45 dias ao longo do semestre. A participação é opcional e cada colaborador pode incluir cônjuge e filhos, também com despesas pagas pela empresa.</p>
+    <p>Caso o colaborador opte em não participar, pode trocar o prêmio por um bônus financeiro no valor previamente estabelecido.</p>
+  </div>
+</div>
+
+<!-- CONTRATAÇÃO -->
+<div class="section" id="s-contratacao">
+  <div class="content-block">
+    <div class="section-title">Contratação & Benefícios</div>
+
+    <div class="subsection-title">Formatos de vínculo</div>
+    <div class="value-card">
+      <div class="value-name">Sócio</div>
+      <div class="value-desc">Consta no contrato social com participação na ZenFisio.</div>
+    </div>
+    <div class="value-card">
+      <div class="value-name">Celetista</div>
+      <div class="value-desc">Contrato de trabalho regido pela CLT, com carteira assinada e benefícios pré-estabelecidos.</div>
+    </div>
+    <div class="value-card">
+      <div class="value-name">Contrato PJ</div>
+      <div class="value-desc">Colaborador com vínculo como prestador de serviço como Pessoa Jurídica, com condições definidas em contrato específico, seguindo os padrões da CLT.</div>
+    </div>
+    <div class="value-card">
+      <div class="value-name">Estagiário</div>
+      <div class="value-desc">Vínculo de trabalho através de instituição de ensino, com condições de atuação e remuneração específicas, definidas em contrato de estágio.</div>
+    </div>
+
+    <div class="subsection-title">Direitos & Benefícios</div>
+    <ul class="styled">
+      <li><strong>Remuneração mensal:</strong> valor mensal previamente acertado conforme a função/cargo</li>
+      <li><strong>13º salário:</strong> pagamento correspondente a 1/12 por cada mês de trabalho no ano</li>
+      <li><strong>Férias remuneradas:</strong> 30 dias após cada período de 12 meses trabalhados</li>
+      <li><strong>Adicional de férias:</strong> 1/3 do valor da remuneração mensal (para celetistas)</li>
+      <li><strong>Dispensas abonadas:</strong> ausências remuneradas previstas na legislação, com documento comprobatório</li>
+      <li><strong>Bonificações:</strong> benefício financeiro não obrigatório, condicionado ao atingimento de metas</li>
+      <li><strong>Ambiente de trabalho:</strong> cozinha equipada, frigobar, máquina de café, lanches e bebidas</li>
+    </ul>
+  </div>
+</div>
+
+<!-- OBRIGAÇÕES -->
+<div class="section" id="s-obrigacoes">
+  <div class="content-block">
+    <div class="section-title">Obrigações, Responsabilidades & Condutas</div>
+
+    <div class="subsection-title">Obrigações do colaborador</div>
+    <ul class="styled">
+      <li>Seguir as diretrizes de comportamento, princípios e valores da empresa</li>
+      <li>Assiduidade e pontualidade</li>
+      <li>Comportar-se com respeito, educação e cortesia com colegas, clientes, usuários e parceiros em todos os momentos</li>
+      <li>Evitar desperdício de tempo de trabalho com uso de celulares para fins pessoais, conversas sem relação com o trabalho ou permanência na cozinha por mais de 15 minutos</li>
+      <li>Permanecer no local de trabalho durante todo o expediente; ausências acima de 15 minutos requerem autorização e aviso à equipe</li>
+      <li>Manter em sigilo fatos e informações sensíveis quanto a questões financeiras, estratégicas, operacionais ou confidenciais</li>
+      <li>Estar disponível para atuação em horários extraordinários quando requisitado</li>
+      <li>Registrar horário de início e término dos turnos de trabalho no sistema de ponto</li>
+      <li>Apresentar-se em trajes adequados e em boas condições de higiene</li>
+      <li>Comunicar sugestões ou necessidades de melhoria em processos, produtos e equipamentos</li>
+      <li>Não faltar com cuidados que possam resultar em dano ao patrimônio, aos clientes ou à ZenFisio</li>
+      <li>Informar o RH sobre mudanças de endereço, contato de urgência, atualizações de cursos ou formações</li>
+    </ul>
+
+    <div class="subsection-title">O que NÃO é permitido</div>
+    <ul class="styled">
+      <li>Praticar atividades relacionadas a jogos de azar ou entretenimento durante o expediente</li>
+      <li>Portar arma branca ou de fogo dentro da empresa, mesmo que registrada</li>
+      <li>Receber propinas, comissões ou quaisquer vantagens de clientes ou fornecedores</li>
+      <li>Retirar do ambiente de trabalho equipamentos, objetos ou documentos da ZenFisio sem autorização</li>
+      <li>Executar serviços dentro do ambiente ou em horário de trabalho para fins estranhos à ZenFisio sem autorização</li>
+      <li>Utilizar ou emprestar materiais ou equipamentos para fins estranhos à ZenFisio sem autorização</li>
+      <li>Uso excessivo do celular para assuntos particulares durante o expediente</li>
+      <li>Fumar no horário de trabalho e dentro das dependências da empresa</li>
+      <li>Comparecer ao ambiente ou durante o horário de trabalho embriagado ou sob efeito de drogas</li>
+      <li>Faltar com respeito ou agir de forma agressiva com colegas ou clientes</li>
+    </ul>
+    <div class="alert"><strong>Atenção:</strong> O não cumprimento das regras com a realização de algumas das atividades não permitidas será considerado uma falta grave, passível de advertência ou até mesmo de desligamento da empresa.</div>
+
+    <div class="subsection-title">Uso de celular e internet</div>
+    <p>Recomendamos fortemente evitar o uso de smartphones pessoais para atividades não relacionadas ao trabalho. Entre as ações que devem ser evitadas:</p>
+    <ul class="styled">
+      <li>WhatsApp ou Direct para comunicação pessoal com amigos ou familiares</li>
+      <li>Acesso e atividades em redes sociais pessoais (Facebook, Instagram, TikTok, etc.)</li>
+      <li>Canais de vídeo no YouTube com conteúdo não relacionado à ZenFisio</li>
+      <li>Lojas online e compras pessoais</li>
+      <li>Sites de apostas e jogos de azar</li>
+      <li>Sites com conteúdo de pornografia, violência, drogas</li>
+    </ul>
+    <p>É <strong>permitido</strong> ouvir músicas em plataformas de streaming de áudio (como Spotify) com fone de ouvido, em volume que não perturbe os colegas. Também é permitido e incentivado o acesso a conteúdos educacionais relacionados à ZenFisio.</p>
+
+    <div class="subsection-title">Vestimentas</div>
+    <p>Não há uniforme obrigatório. Recomendamos bom senso com as seguintes orientações:</p>
+    <ul class="styled">
+      <li>Evitar roupas excessivamente indiscretas ou que exponham o corpo de forma sensual</li>
+      <li>Evitar calçados abertos como chinelos</li>
+      <li>Evitar trajes que remetem a ambientes de festa ou férias</li>
+      <li>Evitar uso de acessórios como óculos escuros, bonés e chapéus</li>
+    </ul>
+  </div>
+</div>
+
+<!-- HORÁRIOS -->
+<div class="section" id="s-horarios">
+  <div class="content-block">
+    <div class="section-title">Horários & Ponto</div>
+
+    <div class="subsection-title">Jornada de trabalho</div>
+    <p>A jornada semanal de trabalho padrão na ZenFisio é de <strong>40 horas</strong>, com trabalho de segunda a sexta-feira.</p>
+    <div class="horario-box">
+      <div class="horario-card"><div class="horario-periodo">Manhã</div><div class="horario-time">08h00 — 12h00</div></div>
+      <div class="horario-card"><div class="horario-periodo">Tarde</div><div class="horario-time">13h30 — 17h30</div></div>
+    </div>
+    <p>Para colaboradores com jornada personalizada (estagiários, consultores), os horários devem ser cumpridos conforme previamente estabelecidos.</p>
+
+    <div class="subsection-title">Registro de ponto</div>
+    <p>O ponto deve ser registrado a partir do computador de trabalho, no horário de início e término de cada turno. Em caso de esquecimento, deve ser enviada uma solicitação de registro com data, horário e justificativa da falta de registro.</p>
+    <p>Em situações de trabalho com formatos ou horários fora do convencional (eventos, viagens, atividades extras), o registro deve ser realizado conforme combinado previamente com os responsáveis.</p>
+
+    <div class="subsection-title">Banco de horas</div>
+    <p>A partir do registro no ponto, é calculado o saldo do Banco de Horas de cada colaborador:</p>
+    <ul class="styled">
+      <li><strong>Saldo positivo:</strong> pode ser utilizado para folgas, respeitando as regras de aviso prévio e consentimento</li>
+      <li><strong>Saldo negativo:</strong> compensação com horas extras nas demandas existentes (não é permitido horas extras apenas para compensação sem demanda)</li>
+      <li>Fechamento do banco de horas ao final de cada semestre</li>
+      <li>Ausências devidamente justificadas são abonadas e não contabilizadas no banco</li>
+    </ul>
+
+    <div class="subsection-title">Pontualidade & Assiduidade</div>
+    <p>A pontualidade e a assiduidade refletem o compromisso do profissional com a ZenFisio, com o time e com suas responsabilidades. São considerados critérios para avaliação, promoção e ascensão dos profissionais na ZenFisio.</p>
+
+    <div class="subsection-title">Atrasos</div>
+    <ul class="styled">
+      <li><strong>Tolerância:</strong> atrasos de até 5 minutos são tolerados e não registrados</li>
+      <li>Atrasos acima de 5 minutos: contabilizados no banco de horas e registrados nos indicadores de desempenho</li>
+      <li><strong>A partir de 10 atrasos/mês:</strong> desconto de 5% na bonificação ou Vale Benefício</li>
+      <li><strong>A partir de 20 atrasos/mês:</strong> desconto de 10% na bonificação ou Vale Benefício</li>
+    </ul>
+  </div>
+</div>
+
+<!-- AUSÊNCIAS -->
+<div class="section" id="s-ausencias">
+  <div class="content-block">
+    <div class="section-title">Faltas, Ausências & Folgas</div>
+    <p>O que define o tipo de ausência é o tempo de ausência do colaborador, o motivo, o envio de notificação prévia e o consentimento dos responsáveis. Em todas as situações, é imprescindível informar os responsáveis com o maior tempo de antecedência possível e avisar toda a equipe pelo Slack e WhatsApp.</p>
+
+    <div class="value-card">
+      <div class="value-name">Atraso</div>
+      <div class="value-desc">Ocorre quando o colaborador atrasa para o início do turno de trabalho por algum motivo pessoal ou imprevisto. Tolerância de até 5 minutos. Acima disso, contabilizado no banco de horas e registrado nos indicadores.</div>
+    </div>
+
+    <div class="value-card">
+      <div class="value-name">Falta</div>
+      <div class="value-desc">Atraso ou ausência de mais de 2 horas, não informado com ao menos 1 dia de antecedência e sem justificativa plausível e comprovada. Em casos de problemas de saúde, é necessário apresentar atestado médico ao RH. Faltas recorrentes sem justificativa podem ser motivo para advertência ou desligamento.</div>
+    </div>
+
+    <div class="value-card">
+      <div class="value-name">Ausência</div>
+      <div class="value-desc">Saída do ambiente de trabalho dentro do horário de atuação. Até 15 minutos: informar a equipe pelo Slack/WhatsApp com motivo e período. Acima de 15 minutos: necessário informar responsáveis com antecedência e obter consentimento. Ausências acima de 15 minutos sem aviso e justificativa são consideradas faltas.</div>
+    </div>
+
+    <div class="value-card">
+      <div class="value-name">Folga</div>
+      <div class="value-desc">Ausência de 1 ou mais turnos, informada com antecedência e com consentimento dos responsáveis. Limite: até 2 turnos por mês. Não é permitido mais de 1 dia corrido de folga sem justificativa especial. O saldo positivo do banco de horas pode ser utilizado para folgas.</div>
+    </div>
+
+    <div class="subsection-title">Critérios para aprovação de folgas</div>
+    <ul class="styled">
+      <li>Demanda de atividades na data solicitada</li>
+      <li>Número de solicitações de folga no setor e em toda a equipe na mesma data</li>
+      <li>Pontualidade e assiduidade do colaborador</li>
+      <li>Incidência de atrasos, faltas e folgas anteriores</li>
+      <li>Antecedência e ordem de solicitação em relação à data desejada</li>
+    </ul>
+  </div>
+</div>
+
+<!-- FÉRIAS -->
+<div class="section" id="s-ferias">
+  <div class="content-block">
+    <div class="section-title">Férias</div>
+    <p>Todos os colaboradores (exceto os sócios) têm direito a <strong>30 dias de férias</strong>, contabilizados de forma proporcional a cada 12 meses de atuação, a partir da data de ingresso na ZenFisio.</p>
+
+    <div class="subsection-title">Regras gerais</div>
+    <ul class="styled">
+      <li>O colaborador pode gozar de férias depois de 6 meses de atuação, mesmo que ainda não estejam vencidas</li>
+      <li>Cada período de férias: mínimo de 5 dias, máximo de 20 dias</li>
+      <li>Os 30 dias podem ser divididos em 2 ou 3 períodos ao longo do ano</li>
+      <li>A ZenFisio não adota férias coletivas de fim de ano, mas se reserva o direito de modificar essa prática</li>
+      <li>Para férias em período específico, informe os responsáveis com máxima antecedência para aprovação</li>
+    </ul>
+
+    <div class="highlight">Como alternativa para folgas de mais de 1 dia, é possível utilizar saldo de dias de férias não aproveitados, sempre dependendo de aprovação da gestão.</div>
+
+    <p>Demais situações seguem as regras da Consolidação das Leis do Trabalho (CLT).</p>
+  </div>
+</div>
+
+<!-- ESCRITÓRIO -->
+<div class="section" id="s-escritorio">
+  <div class="content-block">
+    <div class="section-title">Normas do Escritório</div>
+
+    <div class="subsection-title">Acesso às dependências</div>
+    <p>O acesso deve ser controlado por todos, sendo permitido apenas aos colaboradores e em horário de trabalho. Acesso em horários alternativos (noite ou finais de semana) requer autorização prévia. Não é permitida a permanência de pessoas que não façam parte da equipe, exceto em situações específicas e previamente informadas.</p>
+
+    <div class="subsection-title">Cuidado com o patrimônio</div>
+    <p>É de responsabilidade de todos o devido cuidado e zelo com os bens, equipamentos, móveis e materiais da ZenFisio. A falta de cuidado pode ser considerada improbidade, passível de advertência ou desligamento em casos de danos significativos.</p>
+    <p>Não é permitida qualquer atividade comercial não relacionada à empresa (venda ou compra de produtos de terceiros) nem a fixação de cartazes ou avisos sem relação com a ZenFisio.</p>
+
+    <div class="subsection-title">Limpeza & Higiene</div>
+    <p>A limpeza é responsabilidade de todos, em igual forma e independente de cargo ou tempo de empresa. É necessário que cada colaborador mantenha sua estação de trabalho limpa e organizada, coloque o lixo nas lixeiras adequadas e não deixe objetos fora do lugar.</p>
+    <p>Pedimos que todos também atuem como "fiscais" dos colegas, chamando atenção ao perceber alguma ação inconveniente ou informando os responsáveis. A faxineira profissional atende às terças-feiras, quintas-feiras e finais de semana.</p>
+
+    <div class="subsection-title">Lanches</div>
+    <ul class="styled">
+      <li>Tempo sugerido: até <strong>15 minutos</strong> para a realização de lanches</li>
+      <li>Consumo somente na cozinha (água, café e chimarrão podem ficar na mesa)</li>
+      <li>Encomendas externas permitidas apenas às <strong>sextas-feiras</strong></li>
+      <li>Refeições para o almoço podem ser encomendadas em qualquer dia</li>
+      <li>Os produtos disponibilizados pela ZenFisio devem ser consumidos com moderação e espírito coletivo</li>
+    </ul>
+
+    <div class="subsection-title">Cozinha</div>
+    <p>A cozinha é um ambiente coletivo. É responsabilidade de cada um a limpeza dos itens utilizados e a organização dos produtos e equipamentos nos locais adequados. Tenha atenção ao tempo gasto e evite conversas pessoais excessivas no ambiente da cozinha.</p>
+
+    <div class="subsection-title">Banheiros</div>
+    <p>Não há distinção de gênero entre os espaços disponíveis. Esperamos de todos o devido cuidado com a higiene, mantendo os espaços limpos e organizados após o uso.</p>
+  </div>
+</div>
+
+<!-- COMUNICAÇÃO -->
+<div class="section" id="s-comunicacao">
+  <div class="content-block">
+    <div class="section-title">Comunicação entre a equipe</div>
+    <p>A comunicação entre os colaboradores deve sempre ocorrer de forma <strong>respeitosa, cordial, clara e objetiva</strong>, com o intuito de contribuir no desenvolvimento da equipe e das atividades de trabalho.</p>
+
+    <div class="value-card">
+      <div class="value-name">Slack — ferramenta principal</div>
+      <div class="value-desc">Deve ser utilizado para conversas e troca de informações relacionadas às atividades de trabalho. <strong>Não é permitida a utilização do Slack para conversas pessoais</strong> entre a equipe.</div>
+    </div>
+
+    <div class="value-card">
+      <div class="value-name">WhatsApp</div>
+      <div class="value-desc">Ferramenta de atendimento aos clientes e comunicação básica entre a equipe. Utilizado para avisos coletivos de ausências e informações rápidas.</div>
+    </div>
+
+    <div class="value-card">
+      <div class="value-name">E-mail corporativo (Zoho Mail)</div>
+      <div class="value-desc">Utilizado como provedor do serviço de e-mail vinculado ao domínio da ZenFisio. Para comunicações formais externas e internas.</div>
+    </div>
+
+    <p>É importante a realização constante de conversas pessoais e reuniões, sempre que necessário. Esses momentos enriquecem o conhecimento da equipe e as análises em relação às ações e atividades na ZenFisio.</p>
+  </div>
+</div>
+
+<!-- SEGURANÇA -->
+<div class="section" id="s-seguranca">
+  <div class="content-block">
+    <div class="section-title">Segurança da Informação</div>
+    <p>É de responsabilidade de todos a prevenção de incidentes de segurança da informação e vazamento de dados. O cuidado com a segurança de dados deve ser uma premissa no desempenho das atividades, no uso dos equipamentos de tecnologia, serviços de software e principalmente em relação aos dados da ZenFisio e de seus clientes e usuários.</p>
+
+    <div class="subsection-title">Cuidados importantes no dia a dia</div>
+    <ul class="styled">
+      <li>Não compartilhar em nenhuma situação senhas da ZenFisio com terceiros</li>
+      <li>Utilizar sempre senhas fortes: letras maiúsculas e minúsculas, números e caracteres especiais, com no mínimo 12 caracteres</li>
+      <li>Não utilizar e-mail ou contas pessoais em serviços de internet na estação de trabalho</li>
+      <li>Evitar acesso a sites suspeitos como jogos, apostas e conteúdo adulto</li>
+      <li>Evitar acesso a redes sociais pessoais ou serviços de armazenamento na nuvem pessoais</li>
+    </ul>
+
+    <div class="alert"><strong>Responsabilidade:</strong> Em caso de incidentes de segurança ou vazamento de dados ocorridos em decorrência de falhas pessoais dos colaboradores, o profissional pode ser responsabilizado e ter de ressarcir a ZenFisio por eventuais danos e prejuízos.</div>
+  </div>
+</div>
+
+<!-- FERRAMENTAS -->
+<div class="section" id="s-ferramentas">
+  <div class="content-block">
+    <div class="section-title">Ferramentas & Serviços</div>
+    <p>Na ZenFisio utilizamos inúmeros serviços e ferramentas para organização das informações, gestão de processos, marketing, comercial, comunicação e infraestrutura de produtos.</p>
+
+    <div class="subsection-title">Comunicação & Colaboração</div>
+    <ul class="styled">
+      <li><strong>Slack:</strong> comunicação interna da equipe e notificações do sistema</li>
+      <li><strong>WhatsApp:</strong> atendimento de clientes e comunicação básica da equipe</li>
+      <li><strong>Zoho Mail:</strong> e-mail corporativo @zenfisio.com</li>
+      <li><strong>Google Drive:</strong> armazenamento de arquivos e documentos por área, com acesso restrito por profissionais</li>
+      <li><strong>Notion:</strong> organização de fluxos de trabalho, documentação do produto e registro de informações da equipe</li>
+    </ul>
+
+    <div class="subsection-title">Atendimento & CRM</div>
+    <ul class="styled">
+      <li><strong>Intercom:</strong> atendimento via chat integrado ao sistema, Central de Ajuda, onboarding, automação e campanhas de e-mail</li>
+      <li><strong>Pipedrive:</strong> CRM para Comercial e CS, organização de clientes e registro de informações</li>
+    </ul>
+
+    <div class="subsection-title">Gestão de Pessoas</div>
+    <ul class="styled">
+      <li><strong>Ponto Colaborador:</strong> registro de ponto dos colaboradores e cálculo de banco de horas</li>
+    </ul>
+
+    <div class="subsection-title">Produto & Desenvolvimento</div>
+    <ul class="styled">
+      <li><strong>Amazon Web Service (AWS):</strong> infraestrutura em nuvem de praticamente toda a plataforma ZenFisio e FiqueZen</li>
+      <li><strong>Linear App:</strong> gestão de demandas, backlog, fluxo de atividades por sprint na área de P&D</li>
+      <li><strong>RocketSeat:</strong> plataforma de cursos e formações em desenvolvimento de sistemas para o time de P&D</li>
+    </ul>
+
+    <div class="subsection-title">Financeiro & Pagamentos</div>
+    <ul class="styled">
+      <li><strong>Pagar.Me / Stone:</strong> gestão de assinaturas e pagamentos recorrentes dos clientes (boleto e cartão), integrado também ao ZenPago</li>
+    </ul>
+
+    <div class="subsection-title">Marketing & Criação</div>
+    <ul class="styled">
+      <li><strong>Canva:</strong> criação e edição de imagens e vídeos</li>
+      <li><strong>Freepik:</strong> banco de imagens para materiais da ZenFisio</li>
+      <li><strong>Adapta One:</strong> plataforma de IA com acesso aos principais serviços do mercado (gestores de Marketing e CS)</li>
+      <li><strong>Métricas Boss Prime:</strong> plataforma de cursos em Digital Analytics, dashboards e análise de dados</li>
+    </ul>
+  </div>
+</div>
+
+<!-- PARTNERSHIP -->
+<div class="section" id="s-partnership">
+  <div class="content-block">
+    <div class="section-title">Partnership</div>
+    <p>Modelo de gestão da ZenFisio onde os colaboradores em destaque têm a oportunidade de se tornarem sócios da empresa.</p>
+
+    <div class="alert"><strong>Objetivo:</strong> Distribuir até <strong>40% de participação</strong> da empresa entre os colaboradores até 2030.</div>
+
+    <div class="subsection-title">O que é Partnership</div>
+    <p>Partnership é um modelo de gestão e relacionamento no qual os profissionais de uma empresa podem se tornar sócios ou "partners" (parceiros) do negócio, adquirindo participação na empresa. Nesse modelo, há um senso de pertencimento e alinhamento entre os interesses individuais e os da organização.</p>
+    <p>O objetivo principal é criar uma <strong>cultura de meritocracia</strong>, onde profissionais comprometidos com o crescimento da empresa, com alta performance e entrega de excelentes resultados, são reconhecidos e recompensados de forma proporcional à sua contribuição.</p>
+
+    <div class="subsection-title">Benefícios do Partnership</div>
+    <ul class="styled">
+      <li>Distribuição de lucros</li>
+      <li>Ações na empresa (equity)</li>
+      <li>Inclusão no quadro social</li>
+      <li>Participação em decisões estratégicas da organização</li>
+    </ul>
+
+    <div class="subsection-title">Critérios para elegibilidade</div>
+    <ul class="styled">
+      <li>Comprometimento e dedicação de forma consistente e alinhado aos objetivos da ZenFisio</li>
+      <li>Alta performance e desempenho consistente ao longo do tempo</li>
+      <li>Entrega de bons resultados de forma consistente</li>
+      <li>Contribuição relevante para resultados financeiros e crescimento do negócio</li>
+      <li>Comportamento alinhado com os valores e objetivos da organização</li>
+      <li>Desenvolvimento profissional consistente e relevante</li>
+    </ul>
+
+    <div class="subsection-title">Tempo de empresa</div>
+    <div class="kpi-row">
+      <span class="kpi-badge">Elegível: a partir de 2 anos</span>
+      <span class="kpi-badge">Pleito: a partir de 5 anos</span>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<script>
+function showSection(id, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('s-' + id).classList.add('active');
+  el.classList.add('active');
+  window.scrollTo(0, 0);
+  if (window.innerWidth <= 768) {
+    document.getElementById('sidebar').classList.remove('open');
+  }
+}
+function toggleMenu() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+</script>
+</body>
+</html>

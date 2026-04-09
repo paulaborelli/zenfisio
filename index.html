@@ -532,6 +532,8 @@
     });
   });
 
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwVnZwW9yUylYrzJaS92FS6Ll4zPI4ww8EY7hZXe1JSDr2JTWkSQcjEGjhBgatOuMqa7g/exec';
+
   function salvar() {
     const nome = document.getElementById('nome').value.trim();
     const data = document.getElementById('data-deslig').value;
@@ -539,12 +541,14 @@
 
     const r = {
       id: gerarId(),
+      data,
+      proximo: document.getElementById('proximo').value,
+      tipo: '—',
       nome,
-      chefia: document.getElementById('chefia').value,
       funcao: document.getElementById('funcao').value,
-      admissao: document.getElementById('admissao').value,
-      dataDeslig: data,
-      formato: formatoVal || '—',
+      responsavel: document.getElementById('chefia').value,
+      formato: '—',
+      formatoDeslig: formatoVal || '—',
       motivo: motivoVal || '—',
       aviso: avisoVal || '—',
       consideracoes: document.getElementById('consideracoes').value,
@@ -556,9 +560,35 @@
       gestor: document.getElementById('gestor').value,
     };
 
+    // Salva localmente
     registros.unshift(r);
     localStorage.setItem('zenfisio_desl', JSON.stringify(registros));
     renderHistorico();
+
+    // Envia para Google Sheets
+    const btnSalvar = document.querySelector('.btn-primary');
+    btnSalvar.textContent = 'Enviando...';
+    btnSalvar.disabled = true;
+
+    fetch(SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(r)
+    }).then(() => {
+      btnSalvar.textContent = 'Salvo na planilha ✓';
+      btnSalvar.style.background = '#2D5438';
+      setTimeout(() => {
+        btnSalvar.textContent = 'Salvar no histórico ↓';
+        btnSalvar.style.background = '';
+        btnSalvar.disabled = false;
+      }, 3000);
+    }).catch(() => {
+      btnSalvar.textContent = 'Salvar no histórico ↓';
+      btnSalvar.disabled = false;
+      alert('Salvo localmente, mas houve erro ao enviar para a planilha. Verifique sua conexão.');
+    });
+
     limpar();
     document.getElementById('rec-id').textContent = gerarId();
     document.querySelector('.historico-section').scrollIntoView({ behavior: 'smooth', block: 'start' });

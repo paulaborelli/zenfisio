@@ -56,16 +56,25 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);pad
 
 /* PDF */
 @media print {
-  a[href]::after { content: none !important; }
-  @page { margin: 1cm; }
-  .url-footer { display: none !important; }
-  body{background:white;padding:0;font-size:12px;}
-  .no-print{display:none!important;}
-  .card{border:1px solid #ccc;border-radius:0;padding:1rem;margin-bottom:0.5rem;page-break-inside:avoid;}
-  .section-label{font-size:9px;}
-  .field label{font-size:10px;}
-  .field input,.field select{border:1px solid #ccc;background:white!important;padding:4px 6px;font-size:11px;}
-  .field-readonly{background:#f5f5f5!important;}
+  @page { margin: 1.5cm; size: A4; }
+  body { background: white; padding: 0; font-size: 12px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .no-print { display: none !important; }
+  .card { border: 1px solid #ccc; border-radius: 0; padding: 1rem; margin-bottom: 0.5rem; page-break-inside: avoid; }
+  .section-label { font-size: 9px; }
+  .subsection { font-size: 9px; }
+  .field label { font-size: 10px; }
+  .field input, .field select, .field textarea { border: 1px solid #ccc; background: white !important; padding: 4px 6px; font-size: 11px; }
+  .field-readonly { background: #f5f5f5 !important; }
+  .pdf-header { display: flex !important; align-items: center; gap: 16px; border-bottom: 2px solid #4A7C59; padding-bottom: 1rem; margin-bottom: 1rem; }
+  .pdf-logo { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; }
+  .pdf-title { font-family: "Lora", serif; font-size: 18px; font-weight: 600; }
+  .pdf-sub { font-size: 11px; color: #666; }
+  .radio-group { display: flex; gap: 6px; }
+  .radio-btn { padding: 3px 10px; font-size: 11px; border: 1px solid #ccc; color: #aaa; background: white; }
+  .radio-btn.on { background: #2D5438 !important; border-color: #2D5438 !important; color: #fff !important; font-weight: 600; }
+  .grid-2, .grid-3 { gap: 8px; }
+  .ficha-item, .alert-info, #select-screen { display: none !important; }
+}
   .pdf-header{display:flex!important;align-items:center;gap:16px;border-bottom:2px solid #4A7C59;padding-bottom:1rem;margin-bottom:1rem;}
   .pdf-logo{width:48px;height:48px;border-radius:50%;object-fit:cover;}
   .pdf-title{font-family:"Lora",serif;font-size:18px;font-weight:600;}
@@ -401,6 +410,34 @@ function prepararPDF() {
 function voltarSelecao() {
   document.getElementById('select-screen').style.display = 'block';
   document.getElementById('form-screen').style.display = 'none';
+}
+
+// Capitalizar primeira letra de cada palavra
+function capitalize(str) {
+  return str.replace(/(^|\s)\S/g, c => c.toUpperCase());
+}
+document.querySelectorAll('#form-screen input[type="text"]').forEach(function(input) {
+  if (input.id === 'f_salario') return; // pular salário
+  input.addEventListener('input', function() {
+    if (this.classList.contains('field-readonly')) return;
+    const pos = this.selectionStart;
+    this.value = capitalize(this.value);
+    this.setSelectionRange(pos, pos);
+  });
+});
+
+// Máscara R$ no salário
+const salarioEl = document.getElementById('f_salario');
+if (salarioEl) {
+  salarioEl.addEventListener('blur', function() {
+    let val = this.value.replace(/\D/g, '');
+    if (!val) return;
+    val = (parseInt(val) / 100).toFixed(2);
+    this.value = 'R$ ' + val.replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  });
+  salarioEl.addEventListener('focus', function() {
+    this.value = this.value.replace(/[R$\s.]/g, '').replace(',', '.');
+  });
 }
 
 function sel(el) {

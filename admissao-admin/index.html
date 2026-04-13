@@ -301,19 +301,32 @@ function selecionarFicha(idx) {
   const f = window._fichas[idx];
   const map = {
     'Nome':'f_nome','Nascimento':'f_nascimento','Naturalidade':'f_naturalidade','UF Nasc':'f_uf_nasc',
-    'Pai':'f_pai','Mae':'f_mae','Endereco':'f_endereco','Numero':'f_numero',
-    'Complemento':'f_complemento','Bairro':'f_bairro','Cidade':'f_cidade','UF':'f_uf_end',
+    'Pai':'f_pai','Mãe':'f_mae','Mae':'f_mae','Endereço':'f_endereco','Endereco':'f_endereco',
+    'Número':'f_numero','Numero':'f_numero','Complemento':'f_complemento',
+    'Bairro':'f_bairro','Cidade':'f_cidade','UF':'f_uf_end',
     'CEP':'f_cep','Fone':'f_fone','Celular':'f_celular','Estado Civil':'f_estado_civil',
-    'Filhos':'f_filhos','Qtd Filhos':'f_qtd_filhos','Conjuge':'f_conjuge','Nasc Conjuge':'f_nasc_conjuge',
-    'CTPS Digital':'f_ctps_digital','CTPS Num':'f_ctps_num','CTPS Serie':'f_ctps_serie',
-    'RG':'f_rg','RG Data':'f_rg_data','RG Orgao':'f_rg_orgao',
-    'CPF':'f_cpf','PIS':'f_pis','PIS Data':'f_pis_data',
-    'Titulo':'f_titulo','Zona':'f_zona','Secao':'f_secao',
-    'Raca':'f_raca','Instrucao':'f_instrucao','Primeiro Emprego':'f_primeiro'
+    'Filhos':'f_filhos','Qtd Filhos':'f_qtd_filhos','Cônjuge':'f_conjuge','Conjuge':'f_conjuge',
+    'Nasc Cônjuge':'f_nasc_conjuge','Nasc Conjuge':'f_nasc_conjuge',
+    'CTPS Digital':'f_ctps_digital','Nº CTPS':'f_ctps_num','CTPS Num':'f_ctps_num',
+    'Série CTPS':'f_ctps_serie','CTPS Serie':'f_ctps_serie',
+    'RG':'f_rg','Data RG':'f_rg_data','RG Data':'f_rg_data',
+    'Órgão RG':'f_rg_orgao','RG Orgao':'f_rg_orgao',
+    'CPF':'f_cpf','PIS':'f_pis','Data PIS':'f_pis_data','PIS Data':'f_pis_data',
+    'Título Eleitor':'f_titulo','Titulo':'f_titulo','Zona':'f_zona','Seção':'f_secao','Secao':'f_secao',
+    'Raça':'f_raca','Raca':'f_raca','Instrução':'f_instrucao','Instrucao':'f_instrucao',
+    'Primeiro Emprego':'f_primeiro'
   };
   Object.entries(map).forEach(([col, id]) => {
     const el = document.getElementById(id);
-    if (el) el.value = f[col] || '';
+    if (el) {
+      let val = f[col] || '';
+      // Formatar datas ISO para dd/mm/aaaa
+      if (val && typeof val === 'string' && val.indexOf('T') > 0) {
+        const parts = val.split('T')[0].split('-');
+        val = parts[2] + '/' + parts[1] + '/' + parts[0];
+      }
+      el.value = val;
+    }
   });
   document.getElementById('select-screen').style.display = 'none';
   document.getElementById('form-screen').style.display = 'block';

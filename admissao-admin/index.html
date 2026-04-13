@@ -301,19 +301,20 @@ function selecionarFicha(idx) {
   const f = window._fichas[idx];
   const map = {
     'Nome':'f_nome','Nascimento':'f_nascimento','Naturalidade':'f_naturalidade','UF Nasc':'f_uf_nasc',
-    'Pai':'f_pai','Mãe':'f_mae','Mae':'f_mae','Endereço':'f_endereco','Endereco':'f_endereco',
-    'Número':'f_numero','Numero':'f_numero','Complemento':'f_complemento',
+    'Pai':'f_pai','M\u00e3e':'f_mae','Mae':'f_mae',
+    'Endere\u00e7o':'f_endereco','Endereco':'f_endereco',
+    'N\u00famero':'f_numero','Numero':'f_numero','Complemento':'f_complemento',
     'Bairro':'f_bairro','Cidade':'f_cidade','UF':'f_uf_end',
     'CEP':'f_cep','Fone':'f_fone','Celular':'f_celular','Estado Civil':'f_estado_civil',
-    'Filhos':'f_filhos','Qtd Filhos':'f_qtd_filhos','Cônjuge':'f_conjuge','Conjuge':'f_conjuge',
-    'Nasc Cônjuge':'f_nasc_conjuge','Nasc Conjuge':'f_nasc_conjuge',
-    'CTPS Digital':'f_ctps_digital','Nº CTPS':'f_ctps_num','CTPS Num':'f_ctps_num',
-    'Série CTPS':'f_ctps_serie','CTPS Serie':'f_ctps_serie',
+    'Filhos':'f_filhos','Qtd Filhos':'f_qtd_filhos','C\u00f4njuge':'f_conjuge','Conjuge':'f_conjuge',
+    'Nasc C\u00f4njuge':'f_nasc_conjuge','Nasc Conjuge':'f_nasc_conjuge',
+    'CTPS Digital':'f_ctps_digital','N\u00ba CTPS':'f_ctps_num','CTPS Num':'f_ctps_num',
+    'S\u00e9rie CTPS':'f_ctps_serie','CTPS Serie':'f_ctps_serie',
     'RG':'f_rg','Data RG':'f_rg_data','RG Data':'f_rg_data',
-    'Órgão RG':'f_rg_orgao','RG Orgao':'f_rg_orgao',
+    '\u00d3rg\u00e3o RG':'f_rg_orgao','RG Orgao':'f_rg_orgao',
     'CPF':'f_cpf','PIS':'f_pis','Data PIS':'f_pis_data','PIS Data':'f_pis_data',
-    'Título Eleitor':'f_titulo','Titulo':'f_titulo','Zona':'f_zona','Seção':'f_secao','Secao':'f_secao',
-    'Raça':'f_raca','Raca':'f_raca','Instrução':'f_instrucao','Instrucao':'f_instrucao',
+    'T\u00edtulo Eleitor':'f_titulo','Titulo':'f_titulo','Zona':'f_zona','Se\u00e7\u00e3o':'f_secao','Secao':'f_secao',
+    'Ra\u00e7a':'f_raca','Raca':'f_raca','Instru\u00e7\u00e3o':'f_instrucao','Instrucao':'f_instrucao',
     'Primeiro Emprego':'f_primeiro'
   };
   Object.entries(map).forEach(([col, id]) => {

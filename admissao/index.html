@@ -483,13 +483,15 @@ function enviar() {
   });
 }
 
-// Capitalizar primeira letra de cada palavra
+// Capitalizar primeira letra de cada palavra (com suporte a acentos)
 function capitalize(str) {
-  return str.replace(/\b\w/g, c => c.toUpperCase());
+  return str.replace(/(^|\s)\S/g, c => c.toUpperCase());
 }
 document.querySelectorAll('input[type="text"], input[type="tel"]').forEach(function(input) {
-  input.addEventListener('blur', function() {
+  input.addEventListener('input', function() {
+    const pos = this.selectionStart;
     this.value = capitalize(this.value);
+    this.setSelectionRange(pos, pos);
   });
 });
 </script>

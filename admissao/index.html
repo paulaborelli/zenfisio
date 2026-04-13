@@ -11,6 +11,7 @@
   --bg:#F2F4F0;--surface:#fff;--border:#DDE0D8;--border-focus:#4A7C59;
   --text:#1C201A;--text-muted:#5E6659;--text-hint:#9AA394;
   --accent:#4A7C59;--accent-light:#EAF2EC;--accent-text:#2D5438;
+  --error:#C0392B;--error-light:#FDECEA;
   --radius:14px;--radius-sm:8px;
 }
 body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);padding:0 0 5rem;font-size:15px;line-height:1.65;}
@@ -27,19 +28,28 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);pad
 .field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;}
 .field:last-child{margin-bottom:0;}
 .field label{font-size:12px;font-weight:500;color:var(--text-muted);}
+.field label .req{color:var(--error);margin-left:2px;}
 .field input,.field select{font-family:"DM Sans",sans-serif;font-size:14px;color:var(--text);background:#F7F8F5;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 13px;outline:none;width:100%;transition:border-color 0.15s,box-shadow 0.15s;}
 .field input:focus,.field select:focus{border-color:var(--border-focus);background:#fff;box-shadow:0 0 0 3px rgba(74,124,89,0.1);}
+.field input.invalid{border-color:var(--error);background:var(--error-light);}
 .field select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239AA394' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-color:#F7F8F5;padding-right:32px;cursor:pointer;}
+.field select.invalid{border-color:var(--error);background:var(--error-light);}
+.field-error{font-size:11px;color:var(--error);margin-top:2px;display:none;}
+.field-error.show{display:block;}
 .radio-group{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;}
 .radio-btn{padding:7px 16px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#F7F8F5;font-size:13px;font-weight:500;color:var(--text-muted);cursor:pointer;transition:all 0.12s;user-select:none;}
 .radio-btn:hover{border-color:var(--accent);color:var(--accent);}
 .radio-btn.on{background:var(--accent-light);border-color:var(--accent);color:var(--accent-text);}
+.radio-group.invalid .radio-btn:not(.on){border-color:var(--error);}
 .conditional{display:none;margin-top:10px;}
 .conditional.show{display:block;}
 .alert{background:var(--accent-light);border:1px solid rgba(74,124,89,0.25);border-radius:10px;padding:1rem 1.25rem;font-size:13px;color:var(--accent-text);line-height:1.6;margin-bottom:1rem;}
+.alert-error{background:var(--error-light);border:1px solid rgba(192,57,43,0.25);border-radius:10px;padding:1rem 1.25rem;font-size:13px;color:var(--error);line-height:1.6;margin-bottom:1rem;display:none;}
+.alert-error.show{display:block;}
 .form-footer{display:flex;justify-content:flex-end;margin-top:1.5rem;}
 .btn-primary{padding:11px 28px;border-radius:var(--radius-sm);font-family:"DM Sans",sans-serif;font-size:14px;font-weight:500;cursor:pointer;background:var(--accent);color:#fff;border:none;transition:opacity 0.15s;}
 .btn-primary:hover{opacity:0.88;}
+.btn-primary:disabled{opacity:0.6;cursor:default;}
 .success-screen{display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:4rem 2rem;min-height:60vh;}
 .success-icon{width:64px;height:64px;border-radius:50%;background:var(--accent-light);display:flex;align-items:center;justify-content:center;margin-bottom:1.5rem;}
 .success-title{font-family:"Lora",serif;font-size:22px;font-weight:600;color:var(--text);margin-bottom:0.75rem;}
@@ -55,42 +65,100 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);pad
 </div>
 
 <div class="page-wrap">
-  <div class="alert">Preencha todos os campos com atenção. Após enviar, os documentos solicitados devem ser encaminhados pelo WhatsApp ao RH da ZenFisio.</div>
+  <div class="alert">Preencha todos os campos obrigatórios (<span style="color:#C0392B">*</span>). Após enviar, os documentos solicitados devem ser encaminhados pelo WhatsApp ao RH da ZenFisio.</div>
+  <div class="alert-error" id="alert-error">Por favor, preencha todos os campos obrigatórios antes de enviar.</div>
 
   <div id="form-area">
 
     <!-- Dados pessoais -->
     <div class="card">
       <div class="section-label">Dados pessoais</div>
-      <div class="field"><label>Nome completo</label><input type="text" id="nome" placeholder="Nome completo conforme documento"></div>
-      <div class="grid-3">
-        <div class="field"><label>Data de nascimento</label><input type="date" id="nascimento"></div>
-        <div class="field"><label>Natural de (cidade)</label><input type="text" id="naturalidade" placeholder="Cidade"></div>
-        <div class="field"><label>UF</label><input type="text" id="uf_nasc" placeholder="RS" maxlength="2"></div>
+      <div class="field">
+        <label>Nome completo <span class="req">*</span></label>
+        <input type="text" id="nome" placeholder="Nome completo conforme documento">
+        <span class="field-error" id="err-nome">Campo obrigatório</span>
       </div>
-      <div class="field"><label>Nome do pai</label><input type="text" id="pai" placeholder="Nome completo do pai"></div>
-      <div class="field"><label>Nome da mãe</label><input type="text" id="mae" placeholder="Nome completo da mãe"></div>
+      <div class="grid-3">
+        <div class="field">
+          <label>Data de nascimento <span class="req">*</span></label>
+          <input type="date" id="nascimento">
+          <span class="field-error" id="err-nascimento">Campo obrigatório</span>
+        </div>
+        <div class="field">
+          <label>Natural de <span class="req">*</span></label>
+          <input type="text" id="naturalidade" placeholder="Cidade">
+          <span class="field-error" id="err-naturalidade">Campo obrigatório</span>
+        </div>
+        <div class="field">
+          <label>UF <span class="req">*</span></label>
+          <input type="text" id="uf_nasc" placeholder="RS" maxlength="2">
+          <span class="field-error" id="err-uf_nasc">Campo obrigatório</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Nome do pai</label>
+        <input type="text" id="pai" placeholder="Nome completo do pai (opcional)">
+      </div>
+      <div class="field">
+        <label>Nome da mãe <span class="req">*</span></label>
+        <input type="text" id="mae" placeholder="Nome completo da mãe">
+        <span class="field-error" id="err-mae">Campo obrigatório</span>
+      </div>
     </div>
 
     <!-- Endereço -->
     <div class="card">
       <div class="section-label">Endereço</div>
       <div class="grid-2">
-        <div class="field"><label>Endereço residencial</label><input type="text" id="endereco" placeholder="Rua / Avenida"></div>
-        <div class="field"><label>Número</label><input type="text" id="numero" placeholder="Nº"></div>
+        <div class="field">
+          <label>Endereço residencial <span class="req">*</span></label>
+          <input type="text" id="endereco" placeholder="Rua / Avenida">
+          <span class="field-error" id="err-endereco">Campo obrigatório</span>
+        </div>
+        <div class="field">
+          <label>Número <span class="req">*</span></label>
+          <input type="text" id="numero" placeholder="Nº">
+          <span class="field-error" id="err-numero">Campo obrigatório</span>
+        </div>
       </div>
       <div class="grid-2">
-        <div class="field"><label>Complemento</label><input type="text" id="complemento" placeholder="Apto, bloco..."></div>
-        <div class="field"><label>Bairro</label><input type="text" id="bairro" placeholder="Bairro"></div>
+        <div class="field">
+          <label>Complemento</label>
+          <input type="text" id="complemento" placeholder="Apto, bloco... (opcional)">
+        </div>
+        <div class="field">
+          <label>Bairro <span class="req">*</span></label>
+          <input type="text" id="bairro" placeholder="Bairro">
+          <span class="field-error" id="err-bairro">Campo obrigatório</span>
+        </div>
       </div>
       <div class="grid-3">
-        <div class="field"><label>Cidade</label><input type="text" id="cidade" placeholder="Cidade"></div>
-        <div class="field"><label>UF</label><input type="text" id="uf_end" placeholder="RS" maxlength="2"></div>
-        <div class="field"><label>CEP</label><input type="text" id="cep" placeholder="00000-000"></div>
+        <div class="field">
+          <label>Cidade <span class="req">*</span></label>
+          <input type="text" id="cidade" placeholder="Cidade">
+          <span class="field-error" id="err-cidade">Campo obrigatório</span>
+        </div>
+        <div class="field">
+          <label>UF <span class="req">*</span></label>
+          <input type="text" id="uf_end" placeholder="RS" maxlength="2">
+          <span class="field-error" id="err-uf_end">Campo obrigatório</span>
+        </div>
+        <div class="field">
+          <label>CEP <span class="req">*</span></label>
+          <input type="text" id="cep" placeholder="00000-000">
+          <span class="field-error" id="err-cep">Campo obrigatório</span>
+        </div>
       </div>
       <div class="grid-2">
-        <div class="field"><label>Telefone residencial</label><input type="tel" id="fone" placeholder="(00) 0000-0000"></div>
-        <div class="field"><label>Celular</label><input type="tel" id="celular" placeholder="(00) 00000-0000"></div>
+        <div class="field">
+          <label>Fone residencial</label>
+          <input type="tel" id="fone" placeholder="(00) 0000-0000 (opcional)">
+        </div>
+        <div class="field">
+          <label>Celular <span class="req">*</span></label>
+          <input type="tel" id="celular" placeholder="(00) 00000-0000">
+          <span class="field-error" id="err-celular">Campo obrigatório</span>
+        </div>
       </div>
     </div>
 
@@ -98,7 +166,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);pad
     <div class="card">
       <div class="section-label">Estado civil & família</div>
       <div class="field">
-        <label>Estado civil</label>
+        <label>Estado civil <span class="req">*</span></label>
         <select id="estado_civil">
           <option value="">Selecione</option>
           <option>Solteiro(a)</option>
@@ -107,20 +175,34 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);pad
           <option>Divorciado(a)</option>
           <option>Viúvo(a)</option>
         </select>
+        <span class="field-error" id="err-estado_civil">Campo obrigatório</span>
       </div>
+
       <div class="field">
-        <label>Possui filhos menores de 14 anos?</label>
+        <label>Possui filhos menores de 14 anos? <span class="req">*</span></label>
         <div class="radio-group" id="filhos-group">
           <div class="radio-btn" data-val="Sim" onclick="toggleFilhos(this)">Sim</div>
           <div class="radio-btn" data-val="Não" onclick="toggleFilhos(this)">Não</div>
         </div>
+        <span class="field-error" id="err-filhos">Campo obrigatório</span>
         <div class="conditional" id="qtd-filhos">
-          <div class="field" style="margin-top:8px;"><label>Quantos?</label><input type="number" id="qtd_filhos" min="1" max="20" placeholder="Quantidade"></div>
+          <div class="field" style="margin-top:8px;">
+            <label>Quantos? <span class="req">*</span></label>
+            <input type="number" id="qtd_filhos" min="1" max="20" placeholder="Quantidade">
+            <span class="field-error" id="err-qtd_filhos">Campo obrigatório</span>
+          </div>
         </div>
       </div>
+
       <div class="grid-2">
-        <div class="field"><label>Nome do cônjuge</label><input type="text" id="conjuge" placeholder="Nome completo (se houver)"></div>
-        <div class="field"><label>Data de nascimento do cônjuge</label><input type="date" id="nasc_conjuge"></div>
+        <div class="field">
+          <label>Nome do cônjuge</label>
+          <input type="text" id="conjuge" placeholder="Nome completo (opcional)">
+        </div>
+        <div class="field">
+          <label>Data de nascimento do cônjuge</label>
+          <input type="date" id="nasc_conjuge">
+        </div>
       </div>
     </div>
 
@@ -128,17 +210,30 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);pad
     <div class="card">
       <div class="section-label">Carteira de Trabalho</div>
       <div class="field">
-        <label>Possui CTPS Digital?</label>
+        <label>Possui CTPS Digital? <span class="req">*</span></label>
         <div class="radio-group" id="ctps-group">
           <div class="radio-btn" data-val="Sim" onclick="toggleCTPS(this)">Sim — tenho CTPS Digital</div>
           <div class="radio-btn" data-val="Não" onclick="toggleCTPS(this)">Não — tenho CTPS física</div>
         </div>
+        <span class="field-error" id="err-ctps">Campo obrigatório</span>
       </div>
       <div class="conditional" id="ctps-fisica">
         <div class="grid-3">
-          <div class="field"><label>Nº da CTPS</label><input type="text" id="ctps_num" placeholder="Número"></div>
-          <div class="field"><label>Série</label><input type="text" id="ctps_serie" placeholder="Série"></div>
-          <div class="field"><label>Data de expedição</label><input type="date" id="ctps_data"></div>
+          <div class="field">
+            <label>Nº da CTPS <span class="req">*</span></label>
+            <input type="text" id="ctps_num" placeholder="Número">
+            <span class="field-error" id="err-ctps_num">Campo obrigatório</span>
+          </div>
+          <div class="field">
+            <label>Série <span class="req">*</span></label>
+            <input type="text" id="ctps_serie" placeholder="Série">
+            <span class="field-error" id="err-ctps_serie">Campo obrigatório</span>
+          </div>
+          <div class="field">
+            <label>Data de expedição <span class="req">*</span></label>
+            <input type="date" id="ctps_data">
+            <span class="field-error" id="err-ctps_data">Campo obrigatório</span>
+          </div>
         </div>
       </div>
     </div>
@@ -147,22 +242,58 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);pad
     <div class="card">
       <div class="section-label">Documentos</div>
       <div class="grid-3">
-        <div class="field"><label>Nº do RG</label><input type="text" id="rg" placeholder="RG"></div>
-        <div class="field"><label>Data de expedição</label><input type="date" id="rg_data"></div>
-        <div class="field"><label>Órgão emissor</label><input type="text" id="rg_orgao" placeholder="SSP/RS"></div>
+        <div class="field">
+          <label>Nº do RG <span class="req">*</span></label>
+          <input type="text" id="rg" placeholder="RG">
+          <span class="field-error" id="err-rg">Campo obrigatório</span>
+        </div>
+        <div class="field">
+          <label>Data de expedição <span class="req">*</span></label>
+          <input type="date" id="rg_data">
+          <span class="field-error" id="err-rg_data">Campo obrigatório</span>
+        </div>
+        <div class="field">
+          <label>Órgão emissor <span class="req">*</span></label>
+          <input type="text" id="rg_orgao" placeholder="SSP/RS">
+          <span class="field-error" id="err-rg_orgao">Campo obrigatório</span>
+        </div>
       </div>
       <div class="grid-2">
-        <div class="field"><label>CPF</label><input type="text" id="cpf" placeholder="000.000.000-00"></div>
-        <div class="field"><label>Nº do PIS</label><input type="text" id="pis" placeholder="PIS/PASEP"></div>
-      </div>
-      <div class="field"><label>Cadastro PIS em</label><input type="date" id="pis_data"></div>
-      <div class="grid-3">
-        <div class="field"><label>Nº Título de eleitor</label><input type="text" id="titulo" placeholder="Título"></div>
-        <div class="field"><label>Zona</label><input type="text" id="zona" placeholder="Zona"></div>
-        <div class="field"><label>Seção</label><input type="text" id="secao" placeholder="Seção"></div>
+        <div class="field">
+          <label>CPF <span class="req">*</span></label>
+          <input type="text" id="cpf" placeholder="000.000.000-00">
+          <span class="field-error" id="err-cpf">Campo obrigatório</span>
+        </div>
+        <div class="field">
+          <label>Nº do PIS <span class="req">*</span></label>
+          <input type="text" id="pis" placeholder="PIS/PASEP">
+          <span class="field-error" id="err-pis">Campo obrigatório</span>
+        </div>
       </div>
       <div class="field">
-        <label>Raça / Cor</label>
+        <label>Cadastro PIS em <span class="req">*</span></label>
+        <input type="date" id="pis_data">
+        <span class="field-error" id="err-pis_data">Campo obrigatório</span>
+      </div>
+      <div class="grid-3">
+        <div class="field">
+          <label>Nº Título de eleitor <span class="req">*</span></label>
+          <input type="text" id="titulo" placeholder="Título">
+          <span class="field-error" id="err-titulo">Campo obrigatório</span>
+        </div>
+        <div class="field">
+          <label>Zona <span class="req">*</span></label>
+          <input type="text" id="zona" placeholder="Zona">
+          <span class="field-error" id="err-zona">Campo obrigatório</span>
+        </div>
+        <div class="field">
+          <label>Seção <span class="req">*</span></label>
+          <input type="text" id="secao" placeholder="Seção">
+          <span class="field-error" id="err-secao">Campo obrigatório</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Raça / Cor <span class="req">*</span></label>
         <div class="radio-group" id="raca-group">
           <div class="radio-btn" onclick="selectRaca(this)">Branca</div>
           <div class="radio-btn" onclick="selectRaca(this)">Preta</div>
@@ -170,9 +301,10 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);pad
           <div class="radio-btn" onclick="selectRaca(this)">Parda</div>
           <div class="radio-btn" onclick="selectRaca(this)">Indígena</div>
         </div>
+        <span class="field-error" id="err-raca">Campo obrigatório</span>
       </div>
       <div class="field">
-        <label>Grau de instrução</label>
+        <label>Grau de instrução <span class="req">*</span></label>
         <select id="instrucao">
           <option value="">Selecione</option>
           <option>Ensino Fundamental Incompleto</option>
@@ -185,13 +317,15 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);pad
           <option>Mestrado</option>
           <option>Doutorado</option>
         </select>
+        <span class="field-error" id="err-instrucao">Campo obrigatório</span>
       </div>
       <div class="field">
-        <label>Primeiro emprego?</label>
+        <label>Primeiro emprego? <span class="req">*</span></label>
         <div class="radio-group" id="primeiro-group">
           <div class="radio-btn" onclick="selectPrimeiro(this)">Sim</div>
           <div class="radio-btn" onclick="selectPrimeiro(this)">Não</div>
         </div>
+        <span class="field-error" id="err-primeiro">Campo obrigatório</span>
       </div>
     </div>
 
@@ -224,6 +358,8 @@ function toggleFilhos(el) {
   el.classList.add('on');
   filhosVal = el.dataset.val;
   document.getElementById('qtd-filhos').classList.toggle('show', filhosVal === 'Sim');
+  document.getElementById('err-filhos').classList.remove('show');
+  document.getElementById('filhos-group').classList.remove('invalid');
 }
 
 function toggleCTPS(el) {
@@ -231,29 +367,93 @@ function toggleCTPS(el) {
   el.classList.add('on');
   ctpsVal = el.dataset.val;
   document.getElementById('ctps-fisica').classList.toggle('show', ctpsVal === 'Não');
+  document.getElementById('err-ctps').classList.remove('show');
+  document.getElementById('ctps-group').classList.remove('invalid');
 }
 
 function selectRaca(el) {
   document.querySelectorAll('#raca-group .radio-btn').forEach(b => b.classList.remove('on'));
   el.classList.add('on');
   racaVal = el.textContent;
+  document.getElementById('err-raca').classList.remove('show');
+  document.getElementById('raca-group').classList.remove('invalid');
 }
 
 function selectPrimeiro(el) {
   document.querySelectorAll('#primeiro-group .radio-btn').forEach(b => b.classList.remove('on'));
   el.classList.add('on');
   primeiroVal = el.textContent;
+  document.getElementById('err-primeiro').classList.remove('show');
+  document.getElementById('primeiro-group').classList.remove('invalid');
 }
 
-function g(id) { return document.getElementById(id)?.value || ''; }
+function g(id) { return (document.getElementById(id)?.value || '').trim(); }
+
+function setError(id, show) {
+  const el = document.getElementById(id);
+  const errEl = document.getElementById('err-' + id);
+  if (el) el.classList.toggle('invalid', show);
+  if (errEl) errEl.classList.toggle('show', show);
+  return show;
+}
+
+function setRadioError(groupId, errId, show) {
+  const el = document.getElementById(groupId);
+  const errEl = document.getElementById(errId);
+  if (el) el.classList.toggle('invalid', show);
+  if (errEl) errEl.classList.toggle('show', show);
+  return show;
+}
+
+function validar() {
+  let erros = false;
+
+  // Campos texto/select obrigatórios
+  const obrigatorios = [
+    'nome','nascimento','naturalidade','uf_nasc','mae',
+    'endereco','numero','bairro','cidade','uf_end','cep','celular',
+    'estado_civil','rg','rg_data','rg_orgao','cpf','pis','pis_data',
+    'titulo','zona','secao','instrucao'
+  ];
+  obrigatorios.forEach(id => {
+    if (setError(id, !g(id))) erros = true;
+  });
+
+  // Filhos
+  if (setRadioError('filhos-group','err-filhos', !filhosVal)) erros = true;
+  if (filhosVal === 'Sim' && setError('qtd_filhos', !g('qtd_filhos'))) erros = true;
+
+  // CTPS
+  if (setRadioError('ctps-group','err-ctps', !ctpsVal)) erros = true;
+  if (ctpsVal === 'Não') {
+    if (setError('ctps_num', !g('ctps_num'))) erros = true;
+    if (setError('ctps_serie', !g('ctps_serie'))) erros = true;
+    if (setError('ctps_data', !g('ctps_data'))) erros = true;
+  }
+
+  // Raça
+  if (setRadioError('raca-group','err-raca', !racaVal)) erros = true;
+
+  // Primeiro emprego
+  if (setRadioError('primeiro-group','err-primeiro', !primeiroVal)) erros = true;
+
+  return !erros;
+}
 
 function enviar() {
-  const nome = g('nome');
-  if (!nome) { alert('Por favor, informe seu nome completo.'); return; }
+  document.getElementById('alert-error').classList.remove('show');
+
+  if (!validar()) {
+    document.getElementById('alert-error').classList.add('show');
+    // Scroll até o primeiro erro
+    const primeiro = document.querySelector('.invalid, .field-error.show');
+    if (primeiro) primeiro.scrollIntoView({behavior:'smooth', block:'center'});
+    return;
+  }
 
   const dados = {
     tipo: 'ficha_admissao',
-    nome, nascimento: g('nascimento'), naturalidade: g('naturalidade'), uf_nasc: g('uf_nasc'),
+    nome: g('nome'), nascimento: g('nascimento'), naturalidade: g('naturalidade'), uf_nasc: g('uf_nasc'),
     pai: g('pai'), mae: g('mae'),
     endereco: g('endereco'), numero: g('numero'), complemento: g('complemento'),
     bairro: g('bairro'), cidade: g('cidade'), uf_end: g('uf_end'), cep: g('cep'),

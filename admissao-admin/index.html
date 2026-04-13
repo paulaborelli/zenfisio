@@ -56,6 +56,9 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);pad
 
 /* PDF */
 @media print {
+  a[href]::after { content: none !important; }
+  @page { margin: 1cm; }
+  .url-footer { display: none !important; }
   body{background:white;padding:0;font-size:12px;}
   .no-print{display:none!important;}
   .card{border:1px solid #ccc;border-radius:0;padding:1rem;margin-bottom:0.5rem;page-break-inside:avoid;}
@@ -67,7 +70,10 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);pad
   .pdf-logo{width:48px;height:48px;border-radius:50%;object-fit:cover;}
   .pdf-title{font-family:"Lora",serif;font-size:18px;font-weight:600;}
   .pdf-sub{font-size:11px;color:#666;}
-  .radio-btn.on{background:#EAF2EC;border-color:#4A7C59;color:#2D5438;}
+  .radio-btn { padding:3px 10px; font-size:11px; border:1px solid #ccc; color:#aaa; }
+  .radio-btn.on { background:#2D5438 !important; border-color:#2D5438 !important; color:#fff !important; font-weight:600; }
+  .field:has(input:placeholder-shown:not(:focus)) { }
+  .hide-empty { display: none !important; }
   .subsection{font-size:9px;}
   .grid-2,.grid-3{gap:8px;}
 }
@@ -113,7 +119,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);pad
 
     <div class="btn-group no-print">
       <button class="btn btn-ghost" onclick="voltarSelecao()">← Voltar</button>
-      <button class="btn btn-pdf" onclick="window.print()">🖨️ Salvar como PDF</button>
+      <button class="btn btn-pdf" onclick="prepararPDF()">🖨️ Salvar como PDF</button>
     </div>
 
     <!-- Dados do colaborador -->
@@ -365,6 +371,31 @@ function novaFicha() {
   document.getElementById('select-screen').style.display = 'none';
   document.getElementById('form-screen').style.display = 'block';
   window.scrollTo(0,0);
+}
+
+function prepararPDF() {
+  // Ocultar campos vazios no PDF
+  document.querySelectorAll('.field').forEach(function(field) {
+    const input = field.querySelector('input, select, textarea');
+    const radioGroup = field.querySelector('.radio-group');
+    if (input && !radioGroup) {
+      if (!input.value || input.value.trim() === '') {
+        field.setAttribute('data-empty', 'true');
+        field.style.display = 'none';
+      } else {
+        field.removeAttribute('data-empty');
+        field.style.display = '';
+      }
+    }
+  });
+  window.print();
+  // Restaurar campos após imprimir
+  setTimeout(function() {
+    document.querySelectorAll('[data-empty="true"]').forEach(function(field) {
+      field.style.display = '';
+      field.removeAttribute('data-empty');
+    });
+  }, 1000);
 }
 
 function voltarSelecao() {

@@ -299,36 +299,60 @@ function carregarFichas() {
 
 function selecionarFicha(idx) {
   const f = window._fichas[idx];
-  const map = {
-    'Nome':'f_nome','Nascimento':'f_nascimento','Naturalidade':'f_naturalidade','UF Nasc':'f_uf_nasc',
-    'Pai':'f_pai','M\u00e3e':'f_mae','Mae':'f_mae',
-    'Endere\u00e7o':'f_endereco','Endereco':'f_endereco',
-    'N\u00famero':'f_numero','Numero':'f_numero','Complemento':'f_complemento',
-    'Bairro':'f_bairro','Cidade':'f_cidade','UF':'f_uf_end',
-    'CEP':'f_cep','Fone':'f_fone','Celular':'f_celular','Estado Civil':'f_estado_civil',
-    'Filhos':'f_filhos','Qtd Filhos':'f_qtd_filhos','C\u00f4njuge':'f_conjuge','Conjuge':'f_conjuge',
-    'Nasc C\u00f4njuge':'f_nasc_conjuge','Nasc Conjuge':'f_nasc_conjuge',
-    'CTPS Digital':'f_ctps_digital','N\u00ba CTPS':'f_ctps_num','CTPS Num':'f_ctps_num',
-    'S\u00e9rie CTPS':'f_ctps_serie','CTPS Serie':'f_ctps_serie',
-    'RG':'f_rg','Data RG':'f_rg_data','RG Data':'f_rg_data',
-    '\u00d3rg\u00e3o RG':'f_rg_orgao','RG Orgao':'f_rg_orgao',
-    'CPF':'f_cpf','PIS':'f_pis','Data PIS':'f_pis_data','PIS Data':'f_pis_data',
-    'T\u00edtulo Eleitor':'f_titulo','Titulo':'f_titulo','Zona':'f_zona','Se\u00e7\u00e3o':'f_secao','Secao':'f_secao',
-    'Ra\u00e7a':'f_raca','Raca':'f_raca','Instru\u00e7\u00e3o':'f_instrucao','Instrucao':'f_instrucao',
-    'Primeiro Emprego':'f_primeiro'
-  };
-  Object.entries(map).forEach(([col, id]) => {
-    const el = document.getElementById(id);
-    if (el) {
-      let val = f[col] || '';
-      // Formatar datas ISO para dd/mm/aaaa
-      if (val && typeof val === 'string' && val.indexOf('T') > 0) {
-        const parts = val.split('T')[0].split('-');
-        val = parts[2] + '/' + parts[1] + '/' + parts[0];
-      }
-      el.value = val;
+  function formatVal(val) {
+    if (!val) return '';
+    val = String(val);
+    if (val.indexOf('T') > 0 && val.match(/\d{4}-\d{2}-\d{2}/)) {
+      const parts = val.split('T')[0].split('-');
+      return parts[2] + '/' + parts[1] + '/' + parts[0];
     }
-  });
+    return val;
+  }
+  function get(keys) {
+    for (const k of keys) {
+      if (f[k] !== undefined && f[k] !== '') return formatVal(f[k]);
+    }
+    return '';
+  }
+  function set(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.value = val;
+  }
+  set('f_nome',         get(['Nome']));
+  set('f_nascimento',   get(['Nascimento']));
+  set('f_naturalidade', get(['Naturalidade']));
+  set('f_uf_nasc',      get(['UF Nasc']));
+  set('f_pai',          get(['Pai']));
+  set('f_mae',          get(['Mãe','Mae']));
+  set('f_endereco',     get(['Endereço','Endereco']));
+  set('f_numero',       get(['Número','Numero']));
+  set('f_complemento',  get(['Complemento']));
+  set('f_bairro',       get(['Bairro']));
+  set('f_cidade',       get(['Cidade']));
+  set('f_uf_end',       get(['UF']));
+  set('f_cep',          get(['CEP']));
+  set('f_fone',         get(['Fone']));
+  set('f_celular',      get(['Celular']));
+  set('f_estado_civil', get(['Estado Civil']));
+  set('f_filhos',       get(['Filhos']));
+  set('f_qtd_filhos',   get(['Qtd Filhos']));
+  set('f_conjuge',      get(['Cônjuge','Conjuge']));
+  set('f_nasc_conjuge', get(['Nasc Cônjuge','Nasc Conjuge']));
+  set('f_ctps_digital', get(['CTPS Digital']));
+  set('f_ctps_num',     get(['Nº CTPS','CTPS Num']));
+  set('f_ctps_serie',   get(['Série CTPS','CTPS Serie']));
+  set('f_rg',           get(['RG']));
+  set('f_rg_data',      get(['Data RG','RG Data']));
+  set('f_rg_orgao',     get(['Órgão RG','RG Orgao']));
+  set('f_cpf',          get(['CPF']));
+  set('f_pis',          get(['PIS']));
+  set('f_pis_data',     get(['Data PIS','PIS Data']));
+  set('f_titulo',       get(['Título Eleitor','Titulo']));
+  set('f_zona',         get(['Zona']));
+  set('f_secao',        get(['Seção','Secao']));
+  set('f_raca',         get(['Raça','Raca']));
+  set('f_instrucao',    get(['Instrução','Instrucao']));
+  set('f_primeiro',     get(['Primeiro Emprego']));
   document.getElementById('select-screen').style.display = 'none';
   document.getElementById('form-screen').style.display = 'block';
   window.scrollTo(0,0);

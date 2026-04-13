@@ -271,9 +271,8 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);pad
         </div>
       </div>
       <div class="field">
-        <label>Cadastro PIS em <span class="req">*</span></label>
+        <label>Cadastro PIS em</label>
         <input type="date" id="pis_data">
-        <span class="field-error" id="err-pis_data">Campo obrigatório</span>
       </div>
       <div class="grid-3">
         <div class="field">
@@ -412,7 +411,7 @@ function validar() {
   const obrigatorios = [
     'nome','nascimento','naturalidade','uf_nasc','mae',
     'endereco','numero','bairro','cidade','uf_end','cep','celular',
-    'estado_civil','rg','rg_data','rg_orgao','cpf','pis','pis_data',
+    'estado_civil','rg','rg_data','rg_orgao','cpf','pis',
     'titulo','zona','secao','instrucao'
   ];
   obrigatorios.forEach(id => {

@@ -633,11 +633,11 @@
       const data = await res.json();
       const sel = document.getElementById('selectColab');
       sel.innerHTML = '<option value="">— Selecione um colaborador —</option>';
-      const list = Array.isArray(data) ? data : (data.colaboradores || []);
+      const list = data.fichas || data.colaboradores || (Array.isArray(data) ? data : []);
       list.forEach(c => {
-        const name = c.nome || c.name || c[0] || '';
-        const cargo = c.cargo || c.funcao || c[1] || '';
-        const admissao = c.admissao || c.dataAdmissao || c[2] || '';
+        const name = c['Nome'] || c.nome || c.name || '';
+        const cargo = c['Funcao'] || c['Função'] || c.cargo || c.funcao || '';
+        const admissao = c['Admissao'] || c['Admissão'] || c.admissao || c.dataAdmissao || '';
         if (!name) return;
         const opt = document.createElement('option');
         opt.value = name;

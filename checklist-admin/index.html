@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Checklists — Admin | ZenFisio</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --green: #4A7C59;
+      --green-light: #6a9e78;
+      --green-pale: #e8f0ea;
+      --bg: #F2F4F0;
+      --surface: #FFFFFF;
+      --border: #DDE0D8;
+      --text: #1e2a22;
+      --muted: #6b7a6e;
+      --red: #9b3a2e;
+      --red-pale: #fdf0ee;
+      --red-border: #e8b4ae;
+      --blue: #2e6da4;
+      --blue-pale: #e8f0f7;
+      --warning: #e67e22;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2rem 1rem 5rem;
+    }
+
+    .container { max-width: 780px; margin: 0 auto; }
+
+    /* ── HEADER ── */
+    .page-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.75rem;
+    }
+    .header-icon {
+      width: 48px; height: 48px;
+      background: var(--green);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .header-icon svg { width: 26px; height: 26px; }
+    .page-header h1 {
+      font-family: 'Lora', serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--green);
+      line-height: 1.2;
+    }
+    .page-header p { font-size: 0.85rem; color: var(--muted); margin-top: 2px; }
+
+    /* ── SELECTOR CARD ── */
+    .selector-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .selector-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+    .selector-field { flex: 1; min-width: 200px; }
+    .selector-field label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+    .selector-field select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      color: var(--text);
+      background: white;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7a6e' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      cursor: pointer;
+    }
+    .selector-field select:focus { outline: none; border-color: var(--green); }
+
+    .btn {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.88rem;
+      font-weight: 600;
+      padding: 10px 18px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .btn-primary { background: var(--green); color: white; }
+    .btn-primary:hover { background: #3d6b4a; }
+    .btn-primary:disabled { background: #aac5b3; cursor: not-allowed; }
+    .btn-ghost { background: white; color: var(--muted); border: 1px solid var(--border); }
+    .btn-ghost:hover { background: var(--bg); color: var(--text); }
+    .btn-outline-green { background: white; color: var(--green); border: 1.5px solid var(--green); }
+    .btn-outline-green:hover { background: var(--green-pale); }
+    .btn-sm { padding: 7px 14px; font-size: 0.82rem; }
+
+    .spinner {
+      width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+    .btn.loading .spinner { display: inline-block; }
+    .btn.loading .btn-label { display: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Colaborador selecionado */
+    .colab-banner {
+      display: none;
+      background: var(--green-pale);
+      border: 1px solid #c2d9c9;
+      border-radius: 10px;
+      padding: 0.85rem 1.1rem;
+      margin-top: 1rem;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .colab-banner.visible { display: flex; }
+    .colab-info { display: flex; align-items: center; gap: 10px; }
+    .colab-avatar {
+      width: 36px; height: 36px;
+      background: var(--green);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+    .colab-name { font-weight: 600; font-size: 0.95rem; color: var(--green); }
+    .colab-meta { font-size: 0.78rem; color: var(--muted); }
+
+    .save-status {
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+      display: none;
+    }
+    .save-status.saved { display: inline-flex; align-items: center; gap: 4px; background: #d4edda; color: #276843; }
+    .save-status.saving { display: inline-flex; align-items: center; gap: 4px; background: #fff3cd; color: #856404; }
+    .save-status.error { display: inline-flex; align-items: center; gap: 4px; background: #f8d7da; color: #721c24; }
+
+    /* ── TABS ── */
+    .tabs-wrapper { display: none; }
+    .tabs-wrapper.visible { display: block; }
+
+    .tabs-nav {
+      display: flex;
+      gap: 4px;
+      border-bottom: 2px solid var(--border);
+      margin-bottom: 0;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .tabs-nav::-webkit-scrollbar { display: none; }
+
+    .tab-btn {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.84rem;
+      font-weight: 600;
+      padding: 10px 16px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      white-space: nowrap;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 8px 8px 0 0;
+    }
+    .tab-btn:hover { color: var(--text); background: var(--bg); }
+    .tab-btn.active { color: var(--green); border-bottom-color: var(--green); background: white; }
+    .tab-btn.active.red { color: var(--red); border-bottom-color: var(--red); }
+
+    .tab-pill {
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 10px;
+      background: var(--border);
+      color: var(--muted);
+      transition: all 0.15s;
+    }
+    .tab-btn.active .tab-pill { background: var(--green-pale); color: var(--green); }
+    .tab-btn.active.red .tab-pill { background: var(--red-pale); color: var(--red); }
+
+    .tab-panel { display: none; padding-top: 1.25rem; }
+    .tab-panel.active { display: block; }
+
+    /* ── CHECKLIST CARD ── */
+    .cl-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .cl-card-header {
+      padding: 0.9rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .cl-card-header.green { background: var(--green-pale); }
+    .cl-card-header.blue { background: var(--blue-pale); }
+    .cl-card-header.red { background: var(--red-pale); border-bottom-color: var(--red-border); }
+
+    .cl-card-title {
+      font-family: 'Lora', serif;
+      font-weight: 600;
+      font-size: 0.92rem;
+    }
+    .cl-card-header.green .cl-card-title { color: var(--green); }
+    .cl-card-header.blue .cl-card-title { color: var(--blue); }
+    .cl-card-header.red .cl-card-title { color: var(--red); }
+
+    .resp-tag {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 3px 9px;
+      border-radius: 20px;
+      color: white;
+      white-space: nowrap;
+    }
+    .tag-rh { background: var(--green); }
+    .tag-dir { background: var(--blue); }
+    .tag-red { background: var(--red); }
+
+    /* items */
+    .cl-list { list-style: none; }
+    .cl-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 0.8rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background 0.12s;
+      user-select: none;
+    }
+    .cl-item:last-child { border-bottom: none; }
+    .cl-item:hover { background: #f7faf7; }
+    .cl-item.checked { background: #f0f7f2; }
+
+    .chkbox {
+      width: 21px; height: 21px;
+      border-radius: 6px;
+      border: 2px solid var(--border);
+      flex-shrink: 0;
+      margin-top: 1px;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.12s;
+      background: white;
+    }
+    .cl-item.checked .chkbox { background: var(--green); border-color: var(--green); }
+    .chkbox svg {
+      width: 12px; height: 12px;
+      fill: none; stroke: white;
+      stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round;
+      opacity: 0; transition: opacity 0.12s;
+    }
+    .cl-item.checked .chkbox svg { opacity: 1; }
+
+    .cl-label {
+      font-size: 0.88rem;
+      color: var(--text);
+      line-height: 1.4;
+      flex: 1;
+      transition: color 0.12s;
+    }
+    .cl-item.checked .cl-label { color: var(--muted); text-decoration: line-through; text-decoration-color: #b0bdb3; }
+
+    .tag-cond {
+      font-size: 0.68rem; font-weight: 600;
+      padding: 2px 7px; border-radius: 10px;
+      white-space: nowrap; flex-shrink: 0; margin-top: 2px;
+      color: var(--warning); background: #fef5ec; border: 1px solid #f5cba7;
+    }
+
+    /* progress bar */
+    .cl-footer {
+      padding: 0.85rem 1.25rem;
+      border-top: 1px solid var(--border);
+    }
+    .cl-footer.green { background: var(--green-pale); }
+    .cl-footer.blue { background: var(--blue-pale); }
+    .cl-footer.red { background: var(--red-pale); border-top-color: var(--red-border); }
+
+    .prog-track { height: 5px; background: var(--border); border-radius: 99px; overflow: hidden; }
+    .prog-fill { height: 100%; background: var(--green); border-radius: 99px; transition: width 0.3s; width: 0%; }
+    .prog-fill.red { background: var(--red); }
+    .prog-label { font-size: 0.76rem; color: var(--muted); margin-top: 5px; }
+
+    /* tab total progress */
+    .tab-progress-row {
+      display: flex; align-items: center;
+      gap: 10px; margin-bottom: 1.25rem;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.85rem 1.1rem;
+    }
+    .tab-progress-row .big-num {
+      font-family: 'Lora', serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--green);
+      line-height: 1;
+    }
+    .tab-progress-row .big-num.red { color: var(--red); }
+    .tab-progress-row .desc { flex: 1; }
+    .tab-progress-row .desc strong { display: block; font-size: 0.88rem; color: var(--text); }
+    .tab-progress-row .desc span { font-size: 0.78rem; color: var(--muted); }
+
+    /* complete badge */
+    .complete-badge {
+      display: none; align-items: center; gap: 8px;
+      background: #e8f5ed; border: 1px solid #a8d5b5;
+      border-radius: 10px; padding: 0.85rem 1.1rem;
+      margin-bottom: 1.25rem;
+      color: var(--green); font-weight: 600; font-size: 0.88rem;
+    }
+    .complete-badge.visible { display: flex; }
+    .complete-badge svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+    /* save bar */
+    .save-bar {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: white;
+      border-top: 1px solid var(--border);
+      padding: 0.85rem 1.5rem;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+      z-index: 100;
+      box-shadow: 0 -4px 16px rgba(0,0,0,0.06);
+    }
+    .save-bar.visible { display: flex; }
+    .save-bar-info { font-size: 0.85rem; color: var(--muted); }
+    .save-bar-info strong { color: var(--text); }
+    .save-bar-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    /* empty state */
+    .empty-state {
+      text-align: center; padding: 3rem 1rem;
+      color: var(--muted);
+    }
+    .empty-state svg { width: 48px; height: 48px; margin-bottom: 1rem; opacity: 0.35; }
+    .empty-state h3 { font-family: 'Lora', serif; font-size: 1.1rem; color: var(--text); margin-bottom: 0.5rem; }
+    .empty-state p { font-size: 0.85rem; }
+
+    @media (max-width: 500px) {
+      .tab-btn { font-size: 0.78rem; padding: 8px 10px; }
+      .cl-label { font-size: 0.84rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div class="header-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+        <rect x="9" y="3" width="6" height="4" rx="1"/>
+        <path d="M9 12l2 2 4-4"/>
+      </svg>
+    </div>
+    <div>
+      <h1>Checklists de Contratação e Desligamento</h1>
+      <p>Painel administrativo — ZenFisio RH</p>
+    </div>
+  </div>
+
+  <!-- SELECTOR -->
+  <div class="selector-card">
+    <div class="selector-row">
+      <div class="selector-field">
+        <label>Colaborador</label>
+        <select id="selectColab" onchange="onColabChange()">
+          <option value="">— Selecione um colaborador —</option>
+        </select>
+      </div>
+      <button class="btn btn-outline-green" onclick="loadColabs()">
+        <div class="spinner"></div>
+        <span class="btn-label">↻ Atualizar lista</span>
+      </button>
+    </div>
+
+    <div class="colab-banner" id="colabBanner">
+      <div class="colab-info">
+        <div class="colab-avatar" id="colabAvatar">--</div>
+        <div>
+          <div class="colab-name" id="colabName">—</div>
+          <div class="colab-meta" id="colabMeta">—</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span class="save-status" id="saveStatus"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- EMPTY STATE -->
+  <div class="empty-state" id="emptyState">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+    <h3>Nenhum colaborador selecionado</h3>
+    <p>Clique em "Atualizar lista" e selecione um colaborador para iniciar.</p>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs-wrapper" id="tabsWrapper">
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('docs', this)" id="tBtn-docs">
+        📁 Documentos <span class="tab-pill" id="tPill-docs">0/14</span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('sign', this)" id="tBtn-sign">
+        ✍️ Assinaturas <span class="tab-pill" id="tPill-sign">0/6</span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('reg', this)" id="tBtn-reg">
+        🖥️ Registros <span class="tab-pill" id="tPill-reg">0/6</span>
+      </button>
+      <button class="tab-btn red" onclick="switchTab('desl', this)" id="tBtn-desl">
+        🚪 Desligamento <span class="tab-pill" id="tPill-desl">0/7</span>
+      </button>
+    </div>
+
+    <!-- TAB: DOCUMENTOS -->
+    <div class="tab-panel active" id="tab-docs">
+      <div class="complete-badge" id="done-docs">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        Todos os documentos foram conferidos!
+      </div>
+      <div class="cl-card">
+        <div class="cl-card-header green">
+          <span class="cl-card-title">📁 Documentos para Arquivamento no Drive</span>
+        </div>
+        <ul class="cl-list" id="list-docs">
+          <li class="cl-item" onclick="toggleItem(this,'docs')"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Cópia da Carteira de Trabalho (se não for digital)</span></li>
+          <li class="cl-item" onclick="toggleItem(this,'docs')"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Ficha de Registro de Empregado</span></li>
+          <li class="cl-item" onclick="toggleItem(this,'docs')"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Cópia do RG</span></li>
+          <li class="cl-item" onclick="toggleItem(this,'docs')"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Cópia do CPF</span></li>
+          <li class="cl-item" onclick="toggleItem(this,'docs')"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Cópia do Comprovante de Residência</span></li>
+          <li class="cl-item" onclick="toggleItem(this,'docs')"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Cópia do Título de Eleitor</span></li>
+          <li class="cl-item" onclick="toggleItem(this,'docs')"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Cópia da Carteira de Habilitação</span><span class="tag-cond">Motorista</span></li>
+          <li class="cl-item" onclick="toggleItem(this,'docs')"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Cópia da Certidão de Nascimento ou Casamento</span></li>
+          <li class="cl-item" onclick="toggleItem(this,'docs')"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Cópia da Certidão de Reservista</span><span class="tag-cond">Sexo Masc.</span></li>
+          <li class="cl-item" onclick="toggleItem(this,'docs')"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Cópia da Certidão de Nascimento dos filhos menores de 14 anos</span></li>
+          <li class="cl-item" onclick="toggleItem(this,'docs')"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Cópia de Diploma ou Certificado Escolar</span></li>
+          <li class="cl-item" onclick="toggleItem(this,'docs')"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Cópia da Caderneta de Vacinação (filhos menores de 7 anos — anual)</span></li>
+          <li class="cl-item" onclick="toggleItem(this,'docs')"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">1 foto recente 3×4</span></li>
+          <li class="cl-item" onclick="toggleItem(this,'docs')"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Exame Médico Admissional</span></li>
+        </ul>
+        <div class="cl-footer green">
+          <div class="prog-track"><div class="prog-fill" id="bar-docs"></div></div>
+          <div class="prog-label" id="lbl-docs">0 de 14 itens conferidos</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: ASSINATURAS -->
+    <div class="tab-panel" id="tab-sign">
+      <div class="complete-badge" id="done-sign">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        Todos os documentos foram assinados!
+      </div>
+      <div class="cl-card">
+        <div class="cl-card-header green">
+          <span class="cl-card-title">✍️ Documentos para Assinatura</span>
+        </div>
+        <ul class="cl-list" id="list-sign">
+          <li class="cl-item" onclick="toggleItem(this,'sign')"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Contrato de Trabalho</span></li>
+          <li class="cl-item" onclick="toggleItem(this,'sign')"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Contrato de Renovação do Período de Experiência</span></li>
+          <li class="cl-item" onclick="toggleItem(this,'sign')"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Acordo de Horário de Trabalho</span></li>
+          <li class="cl-item" onclick="toggleItem(this,'sign')"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Acordo de Compensação de Horas de Trabalho</span></li>
+          <li class="cl-item" onclick="toggleItem(this,'sign')"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Acordo de Prorrogação de Horas</span></li>
+          <li class="cl-item" onclick="toggleItem(this,'sign')"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Termo de Vale Transporte</span></li>
+        </ul>
+        <div class="cl-footer green">
+          <div class="prog-track"><div class="prog-fill" id="bar-sign"></div></div>
+          <div class="prog-label" id="lbl-sign">0 de 6 itens conferidos</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: REGISTROS -->
+    <div class="tab-panel" id="tab-reg">
+      <div class="complete-badge" id="done-reg">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        Todos os registros foram realizados!
+      </div>
+      <div class="cl-card">
+        <div class="cl-card-header green">
+          <span class="cl-card-title">🏢 Setor de RH</span>
+          <span class="resp-tag tag-rh">RH</span>
+        </div>
+        <ul class="cl-list" id="list-reg-rh">
+          <li class="cl-item" onclick="toggleItem(this,'reg')"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Senha de acesso à porta — reconhecimento facial</span></li>
+          <li class="cl-item" onclick="toggleItem(this,'reg')"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Cadastro do Empregado no Sistema Ponto</span></li>
+          <li class="cl-item" onclick="toggleItem(this,'reg')"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Cadastro do Colaborador no Cartão Caju</span></li>
+        </ul>
+        <div class="cl-footer green">
+          <div class="prog-track"><div class="prog-fill" id="bar-reg-rh"></div></div>
+          <div class="prog-label" id="lbl-reg-rh">0 de 3 itens realizados (RH)</div>
+        </div>
+      </div>
+      <div class="cl-card">
+        <div class="cl-card-header blue">
+          <span class="cl-card-title" style="color:var(--blue)">👤 Diretor / Coordenador</span>
+          <span class="resp-tag tag-dir">Diretor</span>
+        </div>
+        <ul class="cl-list" id="list-reg-dir">
+          <li class="cl-item" onclick="toggleItem(this,'reg')"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Criação de E-mail (ZenFisio e Drive)</span></li>
+          <li class="cl-item" onclick="toggleItem(this,'reg')"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Criação de Conta no Slack</span></li>
+          <li class="cl-item" onclick="toggleItem(this,'reg')"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Encaminhamento para criação de usuário nas ferramentas de trabalho (conforme setor)</span></li>
+        </ul>
+        <div class="cl-footer blue">
+          <div class="prog-track"><div class="prog-fill" id="bar-reg-dir" style="background:var(--blue)"></div></div>
+          <div class="prog-label" id="lbl-reg-dir">0 de 3 itens realizados (Diretor)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: DESLIGAMENTO -->
+    <div class="tab-panel" id="tab-desl">
+      <div class="complete-badge" id="done-desl" style="background:#e8f5ed;border-color:#a8d5b5;color:var(--green)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        Todos os procedimentos de desligamento foram concluídos!
+      </div>
+      <div class="cl-card">
+        <div class="cl-card-header red">
+          <span class="cl-card-title">🏢 Setor de RH — Registros de Saída</span>
+          <span class="resp-tag tag-red">RH</span>
+        </div>
+        <ul class="cl-list" id="list-desl">
+          <li class="cl-item" onclick="toggleItem(this,'desl')"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Exame Demissional</span></li>
+          <li class="cl-item" onclick="toggleItem(this,'desl')"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Aviso Prévio</span></li>
+          <li class="cl-item" onclick="toggleItem(this,'desl')"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Termo de Rescisão Contratual</span></li>
+          <li class="cl-item" onclick="toggleItem(this,'desl')"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Cancelamento no Cadastro do Ponto</span></li>
+          <li class="cl-item" onclick="toggleItem(this,'desl')"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Cancelamento do Cartão Caju</span></li>
+          <li class="cl-item" onclick="toggleItem(this,'desl')"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Cancelamento de acesso à porta — reconhecimento facial</span></li>
+          <li class="cl-item" onclick="toggleItem(this,'desl')"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Encaminhamento de troca de senhas — sistemas do setor</span></li>
+        </ul>
+        <div class="cl-footer red">
+          <div class="prog-track" style="background:var(--red-border)"><div class="prog-fill red" id="bar-desl"></div></div>
+          <div class="prog-label" id="lbl-desl">0 de 7 procedimentos concluídos</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /tabs-wrapper -->
+
+</div><!-- /container -->
+
+<!-- SAVE BAR -->
+<div class="save-bar" id="saveBar">
+  <div class="save-bar-info">
+    Colaborador: <strong id="saveBarName">—</strong>
+  </div>
+  <div class="save-bar-actions">
+    <button class="btn btn-ghost btn-sm" onclick="window.print()">🖨️ Imprimir</button>
+    <button class="btn btn-primary btn-sm" id="saveBtn" onclick="saveProgress()">
+      <div class="spinner"></div>
+      <span class="btn-label">💾 Salvar progresso</span>
+    </button>
+  </div>
+</div>
+
+<script>
+  // ── CONFIG ──
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx6jSF6uqsxoA1a4iJtLMqcIDenmOszini4Z3BuXqA77ENbqWC4QuyKHRrIOqRnKKxn-Q/exec';
+
+  // ── STATE ──
+  let currentColab = null;
+  let unsavedChanges = false;
+
+  const totals = { docs: 14, sign: 6, reg: 6, desl: 7 };
+  const counts = { docs: 0, sign: 0, reg: 0, desl: 0 };
+
+  // ── LOAD COLABORADORES ──
+  async function loadColabs() {
+    const btn = document.querySelector('.btn-outline-green');
+    btn.classList.add('loading');
+    btn.disabled = true;
+    try {
+      const res = await fetch(SCRIPT_URL);
+      const data = await res.json();
+      const sel = document.getElementById('selectColab');
+      sel.innerHTML = '<option value="">— Selecione um colaborador —</option>';
+      const list = Array.isArray(data) ? data : (data.colaboradores || []);
+      list.forEach(c => {
+        const name = c.nome || c.name || c[0] || '';
+        const cargo = c.cargo || c.funcao || c[1] || '';
+        const admissao = c.admissao || c.dataAdmissao || c[2] || '';
+        if (!name) return;
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.dataset.cargo = cargo;
+        opt.dataset.admissao = admissao;
+        opt.textContent = name;
+        sel.appendChild(opt);
+      });
+    } catch(e) {
+      alert('Erro ao carregar colaboradores. Verifique a conexão com o Google Sheets.');
+    }
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+
+  function onColabChange() {
+    const sel = document.getElementById('selectColab');
+    const opt = sel.options[sel.selectedIndex];
+    if (!opt || !opt.value) {
+      currentColab = null;
+      document.getElementById('colabBanner').classList.remove('visible');
+      document.getElementById('tabsWrapper').classList.remove('visible');
+      document.getElementById('emptyState').style.display = 'block';
+      document.getElementById('saveBar').classList.remove('visible');
+      return;
+    }
+
+    currentColab = {
+      nome: opt.value,
+      cargo: opt.dataset.cargo || '',
+      admissao: opt.dataset.admissao || ''
+    };
+
+    // Avatar initials
+    const initials = opt.value.split(' ').slice(0,2).map(w => w[0]).join('').toUpperCase();
+    document.getElementById('colabAvatar').textContent = initials;
+    document.getElementById('colabName').textContent = opt.value;
+
+    let meta = [];
+    if (currentColab.cargo) meta.push(currentColab.cargo);
+    if (currentColab.admissao) meta.push('Admissão: ' + currentColab.admissao);
+    document.getElementById('colabMeta').textContent = meta.join(' · ') || 'Colaborador ZenFisio';
+
+    document.getElementById('colabBanner').classList.add('visible');
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('tabsWrapper').classList.add('visible');
+    document.getElementById('saveBar').classList.add('visible');
+    document.getElementById('saveBarName').textContent = opt.value;
+
+    resetAllItems();
+    setSaveStatus('');
+    unsavedChanges = false;
+  }
+
+  // ── TABS ──
+  function switchTab(id, btn) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + id).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  // ── TOGGLE ITEM ──
+  function toggleItem(item, group) {
+    item.classList.toggle('checked');
+    updateGroup(group);
+    unsavedChanges = true;
+  }
+
+  function updateGroup(group) {
+    const lists = group === 'reg'
+      ? [...document.getElementById('list-reg-rh').querySelectorAll('.cl-item'),
+         ...document.getElementById('list-reg-dir').querySelectorAll('.cl-item')]
+      : document.getElementById('list-' + group).querySelectorAll('.cl-item');
+
+    const total = lists.length;
+    const done = [...lists].filter(i => i.classList.contains('checked')).length;
+    counts[group] = done;
+
+    // pill
+    document.getElementById('tPill-' + group).textContent = `${done}/${total}`;
+
+    // complete badge
+    document.getElementById('done-' + group).classList.toggle('visible', done === total && total > 0);
+
+    if (group === 'reg') {
+      // RH sub-bar
+      const rhItems = document.getElementById('list-reg-rh').querySelectorAll('.cl-item');
+      const rhDone = [...rhItems].filter(i => i.classList.contains('checked')).length;
+      document.getElementById('bar-reg-rh').style.width = (rhDone / rhItems.length * 100) + '%';
+      document.getElementById('lbl-reg-rh').textContent = `${rhDone} de ${rhItems.length} itens realizados (RH)`;
+      // Dir sub-bar
+      const dirItems = document.getElementById('list-reg-dir').querySelectorAll('.cl-item');
+      const dirDone = [...dirItems].filter(i => i.classList.contains('checked')).length;
+      document.getElementById('bar-reg-dir').style.width = (dirDone / dirItems.length * 100) + '%';
+      document.getElementById('lbl-reg-dir').textContent = `${dirDone} de ${dirItems.length} itens realizados (Diretor)`;
+    } else {
+      document.getElementById('bar-' + group).style.width = total ? (done / total * 100) + '%' : '0%';
+      const labels = { docs: 'itens conferidos', sign: 'itens conferidos', desl: 'procedimentos concluídos' };
+      document.getElementById('lbl-' + group).textContent = `${done} de ${total} ${labels[group]}`;
+    }
+  }
+
+  function resetAllItems() {
+    document.querySelectorAll('.cl-item.checked').forEach(i => i.classList.remove('checked'));
+    ['docs','sign','reg','desl'].forEach(g => {
+      counts[g] = 0;
+      document.getElementById('tPill-' + g).textContent = `0/${totals[g]}`;
+      document.getElementById('done-' + g).classList.remove('visible');
+      if (g === 'reg') {
+        ['rh','dir'].forEach(s => {
+          document.getElementById('bar-reg-' + s).style.width = '0%';
+        });
+        document.getElementById('lbl-reg-rh').textContent = '0 de 3 itens realizados (RH)';
+        document.getElementById('lbl-reg-dir').textContent = '0 de 3 itens realizados (Diretor)';
+      } else {
+        document.getElementById('bar-' + g).style.width = '0%';
+      }
+    });
+  }
+
+  // ── SAVE ──
+  function setSaveStatus(state, msg) {
+    const el = document.getElementById('saveStatus');
+    el.className = 'save-status';
+    if (!state) { el.style.display = 'none'; return; }
+    el.classList.add(state);
+    el.textContent = msg;
+  }
+
+  async function saveProgress() {
+    if (!currentColab) return;
+    const btn = document.getElementById('saveBtn');
+    btn.classList.add('loading');
+    btn.disabled = true;
+    setSaveStatus('saving', '⏳ Salvando...');
+
+    const getItems = (listId) =>
+      [...document.getElementById(listId).querySelectorAll('.cl-item')]
+        .map(i => ({ item: i.querySelector('.cl-label').textContent.trim(), checked: i.classList.contains('checked') }));
+
+    const payload = {
+      tipo: 'checklist',
+      colaborador: currentColab.nome,
+      cargo: currentColab.cargo,
+      dataRegistro: new Date().toLocaleDateString('pt-BR'),
+      horaRegistro: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      documentos: getItems('list-docs'),
+      assinaturas: getItems('list-sign'),
+      registrosRH: getItems('list-reg-rh'),
+      registrosDiretor: getItems('list-reg-dir'),
+      desligamento: getItems('list-desl'),
+      progressoDocumentos: `${counts.docs}/${totals.docs}`,
+      progressoAssinaturas: `${counts.sign}/${totals.sign}`,
+      progressoRegistros: `${counts.reg}/${totals.reg}`,
+      progressoDesligamento: `${counts.desl}/${totals.desl}`
+    };
+
+    try {
+      await fetch(SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      setSaveStatus('saved', '✓ Salvo');
+      unsavedChanges = false;
+    } catch(e) {
+      setSaveStatus('error', '✗ Erro ao salvar');
+    }
+
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+
+  window.addEventListener('beforeunload', e => {
+    if (unsavedChanges) { e.preventDefault(); e.returnValue = ''; }
+  });
+
+  // Init
+  loadColabs();
+</script>
+</body>
+</html>

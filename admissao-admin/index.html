@@ -376,6 +376,7 @@ function selecionarFicha(idx) {
   document.getElementById('select-screen').style.display = 'none';
   document.getElementById('form-screen').style.display = 'block';
   window.scrollTo(0,0);
+  carregarDadosAdmin(f['Nome'] || '');
 }
 
 function novaFicha() {
@@ -492,7 +493,31 @@ function salvarNoSheets() {
     setTimeout(() => { label.textContent = '💾 Salvar no Sheets'; btn.style.background = ''; btn.disabled = false; }, 3000);
   });
 }
-function sel(el) {
+function carregarDadosAdmin(nome) {
+  if (!nome) return;
+  fetch(SCRIPT_URL + '?acao=getDadosAdmin&colaborador=' + encodeURIComponent(nome))
+    .then(r => r.json())
+    .then(data => {
+      if (!data.dados) return;
+      const d = data.dados;
+      function setVal(id, val) {
+        const el = document.getElementById(id);
+        if (el && val) el.value = val;
+      }
+      setVal('f_funcao',       d['Função'] || d['Funcao'] || '');
+      setVal('f_admissao',     d['Data Admissão'] || d['Data Admissao'] || '');
+      setVal('f_departamento', d['Departamento'] || '');
+      setVal('f_contrato',     d['Contrato Experiência'] || d['Contrato Experiencia'] || '');
+      setVal('f_salario',      d['Salário'] || d['Salario'] || '');
+      setVal('f_h_manha',      d['Horário Manhã'] || d['Horario Manha'] || '');
+      setVal('f_h_tarde',      d['Horário Tarde'] || d['Horario Tarde'] || '');
+      setVal('f_h_sab',        d['Horário Sáb'] || d['Horario Sab'] || '');
+      setVal('f_h_dom',        d['Horário Dom'] || d['Horario Dom'] || '');
+      setVal('f_obs',          d['Observações'] || d['Observacoes'] || '');
+    })
+    .catch(() => {});
+}
+  function sel(el) {
   el.closest('.radio-group').querySelectorAll('.radio-btn').forEach(b => b.classList.remove('on'));
   el.classList.add('on');
 }

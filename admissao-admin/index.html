@@ -444,7 +444,54 @@ if (salarioEl) {
     this.value = this.value.replace(/[R$\s.]/g, '').replace(',', '.');
   });
 }
-
+function salvarNoSheets() {
+  const nome = document.getElementById('f_nome').value.trim();
+  if (!nome) { alert('Selecione um colaborador antes de salvar.'); return; }
+  const btn = document.getElementById('btnSalvar');
+  const label = document.getElementById('btnSalvarLabel');
+  label.textContent = '⏳ Salvando...';
+  btn.disabled = true;
+  function radioVal(group) {
+    const on = group ? group.querySelector('.radio-btn.on') : null;
+    return on ? on.textContent.trim() : '';
+  }
+  const radioGroups = document.querySelectorAll('.radio-group');
+  const payload = {
+    tipo: 'dadosAdmin',
+    nome:           nome,
+    funcao:         (document.getElementById('f_funcao')?.value||'').trim(),
+    admissao:       (document.getElementById('f_admissao')?.value||'').trim(),
+    departamento:   (document.getElementById('f_departamento')?.value||'').trim(),
+    contrato:       (document.getElementById('f_contrato')?.value||'').trim(),
+    salario:        (document.getElementById('f_salario')?.value||'').trim(),
+    horarioManha:   (document.getElementById('f_h_manha')?.value||'').trim(),
+    horarioTarde:   (document.getElementById('f_h_tarde')?.value||'').trim(),
+    horarioSab:     (document.getElementById('f_h_sab')?.value||'').trim(),
+    horarioDom:     (document.getElementById('f_h_dom')?.value||'').trim(),
+    vt:             radioVal(radioGroups[0]),
+    vr:             radioVal(radioGroups[1]),
+    adiantamento:   radioVal(radioGroups[2]),
+    ppra:           radioVal(radioGroups[3]),
+    periculosidade: radioVal(radioGroups[4]),
+    insalubridade:  radioVal(radioGroups[5]),
+    obs:            (document.getElementById('f_obs')?.value||'').trim()
+  };
+  fetch('https://script.google.com/macros/s/AKfycbx6jSF6uqsxoA1a4iJtLMqcIDenmOszini4Z3BuXqA77ENbqWC4QuyKHRrIOqRnKKxn-Q/exec', {
+    method: 'POST', mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+  .then(() => {
+    label.textContent = '✓ Salvo!';
+    btn.style.background = '#276843';
+    setTimeout(() => { label.textContent = '💾 Salvar no Sheets'; btn.style.background = ''; btn.disabled = false; }, 3000);
+  })
+  .catch(() => {
+    label.textContent = '✗ Erro';
+    btn.style.background = '#9b3a2e';
+    setTimeout(() => { label.textContent = '💾 Salvar no Sheets'; btn.style.background = ''; btn.disabled = false; }, 3000);
+  });
+}
 function sel(el) {
   el.closest('.radio-group').querySelectorAll('.radio-btn').forEach(b => b.classList.remove('on'));
   el.classList.add('on');

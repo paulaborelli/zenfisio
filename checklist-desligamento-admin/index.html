@@ -252,7 +252,21 @@ async function onColabChange() {
     document.getElementById('saveBar').classList.remove('visible');
     return;
   }
-  currentColab = { nome: opt.value, cargo: opt.dataset.cargo || '', admissao: opt.dataset.admissao || '' };
+  currentColab = { nome: opt.value, cargo: '', admissao: '' };
+
+  // Busca dados admin (cargo, admissão, departamento)
+  try {
+    const url = SCRIPT_URL + '?acao=getDadosAdmin&colaborador=' + encodeURIComponent(opt.value);
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.dados) {
+      const d = data.dados;
+      currentColab.cargo = d['Função'] || d['Funcao'] || d['função'] || d['funcao'] || d['Cargo'] || '';
+      currentColab.admissao = d['Data Admissão'] || d['Data Admissao'] || d['Data admissão'] || d['DataAdmissao'] || '';
+      currentColab.departamento = d['Departamento'] || d['departamento'] || '';
+    }
+  } catch(e) { /* sem dados admin ainda */ }
+
   const initials = opt.value.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
   document.getElementById('colabAvatar').textContent = initials;
   document.getElementById('colabName').textContent = opt.value;
@@ -260,6 +274,7 @@ async function onColabChange() {
   document.getElementById('printColabBox').style.display = 'flex';
   let meta = [];
   if (currentColab.cargo) meta.push(currentColab.cargo);
+  if (currentColab.departamento) meta.push(currentColab.departamento);
   if (currentColab.admissao) meta.push('Admissão: ' + currentColab.admissao);
   document.getElementById('colabMeta').textContent = meta.join(' · ') || 'Colaborador ZenFisio';
   document.getElementById('colabBanner').classList.add('visible');

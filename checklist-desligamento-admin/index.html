@@ -262,7 +262,13 @@ async function onColabChange() {
     if (data.dados) {
       const d = data.dados;
       currentColab.cargo = d['Função'] || d['Funcao'] || d['função'] || d['funcao'] || d['Cargo'] || '';
-      currentColab.admissao = d['Data Admissão'] || d['Data Admissao'] || d['Data admissão'] || d['DataAdmissao'] || '';
+      const rawAdmissao = d['Data Admissão'] || d['Data Admissao'] || d['Data admissão'] || d['DataAdmissao'] || '';
+      if (rawAdmissao && rawAdmissao.includes('T')) {
+        const parts = rawAdmissao.split('T')[0].split('-');
+        currentColab.admissao = parts[2] + '/' + parts[1] + '/' + parts[0];
+      } else {
+        currentColab.admissao = rawAdmissao;
+      }
       currentColab.departamento = d['Departamento'] || d['departamento'] || '';
     }
   } catch(e) { /* sem dados admin ainda */ }

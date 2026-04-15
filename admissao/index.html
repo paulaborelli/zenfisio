@@ -5,7 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ficha de Cadastro — ZenFisio</title>
 <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<style>
+.back-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: "DM Sans", sans-serif; font-size: 0.82rem; font-weight: 600;
+    color: white; text-decoration: none;
+    padding: 6px 14px; border-radius: 8px;
+    border: 1.5px solid rgba(255,255,255,0.6);
+    background: rgba(255,255,255,0.15);
+    transition: all 0.15s;
+    position: absolute; top: 1rem; left: 1rem; z-index: 10;
+  }
+  .back-btn:hover { background: rgba(255,255,255,0.25); }
+  @media print { .back-btn { display: none !important; } }
+  <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
   --bg:#F2F4F0;--surface:#fff;--border:#DDE0D8;--border-focus:#4A7C59;

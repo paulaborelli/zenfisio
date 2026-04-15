@@ -153,10 +153,24 @@
     }
     .print-colab-box { display: none; }
     .tab-section-title { display: none; }
+
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: "DM Sans", sans-serif; font-size: 0.82rem; font-weight: 600;
+    color: var(--green, #4A7C59); text-decoration: none;
+    padding: 6px 12px; border-radius: 8px;
+    border: 1.5px solid var(--green, #4A7C59);
+    background: white; transition: all 0.15s;
+    margin-bottom: 1.5rem; align-self: flex-start;
+  }
+  .back-btn:hover { background: var(--green-pale, #e8f0ea); }
+  @media print { .back-btn { display: none !important; } }
   </style>
 </head>
 <body>
 <div class="container">
+  <a class="back-btn no-print" href="../index.html">← Início</a>
+
 
   <!-- SCREEN HEADER -->
   <div class="page-header">

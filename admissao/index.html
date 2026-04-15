@@ -55,7 +55,19 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);pad
 .success-title{font-family:"Lora",serif;font-size:22px;font-weight:600;color:var(--text);margin-bottom:0.75rem;}
 .success-sub{font-size:14px;color:var(--text-muted);max-width:380px;line-height:1.6;}
 @media(max-width:560px){.grid-2,.grid-3{grid-template-columns:1fr;}}
-</style>
+.back-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: "DM Sans", sans-serif; font-size: 0.82rem; font-weight: 600;
+    color: white; text-decoration: none;
+    padding: 6px 14px; border-radius: 8px;
+    border: 1.5px solid rgba(255,255,255,0.6);
+    background: rgba(255,255,255,0.15);
+    transition: all 0.15s;
+    position: absolute; top: 1rem; left: 1rem; z-index: 10;
+  }
+  .back-btn:hover { background: rgba(255,255,255,0.25); }
+  @media print { .back-btn { display: none !important; } }
+  </style>
 </head>
 <body>
 <div class="hero">

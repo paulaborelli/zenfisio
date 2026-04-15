@@ -23,12 +23,11 @@
   .wrap { max-width: 560px; width: 100%; text-align: center; }
   .logo { width: 80px; height: 80px; border-radius: 50%; object-fit: cover;
     margin-bottom: 1.25rem; border: 3px solid rgba(74,124,89,0.2); }
-  .title { font-family: "Lora", font-size: 28px; font-weight: 600;
+  .title { font-family: "Lora"; font-size: 28px; font-weight: 600;
     color: var(--text); letter-spacing: -0.3px; margin-bottom: 0.4rem; }
   .subtitle { font-size: 14px; color: var(--text-hint); margin-bottom: 2.5rem; }
   .cards { display: flex; flex-direction: column; gap: 12px; }
 
-  /* Card direto (link) */
   .card-link {
     display: flex; align-items: center; gap: 16px;
     background: var(--surface); border: 1px solid var(--border);
@@ -41,7 +40,6 @@
     transform: translateY(-1px);
   }
 
-  /* Card expansível */
   .card-group {
     background: var(--surface); border: 1px solid var(--border);
     border-radius: var(--radius); overflow: hidden;
@@ -69,7 +67,6 @@
   .card-link:hover .card-arrow { transform: translateX(4px); color: var(--accent); }
   .card-arrow.open { transform: rotate(90deg); color: var(--accent); }
 
-  /* Sub-items */
   .sub-items { display: none; border-top: 1px solid var(--border); }
   .sub-items.open { display: block; }
   .sub-link {
@@ -116,27 +113,34 @@
       <button class="card-toggle" onclick="toggle('contratacao')">
         <div class="card-icon">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4A7C59" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
           </svg>
         </div>
         <div class="card-body">
           <div class="card-title">Contratação</div>
-          <div class="card-desc">Formulários de admissão para novos colaboradores</div>
+          <div class="card-desc">Formulários e checklists de admissão</div>
         </div>
         <span class="card-arrow" id="arrow-contratacao">→</span>
       </button>
       <div class="sub-items" id="sub-contratacao">
         <a class="sub-link" href="admissao/index.html">
           <div class="sub-body">
-            <div class="sub-title">Admissão</div>
+            <div class="sub-title">Ficha de Admissão</div>
             <div class="sub-desc">Formulário para ingresso de colaboradores</div>
           </div>
           <span class="sub-arrow">→</span>
         </a>
         <a class="sub-link" href="admissao-admin/index.html">
           <div class="sub-body">
-            <div class="sub-title">Admissão Adm</div>
-            <div class="sub-desc">Formulário interno para Admissão</div>
+            <div class="sub-title">Admissão — Admin</div>
+            <div class="sub-desc">Formulário interno de admissão para o RH</div>
+          </div>
+          <span class="sub-arrow">→</span>
+        </a>
+        <a class="sub-link" href="checklist-contratacao/index.html">
+          <div class="sub-body">
+            <div class="sub-title">Checklist de Contratação</div>
+            <div class="sub-desc">Conferência de documentos e registros de admissão</div>
           </div>
           <span class="sub-arrow">→</span>
         </a>
@@ -146,9 +150,9 @@
     <!-- Desligamento -->
     <div class="card-group">
       <button class="card-toggle" onclick="toggle('desligamento')">
-                <div class="card-icon">
+        <div class="card-icon">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4A7C59" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
           </svg>
         </div>
         <div class="card-body">
@@ -169,6 +173,13 @@
           <div class="sub-body">
             <div class="sub-title">Entrevista de Desligamento</div>
             <div class="sub-desc">Formulário para o colaborador responder</div>
+          </div>
+          <span class="sub-arrow">→</span>
+        </a>
+        <a class="sub-link" href="checklist-desligamento-admin/index.html">
+          <div class="sub-body">
+            <div class="sub-title">Checklist de Desligamento</div>
+            <div class="sub-desc">Procedimentos de saída do colaborador</div>
           </div>
           <span class="sub-arrow">→</span>
         </a>

@@ -119,7 +119,7 @@
       </div>
       <div class="error-msg" id="err-cooperacao">Selecione uma opção.</div>
       <div class="field" style="margin-top:0.75rem;">
-        <label>Comentários sobre a Cooperacao</label>
+        <label>Comentários sobre a Cooperação</label>
         <textarea id="comentario_cooperacao" placeholder="Observações adicionais..." style="min-height:70px;"></textarea>
       </div>
     </div>
@@ -216,10 +216,14 @@
       <span class="q-label">Fit Cultural <span class="required-star">*</span></span>
       <span class="q-desc">É a capacidade de adaptação aos processos e comportamentos já estabelecidos na ZenFisio.</span>
       <div class="radio-group" id="rg-fit">
-        <label class="radio-opt"><input type="radio" name="fit" value="Excelente."><span>Excelente.</span></label>
-        <label class="radio-opt"><input type="radio" name="fit" value="Bom."><span>Bom.</span></label>
-        <label class="radio-opt"><input type="radio" name="fit" value="Regular."><span>Regular.</span></label>
-        <label class="radio-opt"><input type="radio" name="fit" value="Ruim."><span>Ruim.</span></label>
+        <label class="radio-opt"><input type="radio" name="fit" value="Excelente." onclick="fitOutro(false)"><span>Excelente.</span></label>
+        <label class="radio-opt"><input type="radio" name="fit" value="Bom." onclick="fitOutro(false)"><span>Bom.</span></label>
+        <label class="radio-opt"><input type="radio" name="fit" value="Regular." onclick="fitOutro(false)"><span>Regular.</span></label>
+        <label class="radio-opt"><input type="radio" name="fit" value="Ruim." onclick="fitOutro(false)"><span>Ruim.</span></label>
+        <label class="radio-opt"><input type="radio" name="fit" value="outro" onclick="fitOutro(true)"><span>Outro</span></label>
+      </div>
+      <div id="fit-outro-wrap" style="display:none;margin-top:0.5rem;">
+        <input type="text" id="fit_outro_texto" placeholder="Descreva..." style="width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;">
       </div>
       <div class="error-msg" id="err-fit">Selecione uma opção.</div>
     </div>
@@ -304,7 +308,19 @@ function validar() {
   const errObs = document.getElementById('err-obs');
   if (!obs.value.trim()) { errObs.style.display='block'; obs.style.borderColor='#c0392b'; ok=false; }
   else { errObs.style.display='none'; obs.style.borderColor=''; }
+  // Fit Cultural Outro validation
+  const fitVal = document.querySelector('input[name=fit]:checked')?.value;
+  if (fitVal === 'outro' && !document.getElementById('fit_outro_texto').value.trim()) {
+    document.getElementById('fit_outro_texto').style.borderColor = '#c0392b'; ok=false;
+  } else if (fitVal === 'outro') {
+    document.getElementById('fit_outro_texto').style.borderColor = '';
+  }
   return ok;
+}
+
+function fitOutro(show) {
+  document.getElementById('fit-outro-wrap').style.display = show ? 'block' : 'none';
+  if (!show) document.getElementById('fit_outro_texto').value = '';
 }
 
 async function salvar() {
@@ -331,7 +347,7 @@ async function salvar() {
     comentario_tecnologias: document.getElementById('comentario_tecnologias').value,
     produtividade: document.querySelector('input[name=produtividade]:checked')?.value,
     comentario_produtividade: document.getElementById('comentario_produtividade').value,
-    fit: document.querySelector('input[name=fit]:checked')?.value,
+    fit: (function(){ const v = document.querySelector('input[name=fit]:checked')?.value; return v === 'outro' ? document.getElementById('fit_outro_texto').value : v; })(),
     comentario_fit: document.getElementById('comentario_fit').value,
     desempenho_geral: document.querySelector('input[name=desempenho_geral]:checked')?.value,
     parecer: document.querySelector('input[name=parecer]:checked')?.value,

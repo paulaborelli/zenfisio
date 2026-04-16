@@ -62,12 +62,16 @@
   </div>
 
   <div class="conceitos no-print">
-    <b>DISCIPLINA:</b> Disponibilidade em seguir as normas e regras propostas pela empresa.<br>
-    <b>COOPERAÇÃO:</b> Capacidade de agir em grupo de forma solidária e colaborativa; trabalhar bem em equipe.<br>
-    <b>INICIATIVA:</b> Vontade de fazer mais, propor soluções e sugerir melhorias sem que alguém precise solicitar.<br>
-    <b>ORGANIZAÇÃO:</b> Como dispõe seus recursos — tempo, esforço e empenho — para alcançar os objetivos.<br>
-    <b>PRODUTIVIDADE:</b> Nível de desempenho e entrega em relação ao que é esperado para a função.<br>
-    <b>FIT CULTURAL:</b> Capacidade de adaptação aos processos e comportamentos já estabelecidos na ZenFisio.
+    <p style="margin-bottom:0.75rem;">Prezado(a) Líder,<br>A Entrevista de Acompanhamento tem o objetivo de aprimorar a seleção e detectar possíveis falhas enquanto durar o período de experiência. Contamos com a sua colaboração!</p>
+    <p style="margin-bottom:0.5rem;font-weight:600;">Abaixo seguem alguns conceitos que darão suporte à sua avaliação:</p>
+    <b>DISCIPLINA:</b> É a disponibilidade que o colaborador tem em seguir as normas e regras propostas pela empresa e que competem a sua função.<br>
+    <b>COOPERAÇÃO:</b> É a capacidade de agir em grupo de forma solidária e colaborativa; contribuindo junto à equipe e demonstrando atitudes de trabalhar pelo mesmo objetivo. É trabalhar bem em Equipe.<br>
+    <b>INICIATIVA:</b> É a vontade de fazer mais, propor soluções, começar algo, sugerir melhorias, sem que alguém precise solicitar.<br>
+    <b>ORGANIZAÇÃO:</b> É a forma como dispõe seus recursos, tais como tempo, esforço e empenho em alcançar um objetivo.<br>
+    <b>PONTUALIDADE:</b> É chegar na hora marcada, ser exato no cumprimento das suas obrigações e fazer com exatidão ou no prazo combinado as atividades que lhes são propostas.<br>
+    <b>HABILIDADES COM AS TECNOLOGIAS:</b> É a adaptação às tecnologias, processos e ferramentas utilizadas na ZenFisio.<br>
+    <b>PRODUTIVIDADE:</b> É a produção em determinado tempo. É conseguir atender às demandas conforme solicitado.<br>
+    <b>FIT CULTURAL:</b> É a capacidade de adaptação aos processos e comportamentos já estabelecidos na ZenFisio.
   </div>
 
   <!-- IDENTIFICAÇÃO -->
@@ -75,7 +79,7 @@
     <div class="section-label">Identificação</div>
     <div class="grid-2">
       <div class="field"><label>Nome do(a) Colaborador(a) <span class="required-star">*</span></label><input type="text" id="colab" placeholder="Nome completo"></div>
-      <div class="field"><label>Data de resposta <span class="required-star">*</span></label><input type="date" id="data"></div>
+      <div class="field"><label>Data de Resposta <span class="required-star">*</span></label><input type="date" id="data"></div>
     </div>
     <div class="grid-2">
       <div class="field"><label>Função <span class="required-star">*</span></label><input type="text" id="funcao" placeholder="Ex: Fisioterapeuta"></div>
@@ -149,6 +153,40 @@
       <div class="field" style="margin-top:0.75rem;">
         <label>Comentários sobre a Organizacao</label>
         <textarea id="comentario_organizacao" placeholder="Observações adicionais..." style="min-height:70px;"></textarea>
+      </div>
+    </div>
+
+    <!-- Pontualidade -->
+    <div class="field" style="margin-top:1.25rem;">
+      <span class="q-label">Pontualidade <span class="required-star">*</span></span>
+      <span class="q-desc">É chegar na hora marcada, ser exato no cumprimento das suas obrigações e fazer com exatidão ou no prazo combinado as atividades que lhes são propostas.</span>
+      <div class="radio-group" id="rg-pontualidade">
+        <label class="radio-opt"><input type="radio" name="pontualidade" value="Excelente."><span>Excelente.</span></label>
+        <label class="radio-opt"><input type="radio" name="pontualidade" value="Bom."><span>Bom.</span></label>
+        <label class="radio-opt"><input type="radio" name="pontualidade" value="Regular."><span>Regular.</span></label>
+        <label class="radio-opt"><input type="radio" name="pontualidade" value="Ruim."><span>Ruim.</span></label>
+      </div>
+      <div class="error-msg" id="err-pontualidade">Selecione uma opção.</div>
+      <div class="field" style="margin-top:0.75rem;">
+        <label>Comentários sobre a Pontualidade</label>
+        <textarea id="comentario_pontualidade" placeholder="Observações adicionais..." style="min-height:70px;"></textarea>
+      </div>
+    </div>
+
+    <!-- Habilidades com Tecnologias -->
+    <div class="field" style="margin-top:1.25rem;">
+      <span class="q-label">Habilidades com as Tecnologias <span class="required-star">*</span></span>
+      <span class="q-desc">É a adaptação às tecnologias, processos e ferramentas utilizadas na ZenFisio.</span>
+      <div class="radio-group" id="rg-tecnologias">
+        <label class="radio-opt"><input type="radio" name="tecnologias" value="Excelente."><span>Excelente.</span></label>
+        <label class="radio-opt"><input type="radio" name="tecnologias" value="Bom."><span>Bom.</span></label>
+        <label class="radio-opt"><input type="radio" name="tecnologias" value="Regular."><span>Regular.</span></label>
+        <label class="radio-opt"><input type="radio" name="tecnologias" value="Ruim."><span>Ruim.</span></label>
+      </div>
+      <div class="error-msg" id="err-tecnologias">Selecione uma opção.</div>
+      <div class="field" style="margin-top:0.75rem;">
+        <label>Comentários sobre Habilidades com Tecnologias</label>
+        <textarea id="comentario_tecnologias" placeholder="Observações adicionais..." style="min-height:70px;"></textarea>
       </div>
     </div>
   </div>
@@ -256,7 +294,7 @@ function validar() {
     if (!el.value.trim()) { el.style.borderColor='#c0392b'; ok=false; }
     else { el.style.borderColor=''; }
   });
-  ['disciplina','cooperacao','iniciativa','organizacao','produtividade','fit','desempenho_geral','parecer'].forEach(n => {
+  ['disciplina','cooperacao','iniciativa','organizacao','pontualidade','tecnologias','produtividade','fit','desempenho_geral','parecer'].forEach(n => {
     const sel = document.querySelector('input[name='+n+']:checked');
     const err = document.getElementById('err-'+n);
     if (!sel) { err.style.display='block'; ok=false; }
@@ -287,6 +325,10 @@ async function salvar() {
     comentario_iniciativa: document.getElementById('comentario_iniciativa').value,
     organizacao: document.querySelector('input[name=organizacao]:checked')?.value,
     comentario_organizacao: document.getElementById('comentario_organizacao').value,
+    pontualidade: document.querySelector('input[name=pontualidade]:checked')?.value,
+    comentario_pontualidade: document.getElementById('comentario_pontualidade').value,
+    tecnologias: document.querySelector('input[name=tecnologias]:checked')?.value,
+    comentario_tecnologias: document.getElementById('comentario_tecnologias').value,
     produtividade: document.querySelector('input[name=produtividade]:checked')?.value,
     comentario_produtividade: document.getElementById('comentario_produtividade').value,
     fit: document.querySelector('input[name=fit]:checked')?.value,

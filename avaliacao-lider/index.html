@@ -98,6 +98,10 @@
         <label class="radio-opt"><input type="radio" name="disciplina" value="Ruim."><span>Ruim.</span></label>
       </div>
       <div class="error-msg" id="err-disciplina">Selecione uma opção.</div>
+      <div class="field" style="margin-top:0.75rem;">
+        <label>Comentários sobre a Disciplina</label>
+        <textarea id="comentario_disciplina" placeholder="Observações adicionais..." style="min-height:70px;"></textarea>
+      </div>
     </div>
 
     <div class="field" style="margin-top:1.25rem">
@@ -110,6 +114,10 @@
         <label class="radio-opt"><input type="radio" name="cooperacao" value="Ruim."><span>Ruim.</span></label>
       </div>
       <div class="error-msg" id="err-cooperacao">Selecione uma opção.</div>
+      <div class="field" style="margin-top:0.75rem;">
+        <label>Comentários sobre a Cooperacao</label>
+        <textarea id="comentario_cooperacao" placeholder="Observações adicionais..." style="min-height:70px;"></textarea>
+      </div>
     </div>
 
     <div class="field" style="margin-top:1.25rem">
@@ -122,6 +130,10 @@
         <label class="radio-opt"><input type="radio" name="iniciativa" value="Ruim."><span>Ruim.</span></label>
       </div>
       <div class="error-msg" id="err-iniciativa">Selecione uma opção.</div>
+      <div class="field" style="margin-top:0.75rem;">
+        <label>Comentários sobre a Iniciativa</label>
+        <textarea id="comentario_iniciativa" placeholder="Observações adicionais..." style="min-height:70px;"></textarea>
+      </div>
     </div>
 
     <div class="field" style="margin-top:1.25rem">
@@ -134,6 +146,10 @@
         <label class="radio-opt"><input type="radio" name="organizacao" value="Ruim."><span>Ruim.</span></label>
       </div>
       <div class="error-msg" id="err-organizacao">Selecione uma opção.</div>
+      <div class="field" style="margin-top:0.75rem;">
+        <label>Comentários sobre a Organizacao</label>
+        <textarea id="comentario_organizacao" placeholder="Observações adicionais..." style="min-height:70px;"></textarea>
+      </div>
     </div>
   </div>
 
@@ -264,9 +280,13 @@ async function salvar() {
     funcao: document.getElementById('funcao').value,
     lider: document.getElementById('lider').value,
     disciplina: document.querySelector('input[name=disciplina]:checked')?.value,
+    comentario_disciplina: document.getElementById('comentario_disciplina').value,
     cooperacao: document.querySelector('input[name=cooperacao]:checked')?.value,
+    comentario_cooperacao: document.getElementById('comentario_cooperacao').value,
     iniciativa: document.querySelector('input[name=iniciativa]:checked')?.value,
+    comentario_iniciativa: document.getElementById('comentario_iniciativa').value,
     organizacao: document.querySelector('input[name=organizacao]:checked')?.value,
+    comentario_organizacao: document.getElementById('comentario_organizacao').value,
     produtividade: document.querySelector('input[name=produtividade]:checked')?.value,
     comentario_produtividade: document.getElementById('comentario_produtividade').value,
     fit: document.querySelector('input[name=fit]:checked')?.value,

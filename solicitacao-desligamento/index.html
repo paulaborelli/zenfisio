@@ -30,36 +30,38 @@
     font-family: 'DM Sans', sans-serif;
     background: var(--bg);
     color: var(--text);
+    padding: 2rem 1rem 5rem;
     min-height: 100vh;
     padding: 2.5rem 1rem 5rem;
     font-size: 15px;
     line-height: 1.6;
   }
 
-  .page-wrap { max-width: 720px; margin: 0 auto; }
+  .page-wrap { max-width: 760px; margin: 0 auto; }
 
   /* Header */
   .page-header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    margin-bottom: 2rem;
+    gap: 1rem;
+    margin-bottom: 1.75rem;
   }
   .brand { display: flex; align-items: center; gap: 12px; }
   .brand-icon {
-    width: 48px; height: 48px;
+    width: 52px; height: 52px;
     border-radius: 50%;
     overflow: hidden;
     flex-shrink: 0;
   }
   .brand-name {
-    font-family: 'DM Serif Display', serif;
-    font-size: 20px;
-    color: var(--text);
-    letter-spacing: -0.3px;
+    font-family: 'Lora', serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #4A7C59;
+    line-height: 1.2;
     display: block;
   }
-  .brand-sub { font-size: 12px; color: var(--text-hint); }
+  .brand-sub { font-size: 0.85rem; color: var(--text-hint); margin-top: 2px; }
   .rec-id {
     font-size: 11px; color: var(--text-hint);
     background: var(--surface); border: 1px solid var(--border);
@@ -230,7 +232,7 @@
   .hist-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
   .hist-nome { font-weight: 600; font-size: 14px; color: var(--text); }
   .hist-tag { font-size: 11px; font-weight: 500; background: var(--surface2); color: var(--text-muted); padding: 2px 8px; border-radius: 4px; }
-  .hist-data { font-size: 12px; color: var(--text-hint); margin-left: auto; }
+  .hist-data { font-size: 0.85rem; color: var(--text-hint); margin-top: 2px; margin-left: auto; }
   .hist-body { font-size: 13px; color: var(--text-muted); line-height: 1.55; }
   .hist-body b { color: var(--text); font-weight: 500; }
   .hist-del { position: absolute; top: 10px; right: 12px; font-size: 17px; color: var(--text-hint); cursor: pointer; background: none; border: none; padding: 2px 5px; border-radius: 4px; line-height: 1; }
@@ -249,17 +251,14 @@
     body { background: white; padding: 0; }
     .form-footer .btn-ghost, .historico-section { display: none; }
     .card { break-inside: avoid; }
-  }  @media print {@media print {}@media print {}@media print {}
-  .count-badge { display: none !important; }
+  }
   .rec-id { display: none !important; }
-
+  .count-badge { display: none !important; }
   @media print { .no-print { display: none !important; } }
 </style>
 </head>
 <body>
-<a href="../index.html" style="display:inline-flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;font-size:0.82rem;font-weight:600;color:#4A7C59;text-decoration:none;padding:6px 14px;border-radius:8px;border:1.5px solid #4A7C59;background:white;transition:background 0.15s;margin-bottom:1.5rem;" onmouseover="this.style.background='#EAF2EC'" onmouseout="this.style.background='white'" class="no-print">← Início</a>
-
-
+<a href="../index.html" style="position:fixed;top:1rem;left:1rem;z-index:9999;display:inline-flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;font-size:0.82rem;font-weight:600;color:#4A7C59;text-decoration:none;padding:6px 14px;border-radius:8px;border:1.5px solid #4A7C59;background:white;box-shadow:0 2px 6px rgba(0,0,0,0.08);transition:background 0.15s;" onmouseover="this.style.background='#EAF2EC'" onmouseout="this.style.background='white'" class="no-print">← Início</a>
 
 
 <div class="page-wrap">
@@ -273,7 +272,7 @@
         <span class="brand-sub">Solicitação de Desligamento</span>
       </div>
     </div>
-    <span class="rec-id" style="display:none" id="rec-id">—</span>
+    <span class="rec-id" id="rec-id">—</span>
   </div>
 
   <!-- Dados funcionais -->

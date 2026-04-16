@@ -250,6 +250,17 @@
     .form-footer .btn-ghost, .historico-section { display: none; }
     .card { break-inside: avoid; }
   }
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: "DM Sans", sans-serif; font-size: 0.82rem; font-weight: 600;
+    color: #4A7C59; text-decoration: none;
+    padding: 6px 14px; border-radius: 8px;
+    border: 1.5px solid #4A7C59;
+    background: white; transition: all 0.15s;
+    position: absolute; top: 1rem; left: 1rem; z-index: 10;
+  }
+  .back-btn:hover { background: #EAF2EC; }
+  @media print { .back-btn { display: none !important; } }
 </style>
 </head>
 <body>
@@ -471,7 +482,7 @@
   <div class="historico-section">
     <div class="historico-header">
       <span class="historico-title">Histórico de registros</span>
-      <span class="count-badge" id="count-badge">0</span>
+      <span class="count-badge" style="display:none" id="count-badge">0</span>
     </div>
     <div id="historico-lista"></div>
     <div style="margin-top: 10px; text-align: right;">

@@ -249,6 +249,10 @@
     body { background: white; padding: 0; }
     .form-footer .btn-ghost, .historico-section { display: none; }
     .card { break-inside: avoid; }
+  }  @media print {@media print {}@media print {}  .back-btn-wrap {
+    padding: 1rem 1.5rem 0;
+    max-width: 860px;
+    margin: 0 auto;
   }
   .back-btn {
     display: inline-flex; align-items: center; gap: 6px;
@@ -257,13 +261,16 @@
     padding: 6px 14px; border-radius: 8px;
     border: 1.5px solid #4A7C59;
     background: white; transition: all 0.15s;
-    position: absolute; top: 1rem; left: 1rem; z-index: 10;
   }
   .back-btn:hover { background: #EAF2EC; }
-  @media print { .back-btn { display: none !important; } }
+  @media print { .back-btn-wrap { display: none !important; } }
+  .count-badge { display: none !important; }
+  .rec-id { display: none !important; }
 </style>
 </head>
 <body>
+
+
 
 <div class="page-wrap">
 
@@ -276,7 +283,7 @@
         <span class="brand-sub">Solicitação de Desligamento</span>
       </div>
     </div>
-    <span class="rec-id" id="rec-id">—</span>
+    <span class="rec-id" style="display:none" id="rec-id">—</span>
   </div>
 
   <!-- Dados funcionais -->
@@ -482,7 +489,7 @@
   <div class="historico-section">
     <div class="historico-header">
       <span class="historico-title">Histórico de registros</span>
-      <span class="count-badge" style="display:none" id="count-badge">0</span>
+      <span class="count-badge" id="count-badge">0</span>
     </div>
     <div id="historico-lista"></div>
     <div style="margin-top: 10px; text-align: right;">

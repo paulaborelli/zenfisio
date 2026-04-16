@@ -239,7 +239,7 @@
         ✍️ Assinaturas <span class="tab-pill" id="tPill-sign">0/6</span>
       </button>
       <button class="tab-btn" onclick="switchTab('reg', this)">
-        🖥️ Registros <span class="tab-pill" id="tPill-reg">0/6</span>
+        🖥️ Registros <span class="tab-pill" id="tPill-reg">0/8</span>
       </button>
     </div>
 
@@ -318,12 +318,13 @@
         <ul class="cl-list" id="list-reg-rh">
           <li class="cl-item" onclick="toggleItem(this,'reg',0)"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Senha de acesso à porta — reconhecimento facial</span></li>
           <li class="cl-item" onclick="toggleItem(this,'reg',1)"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Cadastro do Empregado no Sistema Ponto</span></li>
-          <li class="cl-item" onclick="toggleItem(this,'reg',2)"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Cadastro do Colaborador no Cartão Caju (em até 3 dias)</span></li>
-          <li class="cl-item" onclick="toggleItem(this,'reg',2)"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Subir documentos no Drive - Pasta Individual) (em até 7 dias)</span></li>
+          <li class="cl-item" onclick="toggleItem(this,'reg',2)"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Cadastro do Colaborador no Cartão Caju</span></li>
+          <li class="cl-item" onclick="toggleItem(this,'reg',3)"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Subir documentos no Drive — Pasta Individual <em style="color:var(--text-hint);font-size:0.85em;">(em até 7 dias)</em></span></li>
+          <li class="cl-item" onclick="toggleItem(this,'reg',4)"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Cadastro do(a) Colaborador(a) na Planilha de RH</span></li>
         </ul>
         <div class="cl-footer green">
           <div class="prog-track"><div class="prog-fill" id="bar-reg-rh"></div></div>
-          <div class="prog-label" id="lbl-reg-rh">0 de 3 itens realizados (RH)</div>
+          <div class="prog-label" id="lbl-reg-rh">0 de 5 itens realizados (RH)</div>
         </div>
       </div>
       <div class="cl-card">
@@ -332,9 +333,9 @@
           <span class="resp-tag tag-dir">Diretor</span>
         </div>
         <ul class="cl-list" id="list-reg-dir">
-          <li class="cl-item" onclick="toggleItem(this,'reg',3)"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Criação de E-mail (ZenFisio e Drive)</span></li>
-          <li class="cl-item" onclick="toggleItem(this,'reg',4)"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Criação de Conta no Slack</span></li>
-          <li class="cl-item" onclick="toggleItem(this,'reg',5)"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Encaminhamento para criação de usuário nas ferramentas de trabalho (conforme setor)</span></li>
+          <li class="cl-item" onclick="toggleItem(this,'reg',5)"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Criação de E-mail (ZenFisio e Drive)</span></li>
+          <li class="cl-item" onclick="toggleItem(this,'reg',6)"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Criação de Conta no Slack</span></li>
+          <li class="cl-item" onclick="toggleItem(this,'reg',7)"><div class="chkbox"><svg viewBox="0 0 12 10"><polyline points="1,5 4,9 11,1"/></svg></div><span class="cl-label">Encaminhamento para criação de usuário nas ferramentas de trabalho (conforme setor)</span></li>
         </ul>
         <div class="cl-footer blue">
           <div class="prog-track"><div class="prog-fill prog-fill blue" id="bar-reg-dir" style="background:var(--blue)"></div></div>
@@ -357,7 +358,7 @@
 
 <script>
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx6jSF6uqsxoA1a4iJtLMqcIDenmOszini4Z3BuXqA77ENbqWC4QuyKHRrIOqRnKKxn-Q/exec';
-const GRUPOS = { docs: 14, sign: 6, reg: 6 };
+const GRUPOS = { docs: 14, sign: 6, reg: 8 };
 let currentColab = null;
 let state = { docs: [], sign: [], reg: [] };
 

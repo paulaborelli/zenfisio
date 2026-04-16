@@ -34,10 +34,10 @@
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
   /* Radio horizontal: bolinha ANTES do texto */
   .radio-group { display: flex; flex-direction: column; gap: 0.45rem; margin-top: 0.5rem; }
-  .radio-opt { display: flex; align-items: flex-start; gap: 0.6rem; cursor: pointer; padding: 0.45rem 0.6rem; border-radius: 6px; transition: background 0.12s; }
+  .radio-opt { display: flex !important; flex-direction: row !important; align-items: center !important; gap: 16px !important; cursor: pointer; padding: 0.5rem 0.75rem; border-radius: 6px; transition: background 0.12s; }
   .radio-opt:hover { background: var(--accent-light); }
-  .radio-opt input[type=radio] { margin-top: 3px; accent-color: var(--accent); flex-shrink: 0; width: 16px; height: 16px; cursor: pointer; }
-  .radio-opt span { font-size: 0.9rem; color: var(--text); line-height: 1.45; }
+  .radio-opt input[type=radio] { flex-shrink: 0 !important; width: 17px !important; height: 17px !important; margin: 0 !important; cursor: pointer; accent-color: #4A7C59; appearance: auto; }
+  .radio-opt span { font-size: 0.9rem; color: var(--text); line-height: 1.5; }
   .q-label { font-size: 0.9rem; font-weight: 600; color: var(--text); margin-bottom: 0.2rem; display: block; }
   .q-desc { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.6rem; line-height: 1.45; font-style: italic; }
   .required-star { color: #c0392b; margin-left: 2px; }

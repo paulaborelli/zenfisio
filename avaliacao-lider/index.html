@@ -7,46 +7,78 @@
 <link href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root { --bg:#F2F4F0;--surface:#FFFFFF;--border:#DDE0D8;--border-focus:#4A7C59;--text:#1C201A;--text-muted:#5E6659;--text-hint:#9AA394;--accent:#4A7C59;--accent-light:#EAF2EC;--radius:12px;--radius-sm:8px; }
-  body { font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);padding:2rem 1rem 5rem; }
-  .container { max-width:760px;margin:0 auto; }
-  .page-header { display:flex;align-items:center;gap:1rem;margin-bottom:1.75rem; }
-  .header-logo { width:52px;height:52px;border-radius:50%;object-fit:cover;flex-shrink:0; }
-  .page-header h1 { font-family:'Lora',serif;font-size:1.4rem;font-weight:700;color:var(--accent);line-height:1.2; }
-  .page-header p { font-size:0.85rem;color:var(--text-hint);margin-top:2px; }
-  .card { background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;margin-bottom:1.25rem; }
-  .section-label { font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-hint);margin-bottom:1.25rem;padding-bottom:0.6rem;border-bottom:1px solid var(--border); }
-  .field { margin-bottom:1.25rem; }
-  .field:last-child { margin-bottom:0; }
-  .field label { display:block;font-size:0.875rem;font-weight:600;color:var(--text-muted);margin-bottom:0.4rem; }
-  .field input[type=text],.field input[type=date],.field textarea {
-    width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);
-    font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);background:var(--surface);transition:border-color 0.15s;outline:none;
+  :root {
+    --bg: #F2F4F0; --surface: #FFFFFF; --border: #DDE0D8; --border-focus: #4A7C59;
+    --text: #1C201A; --text-muted: #5E6659; --text-hint: #9AA394;
+    --accent: #4A7C59; --accent-light: #EAF2EC; --radius: 12px; --radius-sm: 8px;
   }
-  .field input:focus,.field textarea:focus { border-color:var(--border-focus);box-shadow:0 0 0 3px rgba(74,124,89,0.1); }
-  .field textarea { min-height:80px;resize:vertical; }
-  .grid-2 { display:grid;grid-template-columns:1fr 1fr;gap:1rem; }
-  .radio-group { display:flex;flex-direction:column;gap:0.4rem;margin-top:0.5rem; }
-  .radio-opt { display: flex !important; flex-direction: row !important; align-items: center !important; gap: 16px !important; cursor: pointer; padding: 0.5rem 0.75rem; border-radius: 6px; transition: background 0.12s; }
-  .radio-opt:hover { background:var(--accent-light); }
-  .radio-opt input[type=radio] { flex-shrink: 0 !important; width: 17px !important; height: 17px !important; margin: 0 !important; cursor: pointer; accent-color: #4A7C59; appearance: auto; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); padding: 2rem 1rem 5rem; }
+  .container { max-width: 760px; margin: 0 auto; }
+  .page-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.75rem; }
+  .header-logo { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+  .page-header h1 { font-family: 'Lora', serif; font-size: 1.4rem; font-weight: 700; color: var(--accent); line-height: 1.2; }
+  .page-header p { font-size: 0.85rem; color: var(--text-hint); margin-top: 2px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.25rem; }
+  .section-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-hint); margin-bottom: 1.25rem; padding-bottom: 0.6rem; border-bottom: 1px solid var(--border); }
+  .field { margin-bottom: 1.4rem; }
+  .field:last-child { margin-bottom: 0; }
+  .field label { display: block; font-size: 0.875rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.4rem; }
+  .field input[type=text], .field input[type=date], .field textarea {
+    width: 100%; padding: 10px 13px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text);
+    background: var(--surface); transition: border-color 0.15s; outline: none;
+  }
+  .field input:focus, .field textarea:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(74,124,89,0.1); }
+  .field textarea { min-height: 80px; resize: vertical; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  /* ── Radio buttons ── */
+  .radio-group { display: flex; flex-direction: column; gap: 4px; margin-top: 0.6rem; }
+  .radio-opt {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 14px !important;
+    cursor: pointer;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    transition: background 0.12s;
+  }
+  .radio-opt:hover { background: var(--accent-light); }
+  .radio-opt input[type=radio] {
+    flex-shrink: 0 !important;
+    width: 17px !important;
+    height: 17px !important;
+    min-width: 17px !important;
+    margin: 0 !important;
+    cursor: pointer;
+    accent-color: #4A7C59;
+  }
   .radio-opt span { font-size: 0.9rem; color: var(--text); line-height: 1.5; }
-  .q-label { font-size:0.9rem;font-weight:700;color:var(--text);margin-bottom:0.2rem;display:block; }
-  .q-desc { font-size:0.82rem;color:var(--text-muted);margin-bottom:0.6rem;line-height:1.45;font-style:italic; }
-  .required-star { color:#c0392b;margin-left:2px; }
-  .conceitos { background:var(--accent-light);border:1px solid #c3dac9;border-radius:var(--radius-sm);padding:1rem 1.1rem;margin-bottom:1.5rem;font-size:0.84rem;color:#2d5438;line-height:1.7; }
-  .form-footer { display:flex;justify-content:flex-end;gap:0.75rem;margin-top:2rem; }
-  .btn { display:inline-flex;align-items:center;gap:6px;padding:10px 22px;border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;border:none;transition:all 0.15s; }
-  .btn-primary { background:var(--accent);color:white; }
-  .btn-primary:hover { background:#3a6347; }
-  .btn-primary:disabled { background:#a0b8a8;cursor:not-allowed; }
-  .btn-ghost { background:transparent;color:var(--accent);border:1.5px solid var(--accent); }
-  .btn-ghost:hover { background:var(--accent-light); }
-  .error-msg { color:#c0392b;font-size:0.8rem;margin-top:4px;display:none; }
-  .toast { position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);color:white;padding:12px 24px;border-radius:8px;font-size:0.9rem;font-weight:600;z-index:9999;opacity:0;transition:opacity 0.3s;pointer-events:none; }
-  .toast.show { opacity:1; }
-  @media print { .no-print { display:none !important; } }
-  @media (max-width:600px) { .grid-2 { grid-template-columns:1fr; } }
+  /* ── Outro wrap ── */
+  .outro-wrap { display: none; margin: 0.4rem 0 0.2rem 2.5rem; }
+  .outro-input { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none; }
+  .outro-input:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(74,124,89,0.1); }
+  /* ── Other ── */
+  .q-label { font-size: 0.9rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; display: block; }
+  .q-desc { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.3rem; line-height: 1.45; font-style: italic; display: block; }
+  .required-star { color: #c0392b; margin-left: 2px; }
+  .conceitos { background: var(--accent-light); border: 1px solid #c3dac9; border-radius: var(--radius-sm); padding: 1rem 1.1rem; margin-bottom: 1.5rem; font-size: 0.84rem; color: #2d5438; line-height: 1.8; }
+  .conceitos b { color: #1e3d27; }
+  .comentario-field { margin-top: 0.75rem; margin-bottom: 0; }
+  .comentario-field label { font-size: 0.83rem; font-weight: 600; color: var(--text-hint); }
+  .comentario-field textarea { min-height: 68px; }
+  .form-footer { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 2rem; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 22px; border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: #3a6347; }
+  .btn-primary:disabled { background: #a0b8a8; cursor: not-allowed; }
+  .btn-ghost { background: transparent; color: var(--accent); border: 1.5px solid var(--accent); }
+  .btn-ghost:hover { background: var(--accent-light); }
+  .error-msg { color: #c0392b; font-size: 0.8rem; margin-top: 4px; display: none; }
+  .toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); color: white; padding: 12px 24px; border-radius: 8px; font-size: 0.9rem; font-weight: 600; z-index: 9999; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+  @media print { .no-print { display: none !important; } }
+  @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -93,7 +125,7 @@
     <div class="section-label">Adaptação à Empresa</div>
     <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1.5rem;">Como você classifica o(a) colaborador(a) nos seguintes aspectos:</p>
 
-    <div class="field">
+        <div class="field">
       <span class="q-label">Disciplina <span class="required-star">*</span></span>
       <span class="q-desc">É a disponibilidade que o colaborador tem em seguir as normas e regras propostas pela empresa e que competem a sua função.</span>
       <div class="radio-group" id="rg-disciplina">
@@ -103,18 +135,16 @@
         <label class="radio-opt"><input type="radio" name="disciplina" value="Ruim." onclick="toggleOutro('disciplina',false)"><span>Ruim.</span></label>
         <label class="radio-opt"><input type="radio" name="disciplina" value="outro" onclick="toggleOutro('disciplina',true)"><span>Outro</span></label>
       </div>
-      <div id="disciplina-outro-wrap" style="display:none;margin-top:0.5rem;">
-        <input type="text" id="disciplina_outro_texto" placeholder="Descreva..." style="width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;">
+      <div id="disciplina-outro-wrap" class="outro-wrap">
+        <input type="text" id="disciplina_outro_texto" class="outro-input" placeholder="Descreva...">
       </div>
       <div class="error-msg" id="err-disciplina">Selecione uma opção.</div>
-      <div class="field" style="margin-top:0.75rem;">
+      <div class="field comentario-field">
         <label>Comentários sobre a Disciplina</label>
-        <textarea id="comentario_disciplina" placeholder="Observações adicionais..." style="min-height:70px;"></textarea>
+        <textarea id="comentario_disciplina" placeholder="Observações adicionais..."></textarea>
       </div>
     </div>
-
-      <!-- Pontualidade -->
-    <div class="field" style="margin-top:1.25rem;">
+        <div class="field">
       <span class="q-label">Pontualidade <span class="required-star">*</span></span>
       <span class="q-desc">É chegar na hora marcada, ser exato no cumprimento das suas obrigações e fazer com exatidão ou no prazo combinado as atividades que lhes são propostas.</span>
       <div class="radio-group" id="rg-pontualidade">
@@ -124,39 +154,35 @@
         <label class="radio-opt"><input type="radio" name="pontualidade" value="Ruim." onclick="toggleOutro('pontualidade',false)"><span>Ruim.</span></label>
         <label class="radio-opt"><input type="radio" name="pontualidade" value="outro" onclick="toggleOutro('pontualidade',true)"><span>Outro</span></label>
       </div>
-      <div id="pontualidade-outro-wrap" style="display:none;margin-top:0.5rem;">
-        <input type="text" id="pontualidade_outro_texto" placeholder="Descreva..." style="width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;">
+      <div id="pontualidade-outro-wrap" class="outro-wrap">
+        <input type="text" id="pontualidade_outro_texto" class="outro-input" placeholder="Descreva...">
       </div>
       <div class="error-msg" id="err-pontualidade">Selecione uma opção.</div>
-      <div class="field" style="margin-top:0.75rem;">
+      <div class="field comentario-field">
         <label>Comentários sobre a Pontualidade</label>
-        <textarea id="comentario_pontualidade" placeholder="Observações adicionais..." style="min-height:70px;"></textarea>
+        <textarea id="comentario_pontualidade" placeholder="Observações adicionais..."></textarea>
       </div>
     </div>
-
-<div class="field" style="margin-top:1.25rem">
+        <div class="field">
       <span class="q-label">Senso de Coletividade <span class="required-star">*</span></span>
       <span class="q-desc">É o cuidado que possui com a limpeza e a organização da empresa, bem como tempo de intervalo e consumos.</span>
-      <div class="radio-group" id="rg-fit">
-        <label class="radio-opt"><input type="radio" name="fit" value="Excelente." onclick="toggleOutro('fit',false)"><span>Excelente.</span></label>
-        <label class="radio-opt"><input type="radio" name="fit" value="Bom." onclick="toggleOutro('fit',false)"><span>Bom.</span></label>
-        <label class="radio-opt"><input type="radio" name="fit" value="Regular." onclick="toggleOutro('fit',false)"><span>Regular.</span></label>
-        <label class="radio-opt"><input type="radio" name="fit" value="Ruim." onclick="toggleOutro('fit',false)"><span>Ruim.</span></label>
-        <label class="radio-opt"><input type="radio" name="fit" value="outro" onclick="toggleOutro('fit',true)"><span>Outro</span></label>
+      <div class="radio-group" id="rg-coletividade">
+        <label class="radio-opt"><input type="radio" name="coletividade" value="Excelente." onclick="toggleOutro('coletividade',false)"><span>Excelente.</span></label>
+        <label class="radio-opt"><input type="radio" name="coletividade" value="Bom." onclick="toggleOutro('coletividade',false)"><span>Bom.</span></label>
+        <label class="radio-opt"><input type="radio" name="coletividade" value="Regular." onclick="toggleOutro('coletividade',false)"><span>Regular.</span></label>
+        <label class="radio-opt"><input type="radio" name="coletividade" value="Ruim." onclick="toggleOutro('coletividade',false)"><span>Ruim.</span></label>
+        <label class="radio-opt"><input type="radio" name="coletividade" value="outro" onclick="toggleOutro('coletividade',true)"><span>Outro</span></label>
       </div>
-      <div id="fit-outro-wrap" style="display:none;margin-top:0.5rem;" style="display:none;margin-top:0.5rem;">
-        <input type="text" id="fit_outro_texto" placeholder="Descreva..." style="width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;">
+      <div id="coletividade-outro-wrap" class="outro-wrap">
+        <input type="text" id="coletividade_outro_texto" class="outro-input" placeholder="Descreva...">
       </div>
-      <div class="error-msg" id="err-fit">Selecione uma opção.</div>
+      <div class="error-msg" id="err-coletividade">Selecione uma opção.</div>
+      <div class="field comentario-field">
+        <label>Comentários sobre o Senso de Coletividade</label>
+        <textarea id="comentario_coletividade" placeholder="Observações adicionais..."></textarea>
+      </div>
     </div>
-
-    <div class="field" style="margin-top:1.25rem;">
-      <label>Comentários sobre o Senso de Coletividade</label>
-      <textarea id="comentario_fit" placeholder="Observações sobre o senso de coletividade..."></textarea>
-    </div>
-  </div>
-   
-<div class="field" style="margin-top:1.25rem">
+        <div class="field">
       <span class="q-label">Fit Cultural <span class="required-star">*</span></span>
       <span class="q-desc">É a capacidade de adaptação aos processos e comportamentos já estabelecidos na ZenFisio.</span>
       <div class="radio-group" id="rg-fit">
@@ -166,23 +192,22 @@
         <label class="radio-opt"><input type="radio" name="fit" value="Ruim." onclick="toggleOutro('fit',false)"><span>Ruim.</span></label>
         <label class="radio-opt"><input type="radio" name="fit" value="outro" onclick="toggleOutro('fit',true)"><span>Outro</span></label>
       </div>
-      <div id="fit-outro-wrap" style="display:none;margin-top:0.5rem;" style="display:none;margin-top:0.5rem;">
-        <input type="text" id="fit_outro_texto" placeholder="Descreva..." style="width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;">
+      <div id="fit-outro-wrap" class="outro-wrap">
+        <input type="text" id="fit_outro_texto" class="outro-input" placeholder="Descreva...">
       </div>
       <div class="error-msg" id="err-fit">Selecione uma opção.</div>
-    </div>
-
-    <div class="field" style="margin-top:1.25rem;">
-      <label>Comentários sobre o Fit Cultural</label>
-      <textarea id="comentario_fit" placeholder="Observações sobre adaptação cultural..."></textarea>
+      <div class="field comentario-field">
+        <label>Comentários sobre o Fit Cultural</label>
+        <textarea id="comentario_fit" placeholder="Observações adicionais..."></textarea>
+      </div>
     </div>
   </div>
-   
-     <!-- DESEMPENHO -->
+
+  <!-- DESEMPENHO -->
   <div class="card">
     <div class="section-label">Desempenho</div>
 
-    <div class="field">
+        <div class="field">
       <span class="q-label">Produtividade <span class="required-star">*</span></span>
       <span class="q-desc">É o nível de desempenho e entrega do colaborador em relação ao que é esperado para a função.</span>
       <div class="radio-group" id="rg-produtividade">
@@ -192,18 +217,16 @@
         <label class="radio-opt"><input type="radio" name="produtividade" value="Ruim." onclick="toggleOutro('produtividade',false)"><span>Ruim.</span></label>
         <label class="radio-opt"><input type="radio" name="produtividade" value="outro" onclick="toggleOutro('produtividade',true)"><span>Outro</span></label>
       </div>
-      <div id="produtividade-outro-wrap" style="display:none;margin-top:0.5rem;">
-        <input type="text" id="produtividade_outro_texto" placeholder="Descreva..." style="width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;">
+      <div id="produtividade-outro-wrap" class="outro-wrap">
+        <input type="text" id="produtividade_outro_texto" class="outro-input" placeholder="Descreva...">
       </div>
       <div class="error-msg" id="err-produtividade">Selecione uma opção.</div>
+      <div class="field comentario-field">
+        <label>Comentários sobre a Produtividade</label>
+        <textarea id="comentario_produtividade" placeholder="Observações adicionais..."></textarea>
+      </div>
     </div>
-
-     <div class="field" style="margin-top:1.25rem;">
-      <label>Comentários sobre a Produtividade</label>
-      <textarea id="comentario_produtividade" placeholder="Observações adicionais..."></textarea>
-    </div>
-
-     <div class="field" style="margin-top:1.25rem">
+        <div class="field">
       <span class="q-label">Cooperação <span class="required-star">*</span></span>
       <span class="q-desc">É a capacidade de agir em grupo de forma solidária e colaborativa; contribuindo junto à equipe e demonstrando atitudes de trabalhar pelo mesmo objetivo.</span>
       <div class="radio-group" id="rg-cooperacao">
@@ -213,17 +236,16 @@
         <label class="radio-opt"><input type="radio" name="cooperacao" value="Ruim." onclick="toggleOutro('cooperacao',false)"><span>Ruim.</span></label>
         <label class="radio-opt"><input type="radio" name="cooperacao" value="outro" onclick="toggleOutro('cooperacao',true)"><span>Outro</span></label>
       </div>
-      <div id="cooperacao-outro-wrap" style="display:none;margin-top:0.5rem;">
-        <input type="text" id="cooperacao_outro_texto" placeholder="Descreva..." style="width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;">
+      <div id="cooperacao-outro-wrap" class="outro-wrap">
+        <input type="text" id="cooperacao_outro_texto" class="outro-input" placeholder="Descreva...">
       </div>
       <div class="error-msg" id="err-cooperacao">Selecione uma opção.</div>
-      <div class="field" style="margin-top:0.75rem;">
+      <div class="field comentario-field">
         <label>Comentários sobre a Cooperação</label>
-        <textarea id="comentario_cooperacao" placeholder="Observações adicionais..." style="min-height:70px;"></textarea>
+        <textarea id="comentario_cooperacao" placeholder="Observações adicionais..."></textarea>
       </div>
     </div>
-
-    <div class="field" style="margin-top:1.25rem">
+        <div class="field">
       <span class="q-label">Iniciativa <span class="required-star">*</span></span>
       <span class="q-desc">É a vontade de fazer mais, propor soluções, começar algo, sugerir melhorias, sem que alguém precise solicitar.</span>
       <div class="radio-group" id="rg-iniciativa">
@@ -233,17 +255,16 @@
         <label class="radio-opt"><input type="radio" name="iniciativa" value="Ruim." onclick="toggleOutro('iniciativa',false)"><span>Ruim.</span></label>
         <label class="radio-opt"><input type="radio" name="iniciativa" value="outro" onclick="toggleOutro('iniciativa',true)"><span>Outro</span></label>
       </div>
-      <div id="iniciativa-outro-wrap" style="display:none;margin-top:0.5rem;">
-        <input type="text" id="iniciativa_outro_texto" placeholder="Descreva..." style="width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;">
+      <div id="iniciativa-outro-wrap" class="outro-wrap">
+        <input type="text" id="iniciativa_outro_texto" class="outro-input" placeholder="Descreva...">
       </div>
       <div class="error-msg" id="err-iniciativa">Selecione uma opção.</div>
-      <div class="field" style="margin-top:0.75rem;">
+      <div class="field comentario-field">
         <label>Comentários sobre a Iniciativa</label>
-        <textarea id="comentario_iniciativa" placeholder="Observações adicionais..." style="min-height:70px;"></textarea>
+        <textarea id="comentario_iniciativa" placeholder="Observações adicionais..."></textarea>
       </div>
     </div>
-
-    <div class="field" style="margin-top:1.25rem">
+        <div class="field">
       <span class="q-label">Organização <span class="required-star">*</span></span>
       <span class="q-desc">É a forma como dispõe seus recursos, tais como tempo, esforço e empenho em alcançar seus objetivos.</span>
       <div class="radio-group" id="rg-organizacao">
@@ -253,18 +274,16 @@
         <label class="radio-opt"><input type="radio" name="organizacao" value="Ruim." onclick="toggleOutro('organizacao',false)"><span>Ruim.</span></label>
         <label class="radio-opt"><input type="radio" name="organizacao" value="outro" onclick="toggleOutro('organizacao',true)"><span>Outro</span></label>
       </div>
-      <div id="organizacao-outro-wrap" style="display:none;margin-top:0.5rem;">
-        <input type="text" id="organizacao_outro_texto" placeholder="Descreva..." style="width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;">
+      <div id="organizacao-outro-wrap" class="outro-wrap">
+        <input type="text" id="organizacao_outro_texto" class="outro-input" placeholder="Descreva...">
       </div>
       <div class="error-msg" id="err-organizacao">Selecione uma opção.</div>
-      <div class="field" style="margin-top:0.75rem;">
+      <div class="field comentario-field">
         <label>Comentários sobre a Organização</label>
-        <textarea id="comentario_organizacao" placeholder="Observações adicionais..." style="min-height:70px;"></textarea>
+        <textarea id="comentario_organizacao" placeholder="Observações adicionais..."></textarea>
       </div>
     </div>
-
-    <!-- Habilidades com Tecnologias -->
-    <div class="field" style="margin-top:1.25rem;">
+        <div class="field">
       <span class="q-label">Habilidades com as Tecnologias <span class="required-star">*</span></span>
       <span class="q-desc">É a adaptação às tecnologias, processos e ferramentas utilizadas na ZenFisio.</span>
       <div class="radio-group" id="rg-tecnologias">
@@ -274,22 +293,23 @@
         <label class="radio-opt"><input type="radio" name="tecnologias" value="Ruim." onclick="toggleOutro('tecnologias',false)"><span>Ruim.</span></label>
         <label class="radio-opt"><input type="radio" name="tecnologias" value="outro" onclick="toggleOutro('tecnologias',true)"><span>Outro</span></label>
       </div>
-      <div id="tecnologias-outro-wrap" style="display:none;margin-top:0.5rem;">
-        <input type="text" id="tecnologias_outro_texto" placeholder="Descreva..." style="width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;">
+      <div id="tecnologias-outro-wrap" class="outro-wrap">
+        <input type="text" id="tecnologias_outro_texto" class="outro-input" placeholder="Descreva...">
       </div>
       <div class="error-msg" id="err-tecnologias">Selecione uma opção.</div>
-      <div class="field" style="margin-top:0.75rem;">
+      <div class="field comentario-field">
         <label>Comentários sobre Habilidades com Tecnologias</label>
-        <textarea id="comentario_tecnologias" placeholder="Observações adicionais..." style="min-height:70px;"></textarea>
+        <textarea id="comentario_tecnologias" placeholder="Observações adicionais..."></textarea>
       </div>
     </div>
+
   </div>
-     
-  <!-- GERAL -->
+
+  <!-- PARECER FINAL -->
   <div class="card">
     <div class="section-label">Geral</div>
 
-  <div class="field" style="margin-top:1.25rem">
+    <div class="field">
       <span class="q-label">Desempenho Geral <span class="required-star">*</span></span>
       <span class="q-desc">Avaliação geral do(a) colaborador(a) durante o período de experiência.</span>
       <div class="radio-group" id="rg-desempenho_geral">
@@ -299,45 +319,39 @@
         <label class="radio-opt"><input type="radio" name="desempenho_geral" value="Fraco, sem possibilidade de aproveitamento." onclick="toggleOutro('desempenho_geral',false)"><span>Fraco, sem possibilidade de aproveitamento.</span></label>
         <label class="radio-opt"><input type="radio" name="desempenho_geral" value="outro" onclick="toggleOutro('desempenho_geral',true)"><span>Outro</span></label>
       </div>
-      <div id="desempenho_geral-outro-wrap" style="display:none;margin-top:0.5rem;">
-        <input type="text" id="desempenho_geral_outro_texto" placeholder="Descreva..." style="width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;">
+      <div id="desempenho_geral-outro-wrap" class="outro-wrap">
+        <input type="text" id="desempenho_geral_outro_texto" class="outro-input" placeholder="Descreva...">
       </div>
-      <div class="error-msg" id="err-desempenho">Selecione uma opção.</div>
+      <div class="error-msg" id="err-desempenho_geral">Selecione uma opção.</div>
     </div>
 
-    <div class="field" style="margin-top:1.25rem;">
+    <div class="field">
       <label>Cite aspectos positivos do(a) colaborador(a) no desempenho de suas atividades: <span class="required-star">*</span></label>
-      <textarea id="aspectos_positivos" placeholder="Descreva os pontos fortes observados..." required></textarea>
+      <textarea id="aspectos_positivos" placeholder="Descreva os pontos fortes observados..."></textarea>
       <div class="error-msg" id="err-positivos">Campo obrigatório.</div>
     </div>
-
-    <div class="field" style="margin-top:1.25rem;">
+    <div class="field">
       <label>Cite aspectos que ainda podem/devem ser melhorados ou merecem atenção no desempenho das atividades: <span class="required-star">*</span></label>
-      <textarea id="aspectos_melhoria" placeholder="Descreva os pontos de atenção ou melhoria..." required></textarea>
+      <textarea id="aspectos_melhoria" placeholder="Descreva os pontos de atenção ou melhoria..."></textarea>
       <div class="error-msg" id="err-melhoria">Campo obrigatório.</div>
     </div>
 
-  <!-- PARECER FINAL -->
-  <div class="card">
-    <div class="section-label">Parecer Final</div>
-   
-    <div class="field" style="margin-top:1.25rem">
+    <div class="field">
       <span class="q-label">Parecer Final <span class="required-star">*</span></span>
-      <span class="q-desc"></span>
       <div class="radio-group" id="rg-parecer">
-        <label class="radio-opt"><input type="radio" name="parecer" value="Efetivação"><span>Efetivação</span></label>
-        <label class="radio-opt"><input type="radio" name="parecer" value="Desligamento"><span>Desligamento</span></label>
+        <label class="radio-opt"><input type="radio" name="parecer" value="Efetivação" onclick="toggleOutro('parecer',false)"><span>Efetivação</span></label>
+        <label class="radio-opt"><input type="radio" name="parecer" value="Desligamento" onclick="toggleOutro('parecer',false)"><span>Desligamento</span></label>
       </div>
       <div class="error-msg" id="err-parecer">Selecione uma opção.</div>
     </div>
 
-    <div class="field" style="margin-top:1.25rem;">
+    <div class="field">
       <label>Observações Finais <span class="required-star">*</span></label>
-      <textarea id="obs_final" placeholder="Comentários gerais sobre o período de experiência..." required></textarea>
+      <textarea id="obs_final" placeholder="Comentários gerais sobre o período de experiência..."></textarea>
       <div class="error-msg" id="err-obs">Campo obrigatório.</div>
     </div>
 
-    <div class="grid-2" style="margin-top:1.25rem;">
+    <div class="grid-2">
       <div class="field"><label>Responsável RH</label><input type="text" id="rh" placeholder="Nome"></div>
       <div class="field"><label>Gestor / Líder</label><input type="text" id="gestor" placeholder="Nome"></div>
     </div>
@@ -362,45 +376,6 @@ function mostrarToast(msg, erro) {
   setTimeout(() => t.classList.remove('show'), 4000);
 }
 
-function validar() {
-  let ok = true;
-  ['colab','data','funcao','lider'].forEach(id => {
-    const el = document.getElementById(id);
-    if (!el.value.trim()) { el.style.borderColor='#c0392b'; ok=false; }
-    else { el.style.borderColor=''; }
-  });
-  ['disciplina','cooperacao','iniciativa','organizacao','pontualidade','tecnologias','produtividade','fit','desempenho_geral','parecer'].forEach(n => {
-    const sel = document.querySelector('input[name='+n+']:checked');
-    const err = document.getElementById('err-'+n);
-    if (!sel) { err.style.display='block'; ok=false; }
-    else { err.style.display='none'; }
-  });
-  // Aspectos positivos e melhoria (obrigatórios)
-  const pos = document.getElementById('aspectos_positivos');
-  const errPos = document.getElementById('err-positivos');
-  if (!pos.value.trim()) { errPos.style.display='block'; pos.style.borderColor='#c0392b'; ok=false; }
-  else { errPos.style.display='none'; pos.style.borderColor=''; }
-  const mel = document.getElementById('aspectos_melhoria');
-  const errMel = document.getElementById('err-melhoria');
-  if (!mel.value.trim()) { errMel.style.display='block'; mel.style.borderColor='#c0392b'; ok=false; }
-  else { errMel.style.display='none'; mel.style.borderColor=''; }
-  const obs = document.getElementById('obs_final');
-  const errObs = document.getElementById('err-obs');
-  if (!obs.value.trim()) { errObs.style.display='block'; obs.style.borderColor='#c0392b'; ok=false; }
-  else { errObs.style.display='none'; obs.style.borderColor=''; }
-  // Validação dos campos "Outro" — obrigatório se selecionado
-  const outroFields = ['disciplina','cooperacao','iniciativa','organizacao','pontualidade','tecnologias','produtividade','fit','desempenho_geral'];
-  outroFields.forEach(f => {
-    const sel = document.querySelector('input[name='+f+']:checked');
-    if (sel && sel.value === 'outro') {
-      const inp = document.getElementById(f+'_outro_texto');
-      if (inp && !inp.value.trim()) { inp.style.borderColor='#c0392b'; ok=false; }
-      else if (inp) { inp.style.borderColor=''; }
-    }
-  });
-  return ok;
-}
-
 function toggleOutro(field, show) {
   const wrap = document.getElementById(field + '-outro-wrap');
   if (wrap) wrap.style.display = show ? 'block' : 'none';
@@ -418,6 +393,39 @@ function getVal(name) {
   return sel.value;
 }
 
+function validar() {
+  let ok = true;
+  ['colab','data','funcao','lider'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el.value.trim()) { el.style.borderColor='#c0392b'; ok=false; }
+    else { el.style.borderColor=''; }
+  });
+  ['disciplina','pontualidade','coletividade','fit','produtividade','cooperacao','iniciativa','organizacao','tecnologias','desempenho_geral','parecer'].forEach(n => {
+    const sel = document.querySelector('input[name='+n+']:checked');
+    const err = document.getElementById('err-'+n);
+    if (!sel) { err.style.display='block'; ok=false; }
+    else { err.style.display='none'; }
+    if (sel && sel.value === 'outro') {
+      const inp = document.getElementById(n+'_outro_texto');
+      if (inp && !inp.value.trim()) { inp.style.borderColor='#c0392b'; ok=false; }
+      else if (inp) { inp.style.borderColor=''; }
+    }
+  });
+  const pos = document.getElementById('aspectos_positivos');
+  const errPos = document.getElementById('err-positivos');
+  if (!pos.value.trim()) { errPos.style.display='block'; pos.style.borderColor='#c0392b'; ok=false; }
+  else { errPos.style.display='none'; pos.style.borderColor=''; }
+  const mel = document.getElementById('aspectos_melhoria');
+  const errMel = document.getElementById('err-melhoria');
+  if (!mel.value.trim()) { errMel.style.display='block'; mel.style.borderColor='#c0392b'; ok=false; }
+  else { errMel.style.display='none'; mel.style.borderColor=''; }
+  const obs = document.getElementById('obs_final');
+  const errObs = document.getElementById('err-obs');
+  if (!obs.value.trim()) { errObs.style.display='block'; obs.style.borderColor='#c0392b'; ok=false; }
+  else { errObs.style.display='none'; obs.style.borderColor=''; }
+  return ok;
+}
+
 async function salvar() {
   if (!validar()) { mostrarToast('Preencha todos os campos obrigatórios.', true); return; }
   const btn = document.getElementById('btn-salvar');
@@ -430,22 +438,24 @@ async function salvar() {
     lider: document.getElementById('lider').value,
     disciplina: getVal('disciplina'),
     comentario_disciplina: document.getElementById('comentario_disciplina').value,
+    pontualidade: getVal('pontualidade'),
+    comentario_pontualidade: document.getElementById('comentario_pontualidade').value,
+    coletividade: getVal('coletividade'),
+    comentario_coletividade: document.getElementById('comentario_coletividade').value,
+    fit: getVal('fit'),
+    comentario_fit: document.getElementById('comentario_fit').value,
+    produtividade: getVal('produtividade'),
+    comentario_produtividade: document.getElementById('comentario_produtividade').value,
     cooperacao: getVal('cooperacao'),
     comentario_cooperacao: document.getElementById('comentario_cooperacao').value,
     iniciativa: getVal('iniciativa'),
     comentario_iniciativa: document.getElementById('comentario_iniciativa').value,
     organizacao: getVal('organizacao'),
     comentario_organizacao: document.getElementById('comentario_organizacao').value,
-    pontualidade: getVal('pontualidade'),
-    comentario_pontualidade: document.getElementById('comentario_pontualidade').value,
     tecnologias: getVal('tecnologias'),
     comentario_tecnologias: document.getElementById('comentario_tecnologias').value,
-    produtividade: getVal('produtividade'),
     aspectos_positivos: document.getElementById('aspectos_positivos').value,
     aspectos_melhoria: document.getElementById('aspectos_melhoria').value,
-    comentario_produtividade: document.getElementById('comentario_produtividade').value,
-    fit: (function(){ const v = document.querySelector('input[name=fit]:checked')?.value; return v === 'outro' ? document.getElementById('fit_outro_texto').value : v; })(),
-    comentario_fit: document.getElementById('comentario_fit').value,
     desempenho_geral: getVal('desempenho_geral'),
     parecer: getVal('parecer'),
     obs_final: document.getElementById('obs_final').value,

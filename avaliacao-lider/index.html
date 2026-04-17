@@ -79,7 +79,7 @@
     <div class="section-label">Identificação</div>
     <div class="grid-2">
       <div class="field"><label>Nome do(a) Colaborador(a) <span class="required-star">*</span></label><input type="text" id="colab" placeholder="Nome completo"></div>
-      <div class="field"><label>Data de Resposta <span class="required-star">*</span></label><input type="date" id="data"></div>
+      <div class="field"><label>Data <span class="required-star">*</span></label><input type="date" id="data"></div>
     </div>
     <div class="grid-2">
       <div class="field"><label>Função <span class="required-star">*</span></label><input type="text" id="funcao" placeholder="Ex: Fisioterapeuta"></div>
@@ -96,10 +96,14 @@
       <span class="q-label">Disciplina <span class="required-star">*</span></span>
       <span class="q-desc">É a disponibilidade que o colaborador tem em seguir as normas e regras propostas pela empresa e que competem a sua função.</span>
       <div class="radio-group" id="rg-disciplina">
-        <label class="radio-opt"><input type="radio" name="disciplina" value="Excelente."><span>Excelente.</span></label>
-        <label class="radio-opt"><input type="radio" name="disciplina" value="Bom."><span>Bom.</span></label>
-        <label class="radio-opt"><input type="radio" name="disciplina" value="Regular."><span>Regular.</span></label>
-        <label class="radio-opt"><input type="radio" name="disciplina" value="Ruim."><span>Ruim.</span></label>
+        <label class="radio-opt"><input type="radio" name="disciplina" value="Excelente." onclick="toggleOutro('disciplina',false)"><span>Excelente.</span></label>
+        <label class="radio-opt"><input type="radio" name="disciplina" value="Bom." onclick="toggleOutro('disciplina',false)"><span>Bom.</span></label>
+        <label class="radio-opt"><input type="radio" name="disciplina" value="Regular." onclick="toggleOutro('disciplina',false)"><span>Regular.</span></label>
+        <label class="radio-opt"><input type="radio" name="disciplina" value="Ruim." onclick="toggleOutro('disciplina',false)"><span>Ruim.</span></label>
+        <label class="radio-opt"><input type="radio" name="disciplina" value="outro" onclick="toggleOutro('disciplina',true)"><span>Outro</span></label>
+      </div>
+      <div id="disciplina-outro-wrap" style="display:none;margin-top:0.5rem;">
+        <input type="text" id="disciplina_outro_texto" placeholder="Descreva..." style="width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;">
       </div>
       <div class="error-msg" id="err-disciplina">Selecione uma opção.</div>
       <div class="field" style="margin-top:0.75rem;">
@@ -112,10 +116,14 @@
       <span class="q-label">Cooperação <span class="required-star">*</span></span>
       <span class="q-desc">É a capacidade de agir em grupo de forma solidária e colaborativa; contribuindo junto à equipe e demonstrando atitudes de trabalhar pelo mesmo objetivo.</span>
       <div class="radio-group" id="rg-cooperacao">
-        <label class="radio-opt"><input type="radio" name="cooperacao" value="Excelente."><span>Excelente.</span></label>
-        <label class="radio-opt"><input type="radio" name="cooperacao" value="Bom."><span>Bom.</span></label>
-        <label class="radio-opt"><input type="radio" name="cooperacao" value="Regular."><span>Regular.</span></label>
-        <label class="radio-opt"><input type="radio" name="cooperacao" value="Ruim."><span>Ruim.</span></label>
+        <label class="radio-opt"><input type="radio" name="cooperacao" value="Excelente." onclick="toggleOutro('cooperacao',false)"><span>Excelente.</span></label>
+        <label class="radio-opt"><input type="radio" name="cooperacao" value="Bom." onclick="toggleOutro('cooperacao',false)"><span>Bom.</span></label>
+        <label class="radio-opt"><input type="radio" name="cooperacao" value="Regular." onclick="toggleOutro('cooperacao',false)"><span>Regular.</span></label>
+        <label class="radio-opt"><input type="radio" name="cooperacao" value="Ruim." onclick="toggleOutro('cooperacao',false)"><span>Ruim.</span></label>
+        <label class="radio-opt"><input type="radio" name="cooperacao" value="outro" onclick="toggleOutro('cooperacao',true)"><span>Outro</span></label>
+      </div>
+      <div id="cooperacao-outro-wrap" style="display:none;margin-top:0.5rem;">
+        <input type="text" id="cooperacao_outro_texto" placeholder="Descreva..." style="width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;">
       </div>
       <div class="error-msg" id="err-cooperacao">Selecione uma opção.</div>
       <div class="field" style="margin-top:0.75rem;">
@@ -128,10 +136,14 @@
       <span class="q-label">Iniciativa <span class="required-star">*</span></span>
       <span class="q-desc">É a vontade de fazer mais, propor soluções, começar algo, sugerir melhorias, sem que alguém precise solicitar.</span>
       <div class="radio-group" id="rg-iniciativa">
-        <label class="radio-opt"><input type="radio" name="iniciativa" value="Excelente."><span>Excelente.</span></label>
-        <label class="radio-opt"><input type="radio" name="iniciativa" value="Bom."><span>Bom.</span></label>
-        <label class="radio-opt"><input type="radio" name="iniciativa" value="Regular."><span>Regular.</span></label>
-        <label class="radio-opt"><input type="radio" name="iniciativa" value="Ruim."><span>Ruim.</span></label>
+        <label class="radio-opt"><input type="radio" name="iniciativa" value="Excelente." onclick="toggleOutro('iniciativa',false)"><span>Excelente.</span></label>
+        <label class="radio-opt"><input type="radio" name="iniciativa" value="Bom." onclick="toggleOutro('iniciativa',false)"><span>Bom.</span></label>
+        <label class="radio-opt"><input type="radio" name="iniciativa" value="Regular." onclick="toggleOutro('iniciativa',false)"><span>Regular.</span></label>
+        <label class="radio-opt"><input type="radio" name="iniciativa" value="Ruim." onclick="toggleOutro('iniciativa',false)"><span>Ruim.</span></label>
+        <label class="radio-opt"><input type="radio" name="iniciativa" value="outro" onclick="toggleOutro('iniciativa',true)"><span>Outro</span></label>
+      </div>
+      <div id="iniciativa-outro-wrap" style="display:none;margin-top:0.5rem;">
+        <input type="text" id="iniciativa_outro_texto" placeholder="Descreva..." style="width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;">
       </div>
       <div class="error-msg" id="err-iniciativa">Selecione uma opção.</div>
       <div class="field" style="margin-top:0.75rem;">
@@ -144,14 +156,18 @@
       <span class="q-label">Organização <span class="required-star">*</span></span>
       <span class="q-desc">É a forma como dispõe seus recursos, tais como tempo, esforço e empenho em alcançar seus objetivos.</span>
       <div class="radio-group" id="rg-organizacao">
-        <label class="radio-opt"><input type="radio" name="organizacao" value="Excelente."><span>Excelente.</span></label>
-        <label class="radio-opt"><input type="radio" name="organizacao" value="Bom."><span>Bom.</span></label>
-        <label class="radio-opt"><input type="radio" name="organizacao" value="Regular."><span>Regular.</span></label>
-        <label class="radio-opt"><input type="radio" name="organizacao" value="Ruim."><span>Ruim.</span></label>
+        <label class="radio-opt"><input type="radio" name="organizacao" value="Excelente." onclick="toggleOutro('organizacao',false)"><span>Excelente.</span></label>
+        <label class="radio-opt"><input type="radio" name="organizacao" value="Bom." onclick="toggleOutro('organizacao',false)"><span>Bom.</span></label>
+        <label class="radio-opt"><input type="radio" name="organizacao" value="Regular." onclick="toggleOutro('organizacao',false)"><span>Regular.</span></label>
+        <label class="radio-opt"><input type="radio" name="organizacao" value="Ruim." onclick="toggleOutro('organizacao',false)"><span>Ruim.</span></label>
+        <label class="radio-opt"><input type="radio" name="organizacao" value="outro" onclick="toggleOutro('organizacao',true)"><span>Outro</span></label>
+      </div>
+      <div id="organizacao-outro-wrap" style="display:none;margin-top:0.5rem;">
+        <input type="text" id="organizacao_outro_texto" placeholder="Descreva..." style="width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;">
       </div>
       <div class="error-msg" id="err-organizacao">Selecione uma opção.</div>
       <div class="field" style="margin-top:0.75rem;">
-        <label>Comentários sobre a Organizacao</label>
+        <label>Comentários sobre a Organização</label>
         <textarea id="comentario_organizacao" placeholder="Observações adicionais..." style="min-height:70px;"></textarea>
       </div>
     </div>
@@ -161,10 +177,14 @@
       <span class="q-label">Pontualidade <span class="required-star">*</span></span>
       <span class="q-desc">É chegar na hora marcada, ser exato no cumprimento das suas obrigações e fazer com exatidão ou no prazo combinado as atividades que lhes são propostas.</span>
       <div class="radio-group" id="rg-pontualidade">
-        <label class="radio-opt"><input type="radio" name="pontualidade" value="Excelente."><span>Excelente.</span></label>
-        <label class="radio-opt"><input type="radio" name="pontualidade" value="Bom."><span>Bom.</span></label>
-        <label class="radio-opt"><input type="radio" name="pontualidade" value="Regular."><span>Regular.</span></label>
-        <label class="radio-opt"><input type="radio" name="pontualidade" value="Ruim."><span>Ruim.</span></label>
+        <label class="radio-opt"><input type="radio" name="pontualidade" value="Excelente." onclick="toggleOutro('pontualidade',false)"><span>Excelente.</span></label>
+        <label class="radio-opt"><input type="radio" name="pontualidade" value="Bom." onclick="toggleOutro('pontualidade',false)"><span>Bom.</span></label>
+        <label class="radio-opt"><input type="radio" name="pontualidade" value="Regular." onclick="toggleOutro('pontualidade',false)"><span>Regular.</span></label>
+        <label class="radio-opt"><input type="radio" name="pontualidade" value="Ruim." onclick="toggleOutro('pontualidade',false)"><span>Ruim.</span></label>
+        <label class="radio-opt"><input type="radio" name="pontualidade" value="outro" onclick="toggleOutro('pontualidade',true)"><span>Outro</span></label>
+      </div>
+      <div id="pontualidade-outro-wrap" style="display:none;margin-top:0.5rem;">
+        <input type="text" id="pontualidade_outro_texto" placeholder="Descreva..." style="width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;">
       </div>
       <div class="error-msg" id="err-pontualidade">Selecione uma opção.</div>
       <div class="field" style="margin-top:0.75rem;">
@@ -178,10 +198,14 @@
       <span class="q-label">Habilidades com as Tecnologias <span class="required-star">*</span></span>
       <span class="q-desc">É a adaptação às tecnologias, processos e ferramentas utilizadas na ZenFisio.</span>
       <div class="radio-group" id="rg-tecnologias">
-        <label class="radio-opt"><input type="radio" name="tecnologias" value="Excelente."><span>Excelente.</span></label>
-        <label class="radio-opt"><input type="radio" name="tecnologias" value="Bom."><span>Bom.</span></label>
-        <label class="radio-opt"><input type="radio" name="tecnologias" value="Regular."><span>Regular.</span></label>
-        <label class="radio-opt"><input type="radio" name="tecnologias" value="Ruim."><span>Ruim.</span></label>
+        <label class="radio-opt"><input type="radio" name="tecnologias" value="Excelente." onclick="toggleOutro('tecnologias',false)"><span>Excelente.</span></label>
+        <label class="radio-opt"><input type="radio" name="tecnologias" value="Bom." onclick="toggleOutro('tecnologias',false)"><span>Bom.</span></label>
+        <label class="radio-opt"><input type="radio" name="tecnologias" value="Regular." onclick="toggleOutro('tecnologias',false)"><span>Regular.</span></label>
+        <label class="radio-opt"><input type="radio" name="tecnologias" value="Ruim." onclick="toggleOutro('tecnologias',false)"><span>Ruim.</span></label>
+        <label class="radio-opt"><input type="radio" name="tecnologias" value="outro" onclick="toggleOutro('tecnologias',true)"><span>Outro</span></label>
+      </div>
+      <div id="tecnologias-outro-wrap" style="display:none;margin-top:0.5rem;">
+        <input type="text" id="tecnologias_outro_texto" placeholder="Descreva..." style="width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;">
       </div>
       <div class="error-msg" id="err-tecnologias">Selecione uma opção.</div>
       <div class="field" style="margin-top:0.75rem;">
@@ -199,12 +223,28 @@
       <span class="q-label">Produtividade <span class="required-star">*</span></span>
       <span class="q-desc">É o nível de desempenho e entrega do colaborador em relação ao que é esperado para a função.</span>
       <div class="radio-group" id="rg-produtividade">
-        <label class="radio-opt"><input type="radio" name="produtividade" value="Excelente, acima do esperado."><span>Excelente, acima do esperado.</span></label>
-        <label class="radio-opt"><input type="radio" name="produtividade" value="Satisfatório, com possibilidade de aproveitamento."><span>Satisfatório, com possibilidade de aproveitamento.</span></label>
-        <label class="radio-opt"><input type="radio" name="produtividade" value="Aceitável, necessitando de maior aprimoramento."><span>Aceitável, necessitando de maior aprimoramento.</span></label>
-        <label class="radio-opt"><input type="radio" name="produtividade" value="Fraco, sem possibilidades de aproveitamento."><span>Fraco, sem possibilidades de aproveitamento.</span></label>
+        <label class="radio-opt"><input type="radio" name="produtividade" value="Excelente." onclick="toggleOutro('produtividade',false)"><span>Excelente.</span></label>
+        <label class="radio-opt"><input type="radio" name="produtividade" value="Bom." onclick="toggleOutro('produtividade',false)"><span>Bom.</span></label>
+        <label class="radio-opt"><input type="radio" name="produtividade" value="Regular." onclick="toggleOutro('produtividade',false)"><span>Regular.</span></label>
+        <label class="radio-opt"><input type="radio" name="produtividade" value="Ruim." onclick="toggleOutro('produtividade',false)"><span>Ruim.</span></label>
+        <label class="radio-opt"><input type="radio" name="produtividade" value="outro" onclick="toggleOutro('produtividade',true)"><span>Outro</span></label>
+      </div>
+      <div id="produtividade-outro-wrap" style="display:none;margin-top:0.5rem;">
+        <input type="text" id="produtividade_outro_texto" placeholder="Descreva..." style="width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;">
       </div>
       <div class="error-msg" id="err-produtividade">Selecione uma opção.</div>
+    </div>
+
+    <div class="field" style="margin-top:1.25rem;">
+      <label>Cite aspectos positivos do(a) colaborador(a) no desempenho de suas atividades: <span class="required-star">*</span></label>
+      <textarea id="aspectos_positivos" placeholder="Descreva os pontos fortes observados..." required></textarea>
+      <div class="error-msg" id="err-positivos">Campo obrigatório.</div>
+    </div>
+
+    <div class="field" style="margin-top:1.25rem;">
+      <label>Cite aspectos que ainda podem/devem ser melhorados ou merecem atenção no desempenho das atividades: <span class="required-star">*</span></label>
+      <textarea id="aspectos_melhoria" placeholder="Descreva os pontos de atenção ou melhoria..." required></textarea>
+      <div class="error-msg" id="err-melhoria">Campo obrigatório.</div>
     </div>
 
     <div class="field" style="margin-top:1.25rem;">
@@ -216,13 +256,13 @@
       <span class="q-label">Fit Cultural <span class="required-star">*</span></span>
       <span class="q-desc">É a capacidade de adaptação aos processos e comportamentos já estabelecidos na ZenFisio.</span>
       <div class="radio-group" id="rg-fit">
-        <label class="radio-opt"><input type="radio" name="fit" value="Excelente." onclick="fitOutro(false)"><span>Excelente.</span></label>
-        <label class="radio-opt"><input type="radio" name="fit" value="Bom." onclick="fitOutro(false)"><span>Bom.</span></label>
-        <label class="radio-opt"><input type="radio" name="fit" value="Regular." onclick="fitOutro(false)"><span>Regular.</span></label>
-        <label class="radio-opt"><input type="radio" name="fit" value="Ruim." onclick="fitOutro(false)"><span>Ruim.</span></label>
-        <label class="radio-opt"><input type="radio" name="fit" value="outro" onclick="fitOutro(true)"><span>Outro</span></label>
+        <label class="radio-opt"><input type="radio" name="fit" value="Excelente." onclick="toggleOutro('fit',false)"><span>Excelente.</span></label>
+        <label class="radio-opt"><input type="radio" name="fit" value="Bom." onclick="toggleOutro('fit',false)"><span>Bom.</span></label>
+        <label class="radio-opt"><input type="radio" name="fit" value="Regular." onclick="toggleOutro('fit',false)"><span>Regular.</span></label>
+        <label class="radio-opt"><input type="radio" name="fit" value="Ruim." onclick="toggleOutro('fit',false)"><span>Ruim.</span></label>
+        <label class="radio-opt"><input type="radio" name="fit" value="outro" onclick="toggleOutro('fit',true)"><span>Outro</span></label>
       </div>
-      <div id="fit-outro-wrap" style="display:none;margin-top:0.5rem;">
+      <div id="fit-outro-wrap" style="display:none;margin-top:0.5rem;" style="display:none;margin-top:0.5rem;">
         <input type="text" id="fit_outro_texto" placeholder="Descreva..." style="width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;">
       </div>
       <div class="error-msg" id="err-fit">Selecione uma opção.</div>
@@ -242,10 +282,14 @@
       <span class="q-label">Desempenho Geral <span class="required-star">*</span></span>
       <span class="q-desc">Avaliação geral do(a) colaborador(a) durante o período de experiência.</span>
       <div class="radio-group" id="rg-desempenho_geral">
-        <label class="radio-opt"><input type="radio" name="desempenho_geral" value="Excelente, acima do esperado."><span>Excelente, acima do esperado.</span></label>
-        <label class="radio-opt"><input type="radio" name="desempenho_geral" value="Satisfatório, com possibilidade de aproveitamento."><span>Satisfatório, com possibilidade de aproveitamento.</span></label>
-        <label class="radio-opt"><input type="radio" name="desempenho_geral" value="Aceitável, necessitando de maior aprimoramento."><span>Aceitável, necessitando de maior aprimoramento.</span></label>
-        <label class="radio-opt"><input type="radio" name="desempenho_geral" value="Fraco, sem possibilidades de aproveitamento."><span>Fraco, sem possibilidades de aproveitamento.</span></label>
+        <label class="radio-opt"><input type="radio" name="desempenho_geral" value="Excelente, acima do esperado." onclick="toggleOutro('desempenho_geral',false)"><span>Excelente, acima do esperado.</span></label>
+        <label class="radio-opt"><input type="radio" name="desempenho_geral" value="Satisfatório, com possibilidade de aproveitamento." onclick="toggleOutro('desempenho_geral',false)"><span>Satisfatório, com possibilidade de aproveitamento.</span></label>
+        <label class="radio-opt"><input type="radio" name="desempenho_geral" value="Aceitável, necessitando de maior aprimoramento." onclick="toggleOutro('desempenho_geral',false)"><span>Aceitável, necessitando de maior aprimoramento.</span></label>
+        <label class="radio-opt"><input type="radio" name="desempenho_geral" value="Fraco, sem possibilidade de aproveitamento." onclick="toggleOutro('desempenho_geral',false)"><span>Fraco, sem possibilidade de aproveitamento.</span></label>
+        <label class="radio-opt"><input type="radio" name="desempenho_geral" value="outro" onclick="toggleOutro('desempenho_geral',true)"><span>Outro</span></label>
+      </div>
+      <div id="desempenho_geral-outro-wrap" style="display:none;margin-top:0.5rem;">
+        <input type="text" id="desempenho_geral_outro_texto" placeholder="Descreva..." style="width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;">
       </div>
       <div class="error-msg" id="err-desempenho">Selecione uma opção.</div>
     </div>
@@ -304,23 +348,47 @@ function validar() {
     if (!sel) { err.style.display='block'; ok=false; }
     else { err.style.display='none'; }
   });
+  // Aspectos positivos e melhoria (obrigatórios)
+  const pos = document.getElementById('aspectos_positivos');
+  const errPos = document.getElementById('err-positivos');
+  if (!pos.value.trim()) { errPos.style.display='block'; pos.style.borderColor='#c0392b'; ok=false; }
+  else { errPos.style.display='none'; pos.style.borderColor=''; }
+  const mel = document.getElementById('aspectos_melhoria');
+  const errMel = document.getElementById('err-melhoria');
+  if (!mel.value.trim()) { errMel.style.display='block'; mel.style.borderColor='#c0392b'; ok=false; }
+  else { errMel.style.display='none'; mel.style.borderColor=''; }
   const obs = document.getElementById('obs_final');
   const errObs = document.getElementById('err-obs');
   if (!obs.value.trim()) { errObs.style.display='block'; obs.style.borderColor='#c0392b'; ok=false; }
   else { errObs.style.display='none'; obs.style.borderColor=''; }
-  // Fit Cultural Outro validation
-  const fitVal = document.querySelector('input[name=fit]:checked')?.value;
-  if (fitVal === 'outro' && !document.getElementById('fit_outro_texto').value.trim()) {
-    document.getElementById('fit_outro_texto').style.borderColor = '#c0392b'; ok=false;
-  } else if (fitVal === 'outro') {
-    document.getElementById('fit_outro_texto').style.borderColor = '';
-  }
+  // Validação dos campos "Outro" — obrigatório se selecionado
+  const outroFields = ['disciplina','cooperacao','iniciativa','organizacao','pontualidade','tecnologias','produtividade','fit','desempenho_geral'];
+  outroFields.forEach(f => {
+    const sel = document.querySelector('input[name='+f+']:checked');
+    if (sel && sel.value === 'outro') {
+      const inp = document.getElementById(f+'_outro_texto');
+      if (inp && !inp.value.trim()) { inp.style.borderColor='#c0392b'; ok=false; }
+      else if (inp) { inp.style.borderColor=''; }
+    }
+  });
   return ok;
 }
 
-function fitOutro(show) {
-  document.getElementById('fit-outro-wrap').style.display = show ? 'block' : 'none';
-  if (!show) document.getElementById('fit_outro_texto').value = '';
+function toggleOutro(field, show) {
+  const wrap = document.getElementById(field + '-outro-wrap');
+  if (wrap) wrap.style.display = show ? 'block' : 'none';
+  const inp = document.getElementById(field + '_outro_texto');
+  if (inp && !show) inp.value = '';
+}
+
+function getVal(name) {
+  const sel = document.querySelector('input[name='+name+']:checked');
+  if (!sel) return '';
+  if (sel.value === 'outro') {
+    const inp = document.getElementById(name+'_outro_texto');
+    return inp ? inp.value : '';
+  }
+  return sel.value;
 }
 
 async function salvar() {
@@ -333,24 +401,26 @@ async function salvar() {
     data: document.getElementById('data').value,
     funcao: document.getElementById('funcao').value,
     lider: document.getElementById('lider').value,
-    disciplina: document.querySelector('input[name=disciplina]:checked')?.value,
+    disciplina: getVal('disciplina'),
     comentario_disciplina: document.getElementById('comentario_disciplina').value,
-    cooperacao: document.querySelector('input[name=cooperacao]:checked')?.value,
+    cooperacao: getVal('cooperacao'),
     comentario_cooperacao: document.getElementById('comentario_cooperacao').value,
-    iniciativa: document.querySelector('input[name=iniciativa]:checked')?.value,
+    iniciativa: getVal('iniciativa'),
     comentario_iniciativa: document.getElementById('comentario_iniciativa').value,
-    organizacao: document.querySelector('input[name=organizacao]:checked')?.value,
+    organizacao: getVal('organizacao'),
     comentario_organizacao: document.getElementById('comentario_organizacao').value,
-    pontualidade: document.querySelector('input[name=pontualidade]:checked')?.value,
+    pontualidade: getVal('pontualidade'),
     comentario_pontualidade: document.getElementById('comentario_pontualidade').value,
-    tecnologias: document.querySelector('input[name=tecnologias]:checked')?.value,
+    tecnologias: getVal('tecnologias'),
     comentario_tecnologias: document.getElementById('comentario_tecnologias').value,
-    produtividade: document.querySelector('input[name=produtividade]:checked')?.value,
+    produtividade: getVal('produtividade'),
+    aspectos_positivos: document.getElementById('aspectos_positivos').value,
+    aspectos_melhoria: document.getElementById('aspectos_melhoria').value,
     comentario_produtividade: document.getElementById('comentario_produtividade').value,
     fit: (function(){ const v = document.querySelector('input[name=fit]:checked')?.value; return v === 'outro' ? document.getElementById('fit_outro_texto').value : v; })(),
     comentario_fit: document.getElementById('comentario_fit').value,
-    desempenho_geral: document.querySelector('input[name=desempenho_geral]:checked')?.value,
-    parecer: document.querySelector('input[name=parecer]:checked')?.value,
+    desempenho_geral: getVal('desempenho_geral'),
+    parecer: getVal('parecer'),
     obs_final: document.getElementById('obs_final').value,
     rh: document.getElementById('rh').value,
     gestor: document.getElementById('gestor').value,

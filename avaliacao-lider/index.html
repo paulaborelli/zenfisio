@@ -68,6 +68,7 @@
     <b>COOPERAÇÃO:</b> É a capacidade de agir em grupo de forma solidária e colaborativa; contribuindo junto à equipe e demonstrando atitudes de trabalhar pelo mesmo objetivo. É trabalhar bem em Equipe.<br>
     <b>INICIATIVA:</b> É a vontade de fazer mais, propor soluções, começar algo, sugerir melhorias, sem que alguém precise solicitar.<br>
     <b>ORGANIZAÇÃO:</b> É a forma como dispõe seus recursos, tais como tempo, esforço e empenho em alcançar um objetivo.<br>
+    <b>SENSO DE COLETIVIDADE:</b> É o cuidado que possui com a limpeza e a organização da empresa, bem como tempo de intervalo e consumos.<br>
     <b>PONTUALIDADE:</b> É chegar na hora marcada, ser exato no cumprimento das suas obrigações e fazer com exatidão ou no prazo combinado as atividades que lhes são propostas.<br>
     <b>HABILIDADES COM AS TECNOLOGIAS:</b> É a adaptação às tecnologias, processos e ferramentas utilizadas na ZenFisio.<br>
     <b>PRODUTIVIDADE:</b> É a produção em determinado tempo. É conseguir atender às demandas conforme solicitado.<br>
@@ -112,7 +113,97 @@
       </div>
     </div>
 
-    <div class="field" style="margin-top:1.25rem">
+      <!-- Pontualidade -->
+    <div class="field" style="margin-top:1.25rem;">
+      <span class="q-label">Pontualidade <span class="required-star">*</span></span>
+      <span class="q-desc">É chegar na hora marcada, ser exato no cumprimento das suas obrigações e fazer com exatidão ou no prazo combinado as atividades que lhes são propostas.</span>
+      <div class="radio-group" id="rg-pontualidade">
+        <label class="radio-opt"><input type="radio" name="pontualidade" value="Excelente." onclick="toggleOutro('pontualidade',false)"><span>Excelente.</span></label>
+        <label class="radio-opt"><input type="radio" name="pontualidade" value="Bom." onclick="toggleOutro('pontualidade',false)"><span>Bom.</span></label>
+        <label class="radio-opt"><input type="radio" name="pontualidade" value="Regular." onclick="toggleOutro('pontualidade',false)"><span>Regular.</span></label>
+        <label class="radio-opt"><input type="radio" name="pontualidade" value="Ruim." onclick="toggleOutro('pontualidade',false)"><span>Ruim.</span></label>
+        <label class="radio-opt"><input type="radio" name="pontualidade" value="outro" onclick="toggleOutro('pontualidade',true)"><span>Outro</span></label>
+      </div>
+      <div id="pontualidade-outro-wrap" style="display:none;margin-top:0.5rem;">
+        <input type="text" id="pontualidade_outro_texto" placeholder="Descreva..." style="width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;">
+      </div>
+      <div class="error-msg" id="err-pontualidade">Selecione uma opção.</div>
+      <div class="field" style="margin-top:0.75rem;">
+        <label>Comentários sobre a Pontualidade</label>
+        <textarea id="comentario_pontualidade" placeholder="Observações adicionais..." style="min-height:70px;"></textarea>
+      </div>
+    </div>
+
+<div class="field" style="margin-top:1.25rem">
+      <span class="q-label">Senso de Coletividade <span class="required-star">*</span></span>
+      <span class="q-desc">É o cuidado que possui com a limpeza e a organização da empresa, bem como tempo de intervalo e consumos.</span>
+      <div class="radio-group" id="rg-fit">
+        <label class="radio-opt"><input type="radio" name="fit" value="Excelente." onclick="toggleOutro('fit',false)"><span>Excelente.</span></label>
+        <label class="radio-opt"><input type="radio" name="fit" value="Bom." onclick="toggleOutro('fit',false)"><span>Bom.</span></label>
+        <label class="radio-opt"><input type="radio" name="fit" value="Regular." onclick="toggleOutro('fit',false)"><span>Regular.</span></label>
+        <label class="radio-opt"><input type="radio" name="fit" value="Ruim." onclick="toggleOutro('fit',false)"><span>Ruim.</span></label>
+        <label class="radio-opt"><input type="radio" name="fit" value="outro" onclick="toggleOutro('fit',true)"><span>Outro</span></label>
+      </div>
+      <div id="fit-outro-wrap" style="display:none;margin-top:0.5rem;" style="display:none;margin-top:0.5rem;">
+        <input type="text" id="fit_outro_texto" placeholder="Descreva..." style="width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;">
+      </div>
+      <div class="error-msg" id="err-fit">Selecione uma opção.</div>
+    </div>
+
+    <div class="field" style="margin-top:1.25rem;">
+      <label>Comentários sobre o Senso de Coletividade</label>
+      <textarea id="comentario_fit" placeholder="Observações sobre o senso de coletividade..."></textarea>
+    </div>
+  </div>
+   
+<div class="field" style="margin-top:1.25rem">
+      <span class="q-label">Fit Cultural <span class="required-star">*</span></span>
+      <span class="q-desc">É a capacidade de adaptação aos processos e comportamentos já estabelecidos na ZenFisio.</span>
+      <div class="radio-group" id="rg-fit">
+        <label class="radio-opt"><input type="radio" name="fit" value="Excelente." onclick="toggleOutro('fit',false)"><span>Excelente.</span></label>
+        <label class="radio-opt"><input type="radio" name="fit" value="Bom." onclick="toggleOutro('fit',false)"><span>Bom.</span></label>
+        <label class="radio-opt"><input type="radio" name="fit" value="Regular." onclick="toggleOutro('fit',false)"><span>Regular.</span></label>
+        <label class="radio-opt"><input type="radio" name="fit" value="Ruim." onclick="toggleOutro('fit',false)"><span>Ruim.</span></label>
+        <label class="radio-opt"><input type="radio" name="fit" value="outro" onclick="toggleOutro('fit',true)"><span>Outro</span></label>
+      </div>
+      <div id="fit-outro-wrap" style="display:none;margin-top:0.5rem;" style="display:none;margin-top:0.5rem;">
+        <input type="text" id="fit_outro_texto" placeholder="Descreva..." style="width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;">
+      </div>
+      <div class="error-msg" id="err-fit">Selecione uma opção.</div>
+    </div>
+
+    <div class="field" style="margin-top:1.25rem;">
+      <label>Comentários sobre o Fit Cultural</label>
+      <textarea id="comentario_fit" placeholder="Observações sobre adaptação cultural..."></textarea>
+    </div>
+  </div>
+   
+     <!-- DESEMPENHO -->
+  <div class="card">
+    <div class="section-label">Desempenho</div>
+
+    <div class="field">
+      <span class="q-label">Produtividade <span class="required-star">*</span></span>
+      <span class="q-desc">É o nível de desempenho e entrega do colaborador em relação ao que é esperado para a função.</span>
+      <div class="radio-group" id="rg-produtividade">
+        <label class="radio-opt"><input type="radio" name="produtividade" value="Excelente." onclick="toggleOutro('produtividade',false)"><span>Excelente.</span></label>
+        <label class="radio-opt"><input type="radio" name="produtividade" value="Bom." onclick="toggleOutro('produtividade',false)"><span>Bom.</span></label>
+        <label class="radio-opt"><input type="radio" name="produtividade" value="Regular." onclick="toggleOutro('produtividade',false)"><span>Regular.</span></label>
+        <label class="radio-opt"><input type="radio" name="produtividade" value="Ruim." onclick="toggleOutro('produtividade',false)"><span>Ruim.</span></label>
+        <label class="radio-opt"><input type="radio" name="produtividade" value="outro" onclick="toggleOutro('produtividade',true)"><span>Outro</span></label>
+      </div>
+      <div id="produtividade-outro-wrap" style="display:none;margin-top:0.5rem;">
+        <input type="text" id="produtividade_outro_texto" placeholder="Descreva..." style="width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;">
+      </div>
+      <div class="error-msg" id="err-produtividade">Selecione uma opção.</div>
+    </div>
+
+     <div class="field" style="margin-top:1.25rem;">
+      <label>Comentários sobre a Produtividade</label>
+      <textarea id="comentario_produtividade" placeholder="Observações adicionais..."></textarea>
+    </div>
+
+     <div class="field" style="margin-top:1.25rem">
       <span class="q-label">Cooperação <span class="required-star">*</span></span>
       <span class="q-desc">É a capacidade de agir em grupo de forma solidária e colaborativa; contribuindo junto à equipe e demonstrando atitudes de trabalhar pelo mesmo objetivo.</span>
       <div class="radio-group" id="rg-cooperacao">
@@ -172,27 +263,6 @@
       </div>
     </div>
 
-    <!-- Pontualidade -->
-    <div class="field" style="margin-top:1.25rem;">
-      <span class="q-label">Pontualidade <span class="required-star">*</span></span>
-      <span class="q-desc">É chegar na hora marcada, ser exato no cumprimento das suas obrigações e fazer com exatidão ou no prazo combinado as atividades que lhes são propostas.</span>
-      <div class="radio-group" id="rg-pontualidade">
-        <label class="radio-opt"><input type="radio" name="pontualidade" value="Excelente." onclick="toggleOutro('pontualidade',false)"><span>Excelente.</span></label>
-        <label class="radio-opt"><input type="radio" name="pontualidade" value="Bom." onclick="toggleOutro('pontualidade',false)"><span>Bom.</span></label>
-        <label class="radio-opt"><input type="radio" name="pontualidade" value="Regular." onclick="toggleOutro('pontualidade',false)"><span>Regular.</span></label>
-        <label class="radio-opt"><input type="radio" name="pontualidade" value="Ruim." onclick="toggleOutro('pontualidade',false)"><span>Ruim.</span></label>
-        <label class="radio-opt"><input type="radio" name="pontualidade" value="outro" onclick="toggleOutro('pontualidade',true)"><span>Outro</span></label>
-      </div>
-      <div id="pontualidade-outro-wrap" style="display:none;margin-top:0.5rem;">
-        <input type="text" id="pontualidade_outro_texto" placeholder="Descreva..." style="width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;">
-      </div>
-      <div class="error-msg" id="err-pontualidade">Selecione uma opção.</div>
-      <div class="field" style="margin-top:0.75rem;">
-        <label>Comentários sobre a Pontualidade</label>
-        <textarea id="comentario_pontualidade" placeholder="Observações adicionais..." style="min-height:70px;"></textarea>
-      </div>
-    </div>
-
     <!-- Habilidades com Tecnologias -->
     <div class="field" style="margin-top:1.25rem;">
       <span class="q-label">Habilidades com as Tecnologias <span class="required-star">*</span></span>
@@ -214,54 +284,7 @@
       </div>
     </div>
   </div>
-
-  <!-- DESEMPENHO -->
-  <div class="card">
-    <div class="section-label">Desempenho</div>
-
-    <div class="field">
-      <span class="q-label">Produtividade <span class="required-star">*</span></span>
-      <span class="q-desc">É o nível de desempenho e entrega do colaborador em relação ao que é esperado para a função.</span>
-      <div class="radio-group" id="rg-produtividade">
-        <label class="radio-opt"><input type="radio" name="produtividade" value="Excelente." onclick="toggleOutro('produtividade',false)"><span>Excelente.</span></label>
-        <label class="radio-opt"><input type="radio" name="produtividade" value="Bom." onclick="toggleOutro('produtividade',false)"><span>Bom.</span></label>
-        <label class="radio-opt"><input type="radio" name="produtividade" value="Regular." onclick="toggleOutro('produtividade',false)"><span>Regular.</span></label>
-        <label class="radio-opt"><input type="radio" name="produtividade" value="Ruim." onclick="toggleOutro('produtividade',false)"><span>Ruim.</span></label>
-        <label class="radio-opt"><input type="radio" name="produtividade" value="outro" onclick="toggleOutro('produtividade',true)"><span>Outro</span></label>
-      </div>
-      <div id="produtividade-outro-wrap" style="display:none;margin-top:0.5rem;">
-        <input type="text" id="produtividade_outro_texto" placeholder="Descreva..." style="width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;">
-      </div>
-      <div class="error-msg" id="err-produtividade">Selecione uma opção.</div>
-    </div>
-
-     <div class="field" style="margin-top:1.25rem;">
-      <label>Comentários sobre a Produtividade</label>
-      <textarea id="comentario_produtividade" placeholder="Observações adicionais..."></textarea>
-    </div>
-   
-    <div class="field" style="margin-top:1.25rem">
-      <span class="q-label">Fit Cultural <span class="required-star">*</span></span>
-      <span class="q-desc">É a capacidade de adaptação aos processos e comportamentos já estabelecidos na ZenFisio.</span>
-      <div class="radio-group" id="rg-fit">
-        <label class="radio-opt"><input type="radio" name="fit" value="Excelente." onclick="toggleOutro('fit',false)"><span>Excelente.</span></label>
-        <label class="radio-opt"><input type="radio" name="fit" value="Bom." onclick="toggleOutro('fit',false)"><span>Bom.</span></label>
-        <label class="radio-opt"><input type="radio" name="fit" value="Regular." onclick="toggleOutro('fit',false)"><span>Regular.</span></label>
-        <label class="radio-opt"><input type="radio" name="fit" value="Ruim." onclick="toggleOutro('fit',false)"><span>Ruim.</span></label>
-        <label class="radio-opt"><input type="radio" name="fit" value="outro" onclick="toggleOutro('fit',true)"><span>Outro</span></label>
-      </div>
-      <div id="fit-outro-wrap" style="display:none;margin-top:0.5rem;" style="display:none;margin-top:0.5rem;">
-        <input type="text" id="fit_outro_texto" placeholder="Descreva..." style="width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;">
-      </div>
-      <div class="error-msg" id="err-fit">Selecione uma opção.</div>
-    </div>
-
-    <div class="field" style="margin-top:1.25rem;">
-      <label>Comentários sobre o Fit Cultural</label>
-      <textarea id="comentario_fit" placeholder="Observações sobre adaptação cultural..."></textarea>
-    </div>
-  </div>
-
+     
   <!-- GERAL -->
   <div class="card">
     <div class="section-label">Geral</div>

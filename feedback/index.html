@@ -861,6 +861,11 @@ function fazerLogin() {
   document.getElementById('login-erro').style.display = 'none';
   document.getElementById('tela-login').style.display = 'none';
   document.getElementById('tela-conteudo').style.display = 'block';
+  // Oculta histórico local imediatamente após login
+  setTimeout(() => {
+    const h = document.querySelector('.historico-section');
+    if (h) h.style.display = 'none';
+  }, 50);
 }
 document.addEventListener('DOMContentLoaded', () => {
   const inp = document.getElementById('inp-usuario');

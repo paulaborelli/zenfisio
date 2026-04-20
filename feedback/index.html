@@ -679,13 +679,15 @@
   function abrirFeedback(idx) {
     feedbackAtual = todosFeedbacks[idx];
     const r = feedbackAtual;
-    document.getElementById('modal-fb-titulo').textContent = r['Colaborador'] || 'Feedback';
+    document.getElementById('modal-fb-titulo').textContent = (r['Colaborador'] || 'Feedback') + ' — ' + formatarDataFb(r['Data']);
     const campos = [
-      ['Colaborador', r['Colaborador']], ['Data', formatarDataFb(r['Data'] || r['Timestamp'])],
+      ['Colaborador', r['Colaborador']], ['Data', formatarDataFb(r['Data'])],
       ['Cargo', r['Cargo']], ['Responsável', r['Responsável']],
-      ['Tipo Feedback', r['Tipo'] || r['Tipo Feedback']], ['Formato', r['Formato']],
-      ['Motivo', r['Motivo']], ['Acertado', r['Acertado']],
-      ['Ciência', r['Ciência'] || r['Ciencia']], ['Observações', r['Obs Final'] || r['obsFinal']],
+      ['Tipo de Feedback', r['Tipo']], ['Formato', r['Formato']],
+      ['Motivo do Feedback', r['Motivo']],
+      ['O que ficou acertado', r['O que ficou acertado'] || r['Acertado']],
+      ['Ciência do Colaborador', r['Ciência'] || r['Ciencia']],
+      ['Observações Finais', r['Obs. Final'] || r['Obs Final'] || r['obsFinal']],
     ];
     document.getElementById('modal-fb-body').innerHTML = campos.map(([l,v]) => `
       <div style="margin-bottom:1rem;">
@@ -709,15 +711,15 @@
   function imprimirFeedback() {
     const r = feedbackAtual; if (!r) return;
     const nome    = r['Colaborador'] || '—';
-    const data    = formatarDataFb(r['Data'] || r['Timestamp']);
+    const data    = formatarDataFb(r['Data']);
     const cargo   = r['Cargo'] || '—';
     const resp    = r['Responsável'] || '—';
-    const tipo    = r['Tipo'] || r['Tipo Feedback'] || '—';
+    const tipo    = r['Tipo'] || '—';
     const formato = r['Formato'] || '—';
     const motivo  = r['Motivo'] || '—';
-    const acertado= r['Acertado'] || '—';
+    const acertado= r['O que ficou acertado'] || r['Acertado'] || '—';
     const ciencia = r['Ciência'] || r['Ciencia'] || '—';
-    const obs     = r['Obs Final'] || r['obsFinal'] || '';
+    const obs     = r['Obs. Final'] || r['Obs Final'] || r['obsFinal'] || '';
 
     const tipoBadgeColor = tipo === 'positivo' ? '#2e7d32' : tipo === 'construtivo' ? '#9b3a2e' : '#4A7C59';
     const tipoBadgeBg    = tipo === 'positivo' ? '#e3f5e1' : tipo === 'construtivo' ? '#fdf0ee' : '#EAF2EC';

@@ -633,6 +633,9 @@
       document.getElementById('busca-planilha').style.display = todosFeedbacks.length ? 'block' : 'none';
       renderPlanilha(todosFeedbacks);
       btn.textContent = '↺ Atualizar';
+      // Oculta o histórico local quando a planilha carregar
+      const histLocal = document.querySelector('.historico-section');
+      if (histLocal) histLocal.style.display = 'none';
     } catch(e) {
       lista.innerHTML = '<div style="text-align:center;padding:1.5rem;color:#9b3a2e;font-size:0.9rem;">⚠️ Erro ao carregar. Verifique a conexão.</div>';
       btn.textContent = '↓ Carregar registros';

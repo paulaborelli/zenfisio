@@ -368,6 +368,50 @@
 <script>
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyYOEGropdzHP5V_nuR29qP7KNDEvFfNIV4JtDifPDZxIG1gX5T9buFyn361K_GISvvkQ/exec';
 
+// ── USUÁRIOS ─────────────────────────────────────────────────
+const USUARIOS = {
+  'cledison':  { senha: 'zen@cledison',  nome: 'Cledison',  perfil: 'rh'    },
+  'taiz':      { senha: 'zen@taiz',      nome: 'Taiz',      perfil: 'lider' },
+  'juliana':   { senha: 'zen@juliana',   nome: 'Juliana',   perfil: 'lider' },
+  'gustavo':   { senha: 'zen@gustavo',   nome: 'Gustavo',   perfil: 'lider' },
+  'lucas':     { senha: 'zen@lucas',     nome: 'Lucas',     perfil: 'lider' },
+  'anderson':  { senha: 'zen@anderson',  nome: 'Anderson',  perfil: 'lider' },
+  'guilherme': { senha: 'zen@guilherme', nome: 'Guilherme', perfil: 'lider' },
+  'viviane':   { senha: 'zen@viviane',   nome: 'Viviane',   perfil: 'lider' },
+  'rh':        { senha: 'zen@rh',        nome: 'RH',        perfil: 'rh'    },
+};
+
+let usuarioLogado = null;
+
+function fazerLogin() {
+  const u = document.getElementById('login-usuario').value.trim().toLowerCase();
+  const s = document.getElementById('login-senha').value;
+  const erro = document.getElementById('login-erro');
+  const usr = USUARIOS[u];
+  if (!usr || usr.senha !== s) {
+    erro.style.display = 'block';
+    return;
+  }
+  erro.style.display = 'none';
+  usuarioLogado = { ...usr, usuario: u };
+
+  // Preenche e bloqueia o campo líder
+  const campoLider = document.getElementById('lider');
+  campoLider.value = usr.nome;
+  campoLider.readOnly = true;
+  campoLider.style.background = '#f0f4f1';
+  campoLider.style.color = '#5E6659';
+
+  // Preenche a data de hoje
+  const hoje = new Date().toISOString().split('T')[0];
+  const campoData = document.getElementById('data');
+  if (!campoData.value) campoData.value = hoje;
+
+  // Troca telas
+  document.getElementById('tela-login').style.display = 'none';
+  document.getElementById('tela-formulario').style.display = 'block';
+}
+
 function mostrarToast(msg, erro) {
   const t = document.getElementById('toast');
   t.textContent = msg;

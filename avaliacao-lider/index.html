@@ -83,6 +83,35 @@
 </head>
 <body>
 <a href="../index.html" style="position:fixed;top:1rem;left:1rem;z-index:9999;display:inline-flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;font-size:0.82rem;font-weight:600;color:#4A7C59;text-decoration:none;padding:6px 14px;border-radius:8px;border:1.5px solid #4A7C59;background:white;box-shadow:0 2px 6px rgba(0,0,0,0.08);transition:background 0.15s;" onmouseover="this.style.background='#EAF2EC'" onmouseout="this.style.background='white'" class="no-print">← Início</a>
+<!-- TELA DE LOGIN -->
+<div id="tela-login" style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem 1rem;background:var(--bg);">
+  <div style="background:white;border:1px solid var(--border);border-radius:var(--radius);padding:2.5rem 2rem;width:100%;max-width:380px;box-shadow:0 8px 32px rgba(0,0,0,0.08);">
+    <a href="../index.html" style="display:inline-flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;font-size:0.82rem;font-weight:600;color:#4A7C59;text-decoration:none;padding:5px 12px;border-radius:8px;border:1.5px solid #4A7C59;margin-bottom:1.5rem;background:white;" onmouseover="this.style.background='#EAF2EC'" onmouseout="this.style.background='white'">← Início</a>
+    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.75rem;">
+      <div>
+        <div style="font-family:'Lora',serif;font-size:1.15rem;font-weight:700;color:var(--accent);">Avaliação Líder</div>
+        <div style="font-size:0.78rem;color:var(--text-hint);">ZenFisio · Período de Experiência</div>
+      </div>
+    </div>
+    <div style="margin-bottom:1rem;">
+      <label style="display:block;font-size:0.82rem;font-weight:600;color:var(--text-muted);margin-bottom:0.35rem;">Usuário</label>
+      <input type="text" id="login-usuario" placeholder="seu usuário" autocomplete="username"
+        onkeydown="if(event.key==='Enter') fazerLogin()"
+        style="width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;">
+    </div>
+    <div style="margin-bottom:1rem;">
+      <label style="display:block;font-size:0.82rem;font-weight:600;color:var(--text-muted);margin-bottom:0.35rem;">Senha</label>
+      <input type="password" id="login-senha" placeholder="sua senha" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter') fazerLogin()"
+        style="width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;">
+    </div>
+    <button onclick="fazerLogin()" style="width:100%;padding:11px;background:var(--accent);color:white;border:none;border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;">Entrar</button>
+    <div id="login-erro" style="background:#fdf0ee;border:1px solid #e8b4ae;border-radius:var(--radius-sm);padding:0.6rem 0.9rem;font-size:0.85rem;color:#9b3a2e;margin-top:0.75rem;display:none;">Usuário ou senha incorretos.</div>
+  </div>
+</div>
+
+<!-- TELA DO FORMULÁRIO -->
+<div id="tela-formulario" style="display:none;">
 <div class="container">
 
   <div class="page-header no-print">
@@ -517,5 +546,6 @@ async function salvar() {
   }
 }
 </script>
+</div>
 </body>
 </html>

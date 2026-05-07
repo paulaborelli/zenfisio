@@ -32,6 +32,7 @@
     background: var(--surface); border: 1px solid var(--border);
     border-radius: var(--radius); padding: 1.25rem 1.5rem;
     text-decoration: none; transition: all 0.15s; text-align: left;
+    cursor: pointer;
   }
   .card-link:hover {
     border-color: var(--accent);
@@ -78,6 +79,98 @@
   .sub-arrow { color: var(--text-hint); font-size: 16px; transition: transform 0.15s; }
   .sub-link:hover .sub-arrow { transform: translateX(3px); color: var(--accent); }
   .footer { margin-top: 2.5rem; font-size: 12px; color: var(--text-hint); }
+
+  /* ── MODAL OUVIDORIA ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45); z-index: 1000;
+    align-items: center; justify-content: center; padding: 1.5rem;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: white; border-radius: var(--radius);
+    width: 100%; max-width: 480px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    overflow: hidden; animation: slideUp 0.2s ease;
+  }
+  @keyframes slideUp {
+    from { opacity:0; transform: translateY(20px); }
+    to   { opacity:1; transform: translateY(0); }
+  }
+  .modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border);
+  }
+  .modal-header h2 {
+    font-family: "Lora"; font-size: 1.1rem; font-weight: 600; color: var(--accent);
+  }
+  .modal-close {
+    width: 32px; height: 32px; border-radius: 50%; border: none;
+    background: var(--bg); cursor: pointer; font-size: 1.1rem;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-muted); transition: background 0.15s;
+  }
+  .modal-close:hover { background: var(--border); }
+  .modal-body { padding: 1.5rem; }
+  .modal-aviso {
+    background: var(--accent-light); border: 1px solid #c3dac9;
+    border-radius: var(--radius-sm); padding: 0.7rem 1rem;
+    font-size: 0.82rem; color: var(--accent-text);
+    margin-bottom: 1.25rem; line-height: 1.5;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .form-field { margin-bottom: 1rem; }
+  .form-field label {
+    display: block; font-size: 0.82rem; font-weight: 600;
+    color: var(--text-muted); margin-bottom: 0.4rem;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .form-field .opcional { font-weight: 400; color: var(--text-hint); font-size: 0.78rem; }
+  .form-field input, .form-field textarea {
+    width: 100%; padding: 10px 13px;
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif; font-size: 14px;
+    outline: none; transition: border-color 0.15s; color: var(--text); background: white;
+  }
+  .form-field input:focus, .form-field textarea:focus {
+    border-color: var(--accent); box-shadow: 0 0 0 3px rgba(74,124,89,0.1);
+  }
+  .form-field textarea { min-height: 120px; resize: vertical; }
+  .form-contador {
+    font-size: 0.75rem; color: var(--text-hint);
+    text-align: right; margin-top: 4px; font-family: 'DM Sans', sans-serif;
+  }
+  .btn-enviar {
+    width: 100%; padding: 12px;
+    background: var(--accent); color: white; border: none;
+    border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem; font-weight: 600; cursor: pointer;
+    transition: background 0.15s; margin-top: 0.25rem;
+  }
+  .btn-enviar:hover { background: #3a6347; }
+  .btn-enviar:disabled { background: var(--text-hint); cursor: not-allowed; }
+  .modal-sucesso { display: none; text-align: center; padding: 2rem 1.5rem; }
+  .sucesso-icon {
+    width: 56px; height: 56px; border-radius: 50%;
+    background: var(--accent-light); display: flex;
+    align-items: center; justify-content: center;
+    margin: 0 auto 1rem; font-size: 1.5rem;
+  }
+  .sucesso-titulo {
+    font-family: 'Lora', serif; font-size: 1.1rem;
+    font-weight: 600; color: var(--accent); margin-bottom: 0.5rem;
+  }
+  .sucesso-desc {
+    font-size: 0.88rem; color: var(--text-muted);
+    font-family: 'DM Sans', sans-serif; line-height: 1.5;
+  }
+  .btn-fechar {
+    margin-top: 1.5rem; padding: 10px 28px;
+    background: var(--accent); color: white; border: none;
+    border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: background 0.15s;
+  }
+  .btn-fechar:hover { background: #3a6347; }
 </style>
 </head>
 <body>
@@ -118,6 +211,21 @@
         </div>
       </div>
       <div id="aniv-lista"></div>
+    </div>
+
+    <!-- Ouvidoria -->
+    <div class="card-link" onclick="abrirOuvidoria()">
+      <div class="card-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4A7C59" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          <line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="12" y2="13"/>
+        </svg>
+      </div>
+      <div class="card-body">
+        <div class="card-title">Ouvidoria</div>
+        <div class="card-desc">Envie sua opinião, sugestão ou reclamação — anônimo ou identificado</div>
+      </div>
+      <span class="card-arrow">→</span>
     </div>
 
     <!-- Contratação -->
@@ -219,7 +327,101 @@
   <p class="footer">&copy; ZenFisio &middot; Uso interno</p>
 </div>
 
+<!-- MODAL OUVIDORIA -->
+<div class="modal-overlay" id="modal-ouvidoria" onclick="fecharModalClick(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>💬 Ouvidoria ZenFisio</h2>
+      <button class="modal-close" onclick="fecharOuvidoria()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-form">
+      <div class="modal-aviso">
+        🔒 Sua mensagem é tratada com sigilo pelo RH. A identificação é totalmente opcional.
+      </div>
+      <div class="form-field">
+        <label>Nome <span class="opcional">(opcional — deixe em branco para envio anônimo)</span></label>
+        <input type="text" id="ouv-nome" placeholder="Seu nome ou apelido" maxlength="100">
+      </div>
+      <div class="form-field">
+        <label>Mensagem <span class="opcional">*</span></label>
+        <textarea id="ouv-mensagem" placeholder="Escreva sua opinião, sugestão ou reclamação..." maxlength="2000" oninput="atualizarContador()"></textarea>
+        <div class="form-contador"><span id="contador">0</span>/2000</div>
+      </div>
+      <button class="btn-enviar" id="btn-enviar" onclick="enviarOuvidoria()">Enviar mensagem</button>
+    </div>
+    <div class="modal-sucesso" id="modal-sucesso">
+      <div class="sucesso-icon">✅</div>
+      <div class="sucesso-titulo">Mensagem enviada!</div>
+      <div class="sucesso-desc">Obrigado pelo seu retorno. Sua mensagem foi recebida pelo RH e será tratada com sigilo.</div>
+      <button class="btn-fechar" onclick="fecharOuvidoria()">Fechar</button>
+    </div>
+  </div>
+</div>
+
 <script>
+  const SCRIPT_OUVIDORIA = 'https://script.google.com/macros/s/AKfycbyhtNE9aZqBr1N7cERxpghKKCBCOgG66PgtWOel303VoTryvq9Zit7_tzD9QvHlXFP-/exec';
+
+  function abrirOuvidoria() {
+    document.getElementById('modal-ouvidoria').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    document.getElementById('modal-form').style.display = 'block';
+    document.getElementById('modal-sucesso').style.display = 'none';
+    document.getElementById('ouv-nome').value = '';
+    document.getElementById('ouv-mensagem').value = '';
+    document.getElementById('contador').textContent = '0';
+    document.getElementById('btn-enviar').disabled = false;
+    document.getElementById('btn-enviar').textContent = 'Enviar mensagem';
+  }
+
+  function fecharOuvidoria() {
+    document.getElementById('modal-ouvidoria').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  function fecharModalClick(e) {
+    if (e.target === document.getElementById('modal-ouvidoria')) fecharOuvidoria();
+  }
+
+  function atualizarContador() {
+    document.getElementById('contador').textContent = document.getElementById('ouv-mensagem').value.length;
+  }
+
+  async function enviarOuvidoria() {
+    const nome = document.getElementById('ouv-nome').value.trim();
+    const mensagem = document.getElementById('ouv-mensagem').value.trim();
+    const btn = document.getElementById('btn-enviar');
+    const textarea = document.getElementById('ouv-mensagem');
+
+    if (!mensagem) {
+      textarea.focus();
+      textarea.style.borderColor = '#c0392b';
+      setTimeout(() => textarea.style.borderColor = '', 2000);
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Enviando...';
+
+    try {
+      await fetch(SCRIPT_OUVIDORIA, {
+        method: 'POST',
+        mode: 'no-cors',
+        body: JSON.stringify({
+          tipo: 'ouvidoria',
+          nome: nome || 'Anônimo',
+          mensagem,
+          data: new Date().toLocaleString('pt-BR'),
+        }),
+      });
+      document.getElementById('modal-form').style.display = 'none';
+      document.getElementById('modal-sucesso').style.display = 'block';
+    } catch(e) {
+      btn.disabled = false;
+      btn.textContent = 'Enviar mensagem';
+      alert('Erro ao enviar. Tente novamente.');
+    }
+  }
+
   function toggle(id) {
     const sub = document.getElementById('sub-' + id);
     const arrow = document.getElementById('arrow-' + id);
@@ -277,7 +479,6 @@
       }).join('');
     } catch(e) {
       descEl.textContent = 'Não foi possível carregar os dados.';
-      console.error('Aniversariantes:', e);
     }
   })();
 </script>

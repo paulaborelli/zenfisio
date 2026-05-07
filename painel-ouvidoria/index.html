@@ -15,7 +15,6 @@
   }
   body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
-  /* LOGIN */
   #tela-login { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem 1rem; }
   .login-box { background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 2.5rem 2rem; width: 100%; max-width: 380px; box-shadow: 0 8px 32px rgba(0,0,0,0.08); }
   .login-logo { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.75rem; }
@@ -30,7 +29,6 @@
   .login-btn:hover { background: #3a6347; }
   .login-erro { background: var(--red-light); border: 1px solid #e8b4ae; border-radius: var(--radius-sm); padding: 0.6rem 0.9rem; font-size: 0.85rem; color: var(--red); margin-top: 0.75rem; display: none; }
 
-  /* PAINEL */
   #tela-painel { display: none; padding: 2rem 1rem 5rem; }
   .container { max-width: 900px; margin: 0 auto; }
   .page-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
@@ -43,7 +41,6 @@
   .btn-sair { background: none; border: 1px solid var(--accent); color: var(--accent); padding: 4px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s; }
   .btn-sair:hover { background: var(--accent); color: white; }
 
-  /* Filtros */
   .filtros { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1.25rem; align-items: center; }
   .filtro-pill { padding: 5px 14px; border-radius: 20px; border: 1.5px solid var(--border); background: white; font-size: 0.83rem; font-weight: 500; cursor: pointer; color: var(--text-muted); transition: all 0.15s; }
   .filtro-pill:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
@@ -66,7 +63,6 @@
   .empty { text-align: center; padding: 3rem 1rem; color: var(--text-hint); }
   .loading { text-align: center; padding: 2rem; color: var(--text-hint); }
 
-  /* MODAL */
   .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 1000; align-items: flex-start; justify-content: center; padding: 2rem 1rem; overflow-y: auto; }
   .modal-overlay.open { display: flex; }
   .modal { background: white; border-radius: var(--radius); width: 100%; max-width: 680px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); margin: auto; }
@@ -142,7 +138,7 @@
   </div>
 </div>
 
-<!-- MODAL DETALHE -->
+<!-- MODAL -->
 <div class="modal-overlay" id="modal-overlay" onclick="fecharModalClick(event)">
   <div class="modal">
     <div class="modal-header">
@@ -155,18 +151,20 @@
 
 <script>
 const SHEET_ID_OUVIDORIA = '1zVjc3Vd0BXP1tuWhkb_Vu_q7XozLKCPbscUgi-UNW30';
+const GID_RESPOSTAS      = '1400704772';
+
 const USUARIOS = {
   'cledison': { senha: 'zen@cledison', nome: 'Cledison', perfil: 'rh' },
   'rh':       { senha: 'zen@rh',       nome: 'RH',       perfil: 'rh' },
 };
 
-let usuarioLogado = null;
+let usuarioLogado  = null;
 let todosRegistros = [];
 let categoriaAtiva = 'Todos';
 
 function fazerLogin() {
-  const u = document.getElementById('inp-usuario').value.trim().toLowerCase();
-  const s = document.getElementById('inp-senha').value;
+  const u   = document.getElementById('inp-usuario').value.trim().toLowerCase();
+  const s   = document.getElementById('inp-senha').value;
   const usr = USUARIOS[u];
   if (!usr || usr.senha !== s) {
     document.getElementById('login-erro').style.display = 'block';
@@ -174,31 +172,40 @@ function fazerLogin() {
   }
   document.getElementById('login-erro').style.display = 'none';
   usuarioLogado = { ...usr, usuario: u };
-  document.getElementById('tela-login').style.display = 'none';
+  document.getElementById('tela-login').style.display  = 'none';
   document.getElementById('tela-painel').style.display = 'block';
-  document.getElementById('nome-usuario').textContent = usr.nome;
+  document.getElementById('nome-usuario').textContent  = usr.nome;
   carregar();
 }
 
 function sair() {
   usuarioLogado = null;
   document.getElementById('tela-painel').style.display = 'none';
-  document.getElementById('tela-login').style.display = 'flex';
+  document.getElementById('tela-login').style.display  = 'flex';
   document.getElementById('inp-usuario').value = '';
-  document.getElementById('inp-senha').value = '';
+  document.getElementById('inp-senha').value   = '';
 }
 
 async function carregar() {
   document.getElementById('lista-wrap').innerHTML = '<div class="loading">Carregando...</div>';
   try {
-    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID_OUVIDORIA}/export?format=csv&gid=0`;
+    const url  = `https://docs.google.com/spreadsheets/d/${SHEET_ID_OUVIDORIA}/export?format=csv&gid=${GID_RESPOSTAS}`;
     const resp = await fetch(url);
-    const text = await resp.text();
-    const linhas = text.trim().split('\n').slice(1);
-    todosRegistros = linhas.map(l => {
-      const cols = l.split(',').map(c => c.replace(/"/g,'').trim());
-      return { data: cols[0]||'', nome: cols[1]||'', categorias: cols[2]||'', mensagem: cols[3]||'' };
-    }).filter(r => r.data).reverse();
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const text   = await resp.text();
+    const linhas = text.trim().split('\n').slice(1); // pula cabeçalho
+    todosRegistros = linhas
+      .map(l => {
+        const cols = l.split(',').map(c => c.replace(/"/g, '').trim());
+        return {
+          data:      cols[0] || '',
+          nome:      cols[1] || '',
+          categorias: cols[2] || '',
+          mensagem:  cols[3] || '',
+        };
+      })
+      .filter(r => r.data)
+      .reverse(); // mais recentes primeiro
     renderLista();
   } catch(e) {
     document.getElementById('lista-wrap').innerHTML = '<div class="empty">⚠️ Erro ao carregar dados.</div>';
@@ -217,6 +224,7 @@ function filtrarCategoria(cat, el) {
 function renderLista() {
   const q = document.getElementById('busca').value.toLowerCase().trim();
   let dados = [...todosRegistros];
+
   if (categoriaAtiva !== 'Todos') {
     dados = dados.filter(r => r.categorias.includes(categoriaAtiva));
   }
@@ -227,15 +235,20 @@ function renderLista() {
       r.categorias.toLowerCase().includes(q)
     );
   }
+
   if (!dados.length) {
     document.getElementById('lista-wrap').innerHTML = '<div class="empty">📭 Nenhuma mensagem encontrada.</div>';
     return;
   }
+
   document.getElementById('lista-wrap').innerHTML = '<div class="lista">' +
-    dados.map((r, i) => {
-      const cats = r.categorias ? r.categorias.split(',').map(c => `<span class="cat-badge">${c.trim()}</span>`).join('') : '';
+    dados.map(r => {
+      const cats = r.categorias
+        ? r.categorias.split(',').map(c => `<span class="cat-badge">${c.trim()}</span>`).join('')
+        : '';
       const preview = r.mensagem.length > 120 ? r.mensagem.substring(0, 120) + '...' : r.mensagem;
-      return `<div class="card-item" onclick="abrirDetalhe(${todosRegistros.indexOf(r)})">
+      const idx = todosRegistros.indexOf(r);
+      return `<div class="card-item" onclick="abrirDetalhe(${idx})">
         <div class="card-top">
           <div class="card-nome">${r.nome}</div>
           <div class="card-data">${r.data}</div>
@@ -247,16 +260,25 @@ function renderLista() {
 }
 
 function abrirDetalhe(idx) {
-  const r = todosRegistros[idx];
-  const cats = r.categorias ? r.categorias.split(',').map(c => `<span class="cat-badge" style="font-size:0.8rem;padding:3px 10px;">${c.trim()}</span>`).join(' ') : '—';
+  const r    = todosRegistros[idx];
+  const cats = r.categorias
+    ? r.categorias.split(',').map(c => `<span class="cat-badge" style="font-size:0.8rem;padding:3px 10px;">${c.trim()}</span>`).join(' ')
+    : '—';
+
   document.getElementById('modal-titulo').textContent = r.nome;
   document.getElementById('modal-body').innerHTML = `
     <div class="detalhe-grid">
       <div><div class="detalhe-label">Remetente</div><div class="detalhe-valor">${r.nome}</div></div>
       <div><div class="detalhe-label">Data e Hora</div><div class="detalhe-valor">${r.data}</div></div>
     </div>
-    <div style="margin-bottom:1.25rem"><div class="detalhe-label" style="margin-bottom:8px">Categorias</div>${cats}</div>
-    <div><div class="detalhe-label" style="margin-bottom:8px">Mensagem</div><div class="detalhe-mensagem">${r.mensagem}</div></div>
+    <div style="margin-bottom:1.25rem">
+      <div class="detalhe-label" style="margin-bottom:8px">Categorias</div>
+      ${cats}
+    </div>
+    <div>
+      <div class="detalhe-label" style="margin-bottom:8px">Mensagem</div>
+      <div class="detalhe-mensagem">${r.mensagem}</div>
+    </div>
   `;
   document.getElementById('modal-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';

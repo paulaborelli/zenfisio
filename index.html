@@ -126,19 +126,37 @@
       <div id="aniv-lista"></div>
     </div>
 
-    <!-- Ouvidoria -->
-    <div class="card-link" onclick="abrirOuvidoria()">
-      <div class="card-icon">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4A7C59" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-          <line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="12" y2="13"/>
-        </svg>
+    <!-- Ouvidoria — card expansível com sub-item -->
+    <div class="card-group">
+      <button class="card-toggle" onclick="toggle('ouvidoria')">
+        <div class="card-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4A7C59" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            <line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="12" y2="13"/>
+          </svg>
+        </div>
+        <div class="card-body">
+          <div class="card-title">Ouvidoria — Conecta ZenFisio</div>
+          <div class="card-desc">Envie sua opinião, sugestão ou reclamação</div>
+        </div>
+        <span class="card-arrow" id="arrow-ouvidoria">→</span>
+      </button>
+      <div class="sub-items" id="sub-ouvidoria">
+        <div class="sub-link" onclick="abrirOuvidoria()" style="cursor:pointer;">
+          <div class="sub-body">
+            <div class="sub-title">Enviar mensagem</div>
+            <div class="sub-desc">Anônimo ou identificado — tratado com sigilo pelo RH</div>
+          </div>
+          <span class="sub-arrow">→</span>
+        </div>
+        <a class="sub-link" href="painel-ouvidoria/index.html">
+          <div class="sub-body">
+            <div class="sub-title">Painel da Ouvidoria</div>
+            <div class="sub-desc">Consulta e gestão das mensagens recebidas — RH</div>
+          </div>
+          <span class="sub-arrow">→</span>
+        </a>
       </div>
-      <div class="card-body">
-        <div class="card-title">Ouvidoria — Conecta ZenFisio</div>
-        <div class="card-desc">Envie sua opinião, sugestão ou reclamação — anônimo ou identificado</div>
-      </div>
-      <span class="card-arrow">→</span>
     </div>
 
     <!-- Contratação -->

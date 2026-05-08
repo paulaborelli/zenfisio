@@ -386,6 +386,7 @@
   }
 
   // Retorna eventos de um dia específico (mes 1-based)
+  // Para férias: só marca início e fim do período
   function getEventosDia(dia, mes, ano) {
     if (!dados) return [];
     const evs = [];
@@ -405,31 +406,66 @@
       }
     });
 
-    // Férias (período)
+    // Férias: só aparece no dia de início e no dia de fim
+    const d = new Date(ano, mes - 1, dia);
     dados.ferias.forEach(f => {
       const ini = new Date(f.inicio + 'T00:00:00');
       const fim = new Date(f.fim + 'T00:00:00');
-      const d = new Date(ano, mes - 1, dia);
-      if (d >= ini && d <= fim) {
-        evs.push({ tipo: 'ferias', label: f.nome, nome: f.nome, tipoFerias: f.tipo });
+      const isInicio = d.getTime() === ini.getTime();
+      const isFim = d.getTime() === fim.getTime();
+      if (isInicio || isFim) {
+        const label = isInicio ? '→ ' + firstName(f.nome) : firstName(f.nome) + ' ←';
+        evs.push({ tipo: 'ferias', label, nome: f.nome, tipoFerias: f.tipo, isInicio, isFim });
       }
     });
 
     return evs;
   }
 
-  // Retorna todos os eventos do mês para a lista lateral
+  function firstName(nome) {
+    return nome.split(' ')[0];
+  }
+
+  // Retorna férias únicas do mês (por período) + eventos pontuais (aniv/admis)
   function getEventosMes(mes, ano) {
     if (!dados) return [];
     const evs = [];
     const diasNoMes = new Date(ano, mes, 0).getDate();
 
+    // Eventos pontuais (aniversário e admissão) — por dia
     for (let dia = 1; dia <= diasNoMes; dia++) {
-      const lista = getEventosDia(dia, mes, ano);
-      lista.forEach(ev => {
-        evs.push({ ...ev, dia, mes });
+      dados.aniversarios.forEach(a => {
+        if (a.dia === dia && a.mes === mes) {
+          evs.push({ tipo: 'aniv', nome: a.nome, dia, mes });
+        }
+      });
+      dados.admissoes.forEach(a => {
+        if (a.dia === dia && a.mes === mes) {
+          const anos = ano - a.ano;
+          evs.push({ tipo: 'admis', nome: a.nome, dia, mes, anos });
+        }
       });
     }
+
+    // Férias: uma entrada por período que toque o mês
+    dados.ferias.forEach(f => {
+      const ini = new Date(f.inicio + 'T00:00:00');
+      const fim = new Date(f.fim + 'T00:00:00');
+      const inicioMes = new Date(ano, mes - 1, 1);
+      const fimMes = new Date(ano, mes - 1, diasNoMes);
+      if (ini <= fimMes && fim >= inicioMes) {
+        evs.push({
+          tipo: 'ferias',
+          nome: f.nome,
+          tipoFerias: f.tipo,
+          inicio: f.inicio,
+          fim: f.fim,
+          // para ordenação usa o dia de início (ou dia 1 se começa antes do mês)
+          dia: ini >= inicioMes ? ini.getDate() : 1,
+          mes
+        });
+      }
+    });
 
     // Ordena por dia
     evs.sort((a, b) => a.dia - b.dia);
@@ -502,25 +538,40 @@
 
     let html = '';
     evs.forEach(ev => {
-      let typeBadge, typeColor;
-      if (ev.tipo === 'aniv') {
+      let typeBadge, typeColor, dateBox;
+
+      if (ev.tipo === 'ferias') {
+        // Formata período
+        const ini = new Date(ev.inicio + 'T00:00:00');
+        const fim = new Date(ev.fim + 'T00:00:00');
+        const fmt = d => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+        typeBadge = `✈️ ${ev.tipoFerias || 'Férias'} &nbsp;·&nbsp; ${fmt(ini)} a ${fmt(fim)}`;
+        typeColor = 'background:var(--ferias-bg);color:var(--ferias)';
+        // Caixa de data: mostra o início
+        dateBox = `<div class="event-date-box">
+          <div class="event-date-day">${String(ini.getDate()).padStart(2,'0')}</div>
+          <div class="event-date-mon">${MESES_CURTO[ini.getMonth()]}</div>
+        </div>`;
+      } else if (ev.tipo === 'aniv') {
         typeBadge = '🎂 Aniversário';
         typeColor = 'background:var(--aniv-bg);color:var(--aniv)';
-      } else if (ev.tipo === 'admis') {
+        dateBox = `<div class="event-date-box">
+          <div class="event-date-day">${String(ev.dia).padStart(2,'0')}</div>
+          <div class="event-date-mon">${MESES_CURTO[ev.mes - 1]}</div>
+        </div>`;
+      } else {
         const label = ev.anos === 1 ? '1 ano de empresa' : `${ev.anos} anos de empresa`;
         typeBadge = `🏢 ${label}`;
         typeColor = 'background:var(--admis-bg);color:var(--admis)';
-      } else {
-        typeBadge = `✈️ ${ev.tipoFerias || 'Férias'}`;
-        typeColor = 'background:var(--ferias-bg);color:var(--ferias)';
+        dateBox = `<div class="event-date-box">
+          <div class="event-date-day">${String(ev.dia).padStart(2,'0')}</div>
+          <div class="event-date-mon">${MESES_CURTO[ev.mes - 1]}</div>
+        </div>`;
       }
 
       html += `
         <div class="event-item">
-          <div class="event-date-box">
-            <div class="event-date-day">${String(ev.dia).padStart(2,'0')}</div>
-            <div class="event-date-mon">${MESES_CURTO[ev.mes - 1]}</div>
-          </div>
+          ${dateBox}
           <div class="event-info">
             <div class="event-name">${ev.nome}</div>
             <span class="event-type" style="${typeColor}">${typeBadge}</span>

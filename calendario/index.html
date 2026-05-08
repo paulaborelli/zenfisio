@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Calendário — ZenFisio RH</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #f5f4f0;
+      --surface: #ffffff;
+      --border: #e8e6e0;
+      --text: #1a1a18;
+      --muted: #8a8880;
+      --primary: #2d5a4e;
+      --primary-light: #e8f0ee;
+
+      --aniv: #7c4dbd;
+      --aniv-bg: #f3eeff;
+      --admis: #1a6fa8;
+      --admis-bg: #e8f3fb;
+      --ferias: #b45309;
+      --ferias-bg: #fef3e2;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* HEADER */
+    header {
+      background: var(--primary);
+      color: #fff;
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .header-back {
+      color: rgba(255,255,255,0.7);
+      text-decoration: none;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: color .2s;
+    }
+    .header-back:hover { color: #fff; }
+    .header-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 22px;
+      font-weight: 400;
+    }
+    .header-sub {
+      font-size: 13px;
+      color: rgba(255,255,255,0.65);
+      margin-left: auto;
+    }
+
+    /* LAYOUT */
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 24px;
+      padding: 28px 32px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* CALENDAR CARD */
+    .cal-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .cal-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .cal-nav-month {
+      font-family: 'DM Serif Display', serif;
+      font-size: 20px;
+      font-weight: 400;
+    }
+    .cal-nav-btns { display: flex; gap: 8px; }
+    .cal-nav-btn {
+      width: 34px; height: 34px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      cursor: pointer;
+      font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text);
+      transition: background .15s, border-color .15s;
+    }
+    .cal-nav-btn:hover { background: var(--primary-light); border-color: var(--primary); }
+
+    .cal-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      padding: 12px 16px 6px;
+      gap: 2px;
+    }
+    .cal-weekday {
+      text-align: center;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 4px 0;
+    }
+
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      padding: 4px 16px 20px;
+      gap: 4px;
+    }
+
+    .cal-day {
+      min-height: 76px;
+      border-radius: 10px;
+      padding: 6px 5px 4px;
+      cursor: default;
+      transition: background .15s;
+      position: relative;
+    }
+    .cal-day:hover { background: var(--bg); }
+    .cal-day.other-month { opacity: .3; }
+    .cal-day.today .day-num {
+      background: var(--primary);
+      color: #fff;
+      border-radius: 50%;
+      width: 26px; height: 26px;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .day-num {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      width: 26px; height: 26px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 3px;
+    }
+
+    .day-dots {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2px;
+      margin-top: 2px;
+    }
+
+    .day-chip {
+      font-size: 10px;
+      font-weight: 500;
+      border-radius: 4px;
+      padding: 1px 5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+      line-height: 1.5;
+    }
+    .chip-aniv { background: var(--aniv-bg); color: var(--aniv); }
+    .chip-admis { background: var(--admis-bg); color: var(--admis); }
+    .chip-ferias { background: var(--ferias-bg); color: var(--ferias); }
+
+    /* SIDEBAR */
+    .sidebar { display: flex; flex-direction: column; gap: 20px; }
+
+    .side-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .side-card-header {
+      padding: 16px 20px 12px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .legend {
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+    }
+    .legend-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .events-list { padding: 8px 0; max-height: 420px; overflow-y: auto; }
+    .events-list::-webkit-scrollbar { width: 4px; }
+    .events-list::-webkit-scrollbar-track { background: transparent; }
+    .events-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    .event-item {
+      display: flex;
+      gap: 12px;
+      padding: 10px 20px;
+      border-bottom: 1px solid var(--border);
+      transition: background .15s;
+    }
+    .event-item:last-child { border-bottom: none; }
+    .event-item:hover { background: var(--bg); }
+
+    .event-date-box {
+      flex-shrink: 0;
+      width: 38px;
+      text-align: center;
+    }
+    .event-date-day {
+      font-family: 'DM Serif Display', serif;
+      font-size: 22px;
+      line-height: 1;
+      color: var(--text);
+    }
+    .event-date-mon {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .event-info { flex: 1; min-width: 0; }
+    .event-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .event-type {
+      font-size: 11px;
+      margin-top: 3px;
+      font-weight: 500;
+      display: inline-block;
+      padding: 1px 7px;
+      border-radius: 20px;
+    }
+
+    .empty-state {
+      padding: 32px 20px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .loading {
+      padding: 40px 20px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    @media (max-width: 800px) {
+      .container { grid-template-columns: 1fr; padding: 16px; }
+      .sidebar { order: -1; }
+      .cal-day { min-height: 56px; }
+      .day-chip { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <a class="header-back" href="../">← Portal RH</a>
+  <span class="header-title">Calendário</span>
+  <span class="header-sub" id="header-sub">Carregando...</span>
+</header>
+
+<div class="container">
+
+  <!-- CALENDÁRIO -->
+  <div class="cal-card">
+    <div class="cal-nav">
+      <div class="cal-nav-month" id="cal-title">—</div>
+      <div class="cal-nav-btns">
+        <button class="cal-nav-btn" onclick="changeMonth(-1)">‹</button>
+        <button class="cal-nav-btn" onclick="goToday()">Hoje</button>
+        <button class="cal-nav-btn" onclick="changeMonth(1)">›</button>
+      </div>
+    </div>
+    <div class="cal-weekdays">
+      <div class="cal-weekday">Dom</div>
+      <div class="cal-weekday">Seg</div>
+      <div class="cal-weekday">Ter</div>
+      <div class="cal-weekday">Qua</div>
+      <div class="cal-weekday">Qui</div>
+      <div class="cal-weekday">Sex</div>
+      <div class="cal-weekday">Sáb</div>
+    </div>
+    <div class="cal-grid" id="cal-grid">
+      <div class="loading">Carregando calendário...</div>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+
+    <!-- Legenda -->
+    <div class="side-card">
+      <div class="side-card-header">Legenda</div>
+      <div class="legend">
+        <div class="legend-item">
+          <div class="legend-dot" style="background:var(--aniv)"></div>
+          <span>Aniversário</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:var(--admis)"></div>
+          <span>Admissão</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:var(--ferias)"></div>
+          <span>Férias / Folga</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Próximos eventos -->
+    <div class="side-card">
+      <div class="side-card-header">📅 Eventos do mês</div>
+      <div class="events-list" id="events-list">
+        <div class="loading">Carregando...</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzGKY4jACd0Zp-U1mTZ63dImg8Kj7ZrDTRKn3U-SBGNZrRUaq_tRasCSDvr5Z_vsfnkyA/exec';
+
+  const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const MESES_CURTO = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+
+  let currentYear, currentMonth;
+  let dados = null;
+
+  function hoje() {
+    const d = new Date();
+    return { ano: d.getFullYear(), mes: d.getMonth(), dia: d.getDate() };
+  }
+
+  async function loadData() {
+    try {
+      const r = await fetch(SCRIPT_URL);
+      dados = await r.json();
+      render();
+    } catch(e) {
+      document.getElementById('cal-grid').innerHTML = '<div class="loading">Erro ao carregar dados. Tente novamente.</div>';
+      document.getElementById('events-list').innerHTML = '<div class="loading">Erro ao carregar dados.</div>';
+    }
+  }
+
+  // Retorna eventos de um dia específico (mes 1-based)
+  function getEventosDia(dia, mes, ano) {
+    if (!dados) return [];
+    const evs = [];
+
+    // Aniversários (recorrente - apenas dia e mês)
+    dados.aniversarios.forEach(a => {
+      if (a.dia === dia && a.mes === mes) {
+        evs.push({ tipo: 'aniv', label: a.nome, nome: a.nome });
+      }
+    });
+
+    // Admissões (recorrente - apenas dia e mês, qualquer ano)
+    dados.admissoes.forEach(a => {
+      if (a.dia === dia && a.mes === mes) {
+        const anos = ano - a.ano;
+        evs.push({ tipo: 'admis', label: a.nome, nome: a.nome, anos });
+      }
+    });
+
+    // Férias (período)
+    dados.ferias.forEach(f => {
+      const ini = new Date(f.inicio + 'T00:00:00');
+      const fim = new Date(f.fim + 'T00:00:00');
+      const d = new Date(ano, mes - 1, dia);
+      if (d >= ini && d <= fim) {
+        evs.push({ tipo: 'ferias', label: f.nome, nome: f.nome, tipoFerias: f.tipo });
+      }
+    });
+
+    return evs;
+  }
+
+  // Retorna todos os eventos do mês para a lista lateral
+  function getEventosMes(mes, ano) {
+    if (!dados) return [];
+    const evs = [];
+    const diasNoMes = new Date(ano, mes, 0).getDate();
+
+    for (let dia = 1; dia <= diasNoMes; dia++) {
+      const lista = getEventosDia(dia, mes, ano);
+      lista.forEach(ev => {
+        evs.push({ ...ev, dia, mes });
+      });
+    }
+
+    // Ordena por dia
+    evs.sort((a, b) => a.dia - b.dia);
+    return evs;
+  }
+
+  function renderCalendar() {
+    const mes = currentMonth + 1; // 1-based
+    const titulo = `${MESES[currentMonth]} ${currentYear}`;
+    document.getElementById('cal-title').textContent = titulo;
+    document.getElementById('header-sub').textContent = titulo;
+
+    const primeiroDia = new Date(currentYear, currentMonth, 1).getDay();
+    const diasNoMes = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const diasMesAnterior = new Date(currentYear, currentMonth, 0).getDate();
+    const h = hoje();
+
+    let html = '';
+    let cell = 0;
+
+    // Dias do mês anterior
+    for (let i = primeiroDia - 1; i >= 0; i--) {
+      const d = diasMesAnterior - i;
+      html += `<div class="cal-day other-month"><div class="day-num">${d}</div></div>`;
+      cell++;
+    }
+
+    // Dias do mês atual
+    for (let dia = 1; dia <= diasNoMes; dia++) {
+      const isHoje = dia === h.dia && currentMonth === h.mes && currentYear === h.ano;
+      const evs = getEventosDia(dia, mes, currentYear);
+
+      let chips = '';
+      // Mostra até 2 chips por dia
+      const visibles = evs.slice(0, 2);
+      visibles.forEach(ev => {
+        const cls = ev.tipo === 'aniv' ? 'chip-aniv' : ev.tipo === 'admis' ? 'chip-admis' : 'chip-ferias';
+        const firstName = ev.nome.split(' ')[0];
+        chips += `<div class="day-chip ${cls}">${firstName}</div>`;
+      });
+      if (evs.length > 2) {
+        chips += `<div class="day-chip" style="background:var(--border);color:var(--muted)">+${evs.length - 2}</div>`;
+      }
+
+      html += `
+        <div class="cal-day${isHoje ? ' today' : ''}">
+          <div class="day-num">${dia}</div>
+          <div class="day-dots">${chips}</div>
+        </div>`;
+      cell++;
+    }
+
+    // Completar última linha
+    const remaining = (7 - (cell % 7)) % 7;
+    for (let i = 1; i <= remaining; i++) {
+      html += `<div class="cal-day other-month"><div class="day-num">${i}</div></div>`;
+    }
+
+    document.getElementById('cal-grid').innerHTML = html;
+  }
+
+  function renderSidebar() {
+    const mes = currentMonth + 1;
+    const evs = getEventosMes(mes, currentYear);
+
+    if (evs.length === 0) {
+      document.getElementById('events-list').innerHTML = '<div class="empty-state">Nenhum evento neste mês.</div>';
+      return;
+    }
+
+    let html = '';
+    evs.forEach(ev => {
+      let typeBadge, typeColor;
+      if (ev.tipo === 'aniv') {
+        typeBadge = '🎂 Aniversário';
+        typeColor = 'background:var(--aniv-bg);color:var(--aniv)';
+      } else if (ev.tipo === 'admis') {
+        const label = ev.anos === 1 ? '1 ano de empresa' : `${ev.anos} anos de empresa`;
+        typeBadge = `🏢 ${label}`;
+        typeColor = 'background:var(--admis-bg);color:var(--admis)';
+      } else {
+        typeBadge = `✈️ ${ev.tipoFerias || 'Férias'}`;
+        typeColor = 'background:var(--ferias-bg);color:var(--ferias)';
+      }
+
+      html += `
+        <div class="event-item">
+          <div class="event-date-box">
+            <div class="event-date-day">${String(ev.dia).padStart(2,'0')}</div>
+            <div class="event-date-mon">${MESES_CURTO[ev.mes - 1]}</div>
+          </div>
+          <div class="event-info">
+            <div class="event-name">${ev.nome}</div>
+            <span class="event-type" style="${typeColor}">${typeBadge}</span>
+          </div>
+        </div>`;
+    });
+
+    document.getElementById('events-list').innerHTML = html;
+  }
+
+  function render() {
+    renderCalendar();
+    renderSidebar();
+  }
+
+  function changeMonth(delta) {
+    currentMonth += delta;
+    if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+    if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+    render();
+  }
+
+  function goToday() {
+    const h = hoje();
+    currentYear = h.ano;
+    currentMonth = h.mes;
+    render();
+  }
+
+  // Init
+  const h = hoje();
+  currentYear = h.ano;
+  currentMonth = h.mes;
+  loadData();
+</script>
+</body>
+</html>

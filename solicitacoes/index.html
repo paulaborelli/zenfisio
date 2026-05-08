@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Solicitações — ZenFisio RH</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #F2F4F0;
+      --surface: #FFFFFF;
+      --border: #DDE0D8;
+      --border-focus: #4A7C59;
+      --text: #1C201A;
+      --text-muted: #5E6659;
+      --text-hint: #9AA394;
+      --accent: #4A7C59;
+      --accent-light: #EAF2EC;
+      --accent-text: #2D5438;
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--accent);
+      color: #fff;
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .header-back {
+      color: rgba(255,255,255,0.7);
+      text-decoration: none;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: color .2s;
+    }
+    .header-back:hover { color: #fff; }
+    .header-title {
+      font-family: 'Lora', serif;
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .container {
+      max-width: 620px;
+      margin: 0 auto;
+      padding: 32px 16px 48px;
+    }
+
+    /* TABS */
+    .tabs {
+      display: flex;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 5px;
+      gap: 4px;
+      margin-bottom: 24px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: transparent;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .tab-btn.active {
+      background: var(--accent);
+      color: #fff;
+    }
+    .tab-btn:not(.active):hover {
+      background: var(--accent-light);
+      color: var(--accent-text);
+    }
+
+    /* CARD FORM */
+    .form-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      display: none;
+    }
+    .form-card.active { display: block; }
+
+    .form-card h2 {
+      font-family: 'Lora', serif;
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .form-card p {
+      font-size: 13px;
+      color: var(--text-hint);
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    @media (max-width: 500px) { .form-row { grid-template-columns: 1fr; } }
+
+    .form-field { margin-bottom: 16px; }
+    .form-field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: 6px;
+    }
+    .form-field input,
+    .form-field select,
+    .form-field textarea {
+      width: 100%;
+      padding: 10px 13px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      color: var(--text);
+      background: white;
+      outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .form-field input:focus,
+    .form-field select:focus,
+    .form-field textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(74,124,89,0.1);
+    }
+    .form-field textarea { min-height: 90px; resize: vertical; }
+
+    /* Tipo pills */
+    .tipo-pills {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .tipo-pill {
+      padding: 8px 16px;
+      border: 1.5px solid var(--border);
+      border-radius: 20px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all .15s;
+      user-select: none;
+      background: white;
+    }
+    .tipo-pill:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+    .tipo-pill.selected { border-color: var(--accent); background: var(--accent); color: white; }
+
+    /* Dias calculados */
+    .dias-badge {
+      display: inline-block;
+      background: var(--accent-light);
+      color: var(--accent-text);
+      border: 1px solid #c3dac9;
+      border-radius: var(--radius-sm);
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    /* Aviso */
+    .aviso {
+      background: var(--accent-light);
+      border: 1px solid #c3dac9;
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      font-size: 12px;
+      color: var(--accent-text);
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    .btn-enviar {
+      width: 100%;
+      padding: 13px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s;
+      margin-top: 8px;
+    }
+    .btn-enviar:hover { background: #3a6347; }
+    .btn-enviar:disabled { background: var(--text-hint); cursor: not-allowed; }
+
+    /* Sucesso */
+    .sucesso {
+      display: none;
+      text-align: center;
+      padding: 40px 20px;
+    }
+    .sucesso-icon {
+      width: 60px; height: 60px;
+      border-radius: 50%;
+      background: var(--accent-light);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 16px;
+      font-size: 26px;
+    }
+    .sucesso h3 {
+      font-family: 'Lora', serif;
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+    .sucesso p {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+    .btn-nova {
+      padding: 10px 28px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .btn-nova:hover { background: #3a6347; }
+
+    .erro-msg {
+      font-size: 11px;
+      color: #c0392b;
+      margin-top: 4px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <a class="header-back" href="../">← Portal RH</a>
+  <span class="header-title">Solicitações</span>
+</header>
+
+<div class="container">
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="trocarTab('ferias')">🏖️ Férias</button>
+    <button class="tab-btn" onclick="trocarTab('folga')">📅 Folga</button>
+  </div>
+
+  <!-- FORMULÁRIO FÉRIAS -->
+  <div class="form-card active" id="form-ferias">
+    <div id="ferias-form-inner">
+      <h2>Solicitação de Férias</h2>
+      <p>Preencha os dados abaixo. Você receberá uma confirmação no seu e-mail assim que a solicitação for registrada.</p>
+
+      <div class="aviso">
+        📌 A aprovação das férias está sujeita à análise do RH e do seu gestor. Em caso de ajuste, informe o período anterior nas observações.
+      </div>
+
+      <div class="form-field">
+        <label>Tipo de solicitação *</label>
+        <div class="tipo-pills">
+          <span class="tipo-pill" onclick="selecionarPill(this, 'ferias-tipo')">Nova solicitação</span>
+          <span class="tipo-pill" onclick="selecionarPill(this, 'ferias-tipo')">Ajuste de solicitação</span>
+        </div>
+        <div class="erro-msg" id="err-ferias-tipo">Selecione o tipo de solicitação.</div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label>Nome completo *</label>
+          <input type="text" id="ferias-nome" placeholder="Seu nome completo"/>
+          <div class="erro-msg" id="err-ferias-nome">Campo obrigatório.</div>
+        </div>
+        <div class="form-field">
+          <label>E-mail *</label>
+          <input type="email" id="ferias-email" placeholder="seu@email.com"/>
+          <div class="erro-msg" id="err-ferias-email">Informe um e-mail válido.</div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label>Data de início *</label>
+          <input type="date" id="ferias-inicio" oninput="calcularDias()"/>
+          <div class="erro-msg" id="err-ferias-inicio">Campo obrigatório.</div>
+        </div>
+        <div class="form-field">
+          <label>Data de fim *</label>
+          <input type="date" id="ferias-fim" oninput="calcularDias()"/>
+          <div class="erro-msg" id="err-ferias-fim">Campo obrigatório.</div>
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label>Quantidade de dias</label>
+        <div class="dias-badge" id="ferias-dias-badge">Preencha as datas acima</div>
+      </div>
+
+      <div class="form-field">
+        <label>Observações</label>
+        <textarea id="ferias-obs" placeholder="Ex: período anterior programado era 01/06 a 15/06..."></textarea>
+      </div>
+
+      <button class="btn-enviar" id="btn-ferias" onclick="enviarFerias()">Enviar solicitação</button>
+    </div>
+
+    <div class="sucesso" id="ferias-sucesso">
+      <div class="sucesso-icon">✅</div>
+      <h3>Solicitação enviada!</h3>
+      <p>Sua solicitação de férias foi registrada com sucesso.<br>Você receberá uma confirmação no e-mail informado.</p>
+      <button class="btn-nova" onclick="novaSolicitacao('ferias')">Nova solicitação</button>
+    </div>
+  </div>
+
+  <!-- FORMULÁRIO FOLGA -->
+  <div class="form-card" id="form-folga">
+    <div id="folga-form-inner">
+      <h2>Solicitação de Folga</h2>
+      <p>Preencha os dados abaixo. Você receberá uma confirmação no seu e-mail assim que a solicitação for registrada.</p>
+
+      <div class="aviso">
+        📌 A aprovação da folga está sujeita à análise do RH e do seu gestor. Em caso de ajuste, informe a data anterior nas observações.
+      </div>
+
+      <div class="form-field">
+        <label>Tipo de solicitação *</label>
+        <div class="tipo-pills">
+          <span class="tipo-pill" onclick="selecionarPill(this, 'folga-tipo')">Nova solicitação</span>
+          <span class="tipo-pill" onclick="selecionarPill(this, 'folga-tipo')">Ajuste de solicitação</span>
+        </div>
+        <div class="erro-msg" id="err-folga-tipo">Selecione o tipo de solicitação.</div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label>Nome completo *</label>
+          <input type="text" id="folga-nome" placeholder="Seu nome completo"/>
+          <div class="erro-msg" id="err-folga-nome">Campo obrigatório.</div>
+        </div>
+        <div class="form-field">
+          <label>E-mail *</label>
+          <input type="email" id="folga-email" placeholder="seu@email.com"/>
+          <div class="erro-msg" id="err-folga-email">Informe um e-mail válido.</div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label>Tipo de folga *</label>
+          <select id="folga-tipo-folga">
+            <option value="">Selecione...</option>
+            <option value="Antecipação de férias">Antecipação de férias</option>
+            <option value="Abono">Abono</option>
+            <option value="Outro">Outro</option>
+          </select>
+          <div class="erro-msg" id="err-folga-tipo-folga">Selecione o tipo de folga.</div>
+        </div>
+        <div class="form-field">
+          <label>Data da folga *</label>
+          <input type="date" id="folga-data"/>
+          <div class="erro-msg" id="err-folga-data">Campo obrigatório.</div>
+        </div>
+      </div>
+
+      <div class="form-field" id="folga-outro-campo" style="display:none;">
+        <label>Especifique o tipo de folga *</label>
+        <input type="text" id="folga-outro-texto" placeholder="Descreva o tipo de folga"/>
+      </div>
+
+      <div class="form-field">
+        <label>Observações</label>
+        <textarea id="folga-obs" placeholder="Informações adicionais, justificativa..."></textarea>
+      </div>
+
+      <button class="btn-enviar" id="btn-folga" onclick="enviarFolga()">Enviar solicitação</button>
+    </div>
+
+    <div class="sucesso" id="folga-sucesso">
+      <div class="sucesso-icon">✅</div>
+      <h3>Solicitação enviada!</h3>
+      <p>Sua solicitação de folga foi registrada com sucesso.<br>Você receberá uma confirmação no e-mail informado.</p>
+      <button class="btn-nova" onclick="novaSolicitacao('folga')">Nova solicitação</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyzI5AplyuA2-mc8G8S2zCiC1yj-g60zCJ30YdS8S4IlyXNz_Rg_fuqXmkMnLN_5jcbhQ/exec';
+
+  // Abre a aba correta se vier da URL (?aba=folga ou ?aba=ferias)
+  const _params = new URLSearchParams(window.location.search);
+  if (_params.get('aba') === 'folga') trocarTab('folga');
+
+  // ── TABS ────────────────────────────────────────────────
+  function trocarTab(aba) {
+    document.querySelectorAll('.tab-btn').forEach((b, i) => {
+      b.classList.toggle('active', (i === 0 && aba === 'ferias') || (i === 1 && aba === 'folga'));
+    });
+    document.getElementById('form-ferias').classList.toggle('active', aba === 'ferias');
+    document.getElementById('form-folga').classList.toggle('active', aba === 'folga');
+  }
+
+  // ── PILLS ───────────────────────────────────────────────
+  const pillSelecionado = {};
+  function selecionarPill(el, grupo) {
+    el.closest('.form-field').querySelectorAll('.tipo-pill').forEach(p => p.classList.remove('selected'));
+    el.classList.add('selected');
+    pillSelecionado[grupo] = el.textContent.trim();
+    esconderErro('err-' + grupo);
+  }
+
+  // ── CALCULAR DIAS ────────────────────────────────────────
+  function calcularDias() {
+    const ini = document.getElementById('ferias-inicio').value;
+    const fim = document.getElementById('ferias-fim').value;
+    const badge = document.getElementById('ferias-dias-badge');
+    if (ini && fim) {
+      const d1 = new Date(ini), d2 = new Date(fim);
+      if (d2 >= d1) {
+        const dias = Math.round((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
+        badge.textContent = dias + (dias === 1 ? ' dia' : ' dias');
+      } else {
+        badge.textContent = 'Data de fim deve ser após o início';
+      }
+    } else {
+      badge.textContent = 'Preencha as datas acima';
+    }
+  }
+
+  // ── TIPO FOLGA "OUTRO" ───────────────────────────────────
+  document.getElementById('folga-tipo-folga').addEventListener('change', function() {
+    document.getElementById('folga-outro-campo').style.display = this.value === 'Outro' ? 'block' : 'none';
+  });
+
+  // ── VALIDAÇÃO ────────────────────────────────────────────
+  function mostrarErro(id) {
+    const el = document.getElementById(id);
+    if (el) { el.style.display = 'block'; el.previousElementSibling?.classList?.add('erro'); }
+  }
+  function esconderErro(id) {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  }
+  function marcarErro(inputId, erroId) {
+    const el = document.getElementById(inputId);
+    if (el) el.style.borderColor = '#c0392b';
+    mostrarErro(erroId);
+    return false;
+  }
+  function limparErro(inputId, erroId) {
+    const el = document.getElementById(inputId);
+    if (el) el.style.borderColor = '';
+    esconderErro(erroId);
+  }
+
+  function validarEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
+  function getDias() {
+    const ini = document.getElementById('ferias-inicio').value;
+    const fim = document.getElementById('ferias-fim').value;
+    if (!ini || !fim) return 0;
+    const d1 = new Date(ini), d2 = new Date(fim);
+    return Math.round((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
+  }
+
+  function formatarData(valor) {
+    if (!valor) return '';
+    const [a, m, d] = valor.split('-');
+    return `${d}/${m}/${a}`;
+  }
+
+  // ── ENVIAR FÉRIAS ─────────────────────────────────────────
+  async function enviarFerias() {
+    let ok = true;
+
+    if (!pillSelecionado['ferias-tipo']) { mostrarErro('err-ferias-tipo'); ok = false; }
+    else esconderErro('err-ferias-tipo');
+
+    const nome = document.getElementById('ferias-nome').value.trim();
+    const email = document.getElementById('ferias-email').value.trim();
+    const inicio = document.getElementById('ferias-inicio').value;
+    const fim = document.getElementById('ferias-fim').value;
+    const obs = document.getElementById('ferias-obs').value.trim();
+
+    if (!nome) { marcarErro('ferias-nome', 'err-ferias-nome'); ok = false; } else limparErro('ferias-nome', 'err-ferias-nome');
+    if (!email || !validarEmail(email)) { marcarErro('ferias-email', 'err-ferias-email'); ok = false; } else limparErro('ferias-email', 'err-ferias-email');
+    if (!inicio) { marcarErro('ferias-inicio', 'err-ferias-inicio'); ok = false; } else limparErro('ferias-inicio', 'err-ferias-inicio');
+    if (!fim) { marcarErro('ferias-fim', 'err-ferias-fim'); ok = false; } else limparErro('ferias-fim', 'err-ferias-fim');
+
+    if (!ok) return;
+
+    const dias = getDias();
+    if (dias <= 0) {
+      marcarErro('ferias-fim', 'err-ferias-fim');
+      document.getElementById('err-ferias-fim').textContent = 'Data de fim deve ser após o início.';
+      return;
+    }
+
+    const btn = document.getElementById('btn-ferias');
+    btn.disabled = true;
+    btn.textContent = 'Enviando...';
+
+    try {
+      await fetch(SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        body: JSON.stringify({
+          tipo: 'ferias',
+          tipoSolicitacao: pillSelecionado['ferias-tipo'],
+          nome, email,
+          inicio: formatarData(inicio),
+          fim: formatarData(fim),
+          dias,
+          observacoes: obs
+        })
+      });
+      document.getElementById('ferias-form-inner').style.display = 'none';
+      document.getElementById('ferias-sucesso').style.display = 'block';
+    } catch(e) {
+      btn.disabled = false;
+      btn.textContent = 'Enviar solicitação';
+      alert('Erro ao enviar. Tente novamente.');
+    }
+  }
+
+  // ── ENVIAR FOLGA ──────────────────────────────────────────
+  async function enviarFolga() {
+    let ok = true;
+
+    if (!pillSelecionado['folga-tipo']) { mostrarErro('err-folga-tipo'); ok = false; }
+    else esconderErro('err-folga-tipo');
+
+    const nome = document.getElementById('folga-nome').value.trim();
+    const email = document.getElementById('folga-email').value.trim();
+    const tipoFolgaSelect = document.getElementById('folga-tipo-folga').value;
+    const data = document.getElementById('folga-data').value;
+    const obs = document.getElementById('folga-obs').value.trim();
+
+    if (!nome) { marcarErro('folga-nome', 'err-folga-nome'); ok = false; } else limparErro('folga-nome', 'err-folga-nome');
+    if (!email || !validarEmail(email)) { marcarErro('folga-email', 'err-folga-email'); ok = false; } else limparErro('folga-email', 'err-folga-email');
+    if (!tipoFolgaSelect) { marcarErro('folga-tipo-folga', 'err-folga-tipo-folga'); ok = false; } else limparErro('folga-tipo-folga', 'err-folga-tipo-folga');
+    if (!data) { marcarErro('folga-data', 'err-folga-data'); ok = false; } else limparErro('folga-data', 'err-folga-data');
+
+    let tipoFolga = tipoFolgaSelect;
+    if (tipoFolgaSelect === 'Outro') {
+      const outro = document.getElementById('folga-outro-texto').value.trim();
+      if (!outro) { marcarErro('folga-outro-texto', ''); ok = false; }
+      else tipoFolga = outro;
+    }
+
+    if (!ok) return;
+
+    const btn = document.getElementById('btn-folga');
+    btn.disabled = true;
+    btn.textContent = 'Enviando...';
+
+    try {
+      await fetch(SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        body: JSON.stringify({
+          tipo: 'folga',
+          tipoSolicitacao: pillSelecionado['folga-tipo'],
+          nome, email,
+          tipoFolga,
+          data: formatarData(data),
+          observacoes: obs
+        })
+      });
+      document.getElementById('folga-form-inner').style.display = 'none';
+      document.getElementById('folga-sucesso').style.display = 'block';
+    } catch(e) {
+      btn.disabled = false;
+      btn.textContent = 'Enviar solicitação';
+      alert('Erro ao enviar. Tente novamente.');
+    }
+  }
+
+  // ── NOVA SOLICITAÇÃO ──────────────────────────────────────
+  function novaSolicitacao(tipo) {
+    if (tipo === 'ferias') {
+      document.getElementById('ferias-form-inner').style.display = 'block';
+      document.getElementById('ferias-sucesso').style.display = 'none';
+      document.getElementById('ferias-nome').value = '';
+      document.getElementById('ferias-email').value = '';
+      document.getElementById('ferias-inicio').value = '';
+      document.getElementById('ferias-fim').value = '';
+      document.getElementById('ferias-obs').value = '';
+      document.getElementById('ferias-dias-badge').textContent = 'Preencha as datas acima';
+      document.querySelectorAll('#form-ferias .tipo-pill').forEach(p => p.classList.remove('selected'));
+      pillSelecionado['ferias-tipo'] = null;
+      document.getElementById('btn-ferias').disabled = false;
+      document.getElementById('btn-ferias').textContent = 'Enviar solicitação';
+    } else {
+      document.getElementById('folga-form-inner').style.display = 'block';
+      document.getElementById('folga-sucesso').style.display = 'none';
+      document.getElementById('folga-nome').value = '';
+      document.getElementById('folga-email').value = '';
+      document.getElementById('folga-tipo-folga').value = '';
+      document.getElementById('folga-data').value = '';
+      document.getElementById('folga-obs').value = '';
+      document.getElementById('folga-outro-campo').style.display = 'none';
+      document.querySelectorAll('#form-folga .tipo-pill').forEach(p => p.classList.remove('selected'));
+      pillSelecionado['folga-tipo'] = null;
+      document.getElementById('btn-folga').disabled = false;
+      document.getElementById('btn-folga').textContent = 'Enviar solicitação';
+    }
+  }
+</script>
+</body>
+</html>

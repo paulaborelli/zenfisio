@@ -108,25 +108,7 @@
       <span class="card-arrow">→</span>
     </a>
 
-    <!-- Aniversariantes -->
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem 1.5rem;text-align:left;transition:border-color 0.15s,box-shadow 0.15s;" onmouseover="this.style.borderColor='#4A7C59';this.style.boxShadow='0 4px 16px rgba(74,124,89,0.1)'" onmouseout="this.style.borderColor='#DDE0D8';this.style.boxShadow='none'">
-      <div style="display:flex;align-items:center;gap:16px;margin-bottom:0.9rem;">
-        <div class="card-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4A7C59" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2" y="10" width="20" height="12" rx="2"/>
-            <path d="M12 2a4 4 0 0 1 4 4v4H8V6a4 4 0 0 1 4-4z"/>
-            <line x1="12" y1="2" x2="12" y2="4"/>
-          </svg>
-        </div>
-        <div class="card-body">
-          <div class="card-title">🎂 Aniversariantes do Mês</div>
-          <div class="card-desc" id="aniv-desc">Carregando...</div>
-        </div>
-      </div>
-      <div id="aniv-lista"></div>
-    </div>
-
-    <!-- Ouvidoria — card expansível com sub-item -->
+   <!-- Ouvidoria — card expansível com sub-item -->
     <div class="card-group">
       <button class="card-toggle" onclick="toggle('ouvidoria')">
         <div class="card-icon">
@@ -241,6 +223,24 @@
       </div>
     </div>
 
+  <!-- Aniversariantes -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem 1.5rem;text-align:left;transition:border-color 0.15s,box-shadow 0.15s;" onmouseover="this.style.borderColor='#4A7C59';this.style.boxShadow='0 4px 16px rgba(74,124,89,0.1)'" onmouseout="this.style.borderColor='#DDE0D8';this.style.boxShadow='none'">
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:0.9rem;">
+        <div class="card-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4A7C59" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="10" width="20" height="12" rx="2"/>
+            <path d="M12 2a4 4 0 0 1 4 4v4H8V6a4 4 0 0 1 4-4z"/>
+            <line x1="12" y1="2" x2="12" y2="4"/>
+          </svg>
+        </div>
+        <div class="card-body">
+          <div class="card-title">🎂 Aniversariantes do Mês</div>
+          <div class="card-desc" id="aniv-desc">Carregando...</div>
+        </div>
+      </div>
+      <div id="aniv-lista"></div>
+    </div> 
+   
   </div>
   <p class="footer">&copy; ZenFisio &middot; Uso interno</p>
 </div>

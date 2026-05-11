@@ -112,7 +112,7 @@
     .resp-discordo { background: #f8d7da; color: #8b1a27; }
     .resp-pendente { background: #fff3cd; color: #856404; }
 
-    .empty { text-align: center; padding: 48px 20px; color: var(--text-hint); font-size: 14px; }
+    .badge-respondida { background: #e8f3fb; color: #1a5276; }
     .loading { text-align: center; padding: 48px 20px; color: var(--text-hint); font-size: 14px; }
   </style>
 </head>
@@ -318,6 +318,20 @@
         </div>
       </div>`;
 
+    const isPendente = status === 'Pendente';
+    const badgeRespondida = aprovadoPor && !isPendente ? `<span class="badge badge-respondida">👤 ${aprovadoPor}</span>` : '';
+    const acaoHTML = isPendente ? `
+      <div class="acao-box">
+        <h4>Ação</h4>
+        <div class="status-pills">${pills}</div>
+        ${ajusteHTML}
+        <div class="obs-field">
+          <label>Observação para o colaborador</label>
+          <textarea id="obs-rh-${linha}" placeholder="Mensagem que será enviada por e-mail ao colaborador..."></textarea>
+        </div>
+        <button class="btn-confirmar" id="btn-conf-${linha}" onclick="confirmarAcao(${linha})">Confirmar</button>
+      </div>` : '';
+
     return `
       <div class="sol-card" id="card-${linha}">
         <div class="sol-header" onclick="toggleCard(${linha})">
@@ -328,6 +342,7 @@
             <div class="sol-badges">
               <span class="badge ${badgeClass(status)}">${status}</span>
               <span class="badge badge-tipo">${tipo}</span>
+              ${badgeRespondida}
             </div>
           </div>
           <span class="sol-toggle" id="tog-${linha}">▾</span>
@@ -336,20 +351,10 @@
           <div class="info-grid">
             ${periodoHTML}
             <div class="info-item"><label>Observações</label><span>${obs}</span></div>
-            ${aprovadoPor ? `<div class="info-item"><label>Aprovado por</label><span>${aprovadoPor}</span></div>` : ''}
-            ${obsRH && status !== 'Pendente' ? `<div class="info-item"><label>Obs. do RH</label><span>${obsRH}</span></div>` : ''}
+            ${obsRH && !isPendente ? `<div class="info-item"><label>Obs. do RH</label><span>${obsRH}</span></div>` : ''}
           </div>
           ${respHTML}
-          <div class="acao-box">
-            <h4>Ação</h4>
-            <div class="status-pills">${pills}</div>
-            ${ajusteHTML}
-            <div class="obs-field">
-              <label>Observação para o colaborador</label>
-              <textarea id="obs-rh-${linha}" placeholder="Mensagem que será enviada por e-mail ao colaborador...">${obsRH}</textarea>
-            </div>
-            <button class="btn-confirmar" id="btn-conf-${linha}" onclick="confirmarAcao(${linha})">Confirmar</button>
-          </div>
+          ${acaoHTML}
         </div>
       </div>`;
   }

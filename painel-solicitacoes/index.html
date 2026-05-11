@@ -260,7 +260,7 @@
     const email = d['E-mail'] || '—';
     const tipo = d['Tipo'] || '—';
     const status = d['Status'] || 'Pendente';
-    const ts = d['Timestamp'] || '—';
+    const ts = formatarTimestamp(d['Timestamp'] || '');
     const obs = d['Observações'] || '—';
     const obsRH = d['Observação RH'] || '';
     const aprovadoPor = d['Aprovado por'] || '';
@@ -270,14 +270,14 @@
     let periodoHTML = '';
     let isFerias = abaAtual === 'Férias';
     if (isFerias) {
-      const ini = d['Início'] || '—', fim = d['Fim'] || '—', dias = d['Dias'] || '—';
+      const ini = formatarCampoData(d['Início']), fim = formatarCampoData(d['Fim']), dias = d['Dias'] || '—';
       periodoHTML = `
         <div class="info-item"><label>Início</label><span>${ini}</span></div>
         <div class="info-item"><label>Fim</label><span>${fim}</span></div>
         <div class="info-item"><label>Dias</label><span>${dias} dias corridos</span></div>`;
     } else {
       const tipoF = d['Tipo de Folga'] || '—';
-      const ini = d['Data início'] || '—', fim = d['Data fim'] || '—', dias = d['Dias'] || '—';
+      const ini = formatarCampoData(d['Data início']), fim = formatarCampoData(d['Data fim']), dias = d['Dias'] || '—';
       periodoHTML = `
         <div class="info-item"><label>Tipo de Folga</label><span>${tipoF}</span></div>
         <div class="info-item"><label>Início</label><span>${ini}</span></div>
@@ -394,9 +394,39 @@
   }
 
   function formatarData(v) {
-    if (!v) return '';
+    if (!v) return '—';
     const [a, m, d] = v.split('-');
     return `${d}/${m}/${a}`;
+  }
+
+  // Formata qualquer valor de data vindo do Sheets (ISO, DD/MM/AAAA, etc.)
+  function formatarCampoData(v) {
+    if (!v) return '—';
+    const s = String(v);
+    // Já está no formato DD/MM/AAAA
+    if (/^\d{2}\/\d{2}\/\d{4}/.test(s)) return s.slice(0, 10);
+    // Formato ISO: 2026-08-03T03:00:00.000Z
+    if (s.includes('T') || s.includes('-')) {
+      const d = new Date(s);
+      if (!isNaN(d)) {
+        return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+      }
+    }
+    return s;
+  }
+
+  // Formata timestamp vindo do Sheets
+  function formatarTimestamp(v) {
+    if (!v) return '—';
+    const s = String(v);
+    // Já formatado (ex: "11/05/2026, 16:46")
+    if (/^\d{2}\/\d{2}\/\d{4}/.test(s)) return s;
+    // ISO
+    const d = new Date(s);
+    if (!isNaN(d)) {
+      return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}, ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    }
+    return s;
   }
 
   async function confirmarAcao(linha) {

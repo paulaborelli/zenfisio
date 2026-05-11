@@ -337,7 +337,7 @@
             ${periodoHTML}
             <div class="info-item"><label>Observações</label><span>${obs}</span></div>
             ${aprovadoPor ? `<div class="info-item"><label>Aprovado por</label><span>${aprovadoPor}</span></div>` : ''}
-            ${obsRH ? `<div class="info-item"><label>Obs. do RH</label><span>${obsRH}</span></div>` : ''}
+            ${obsRH && status !== 'Pendente' ? `<div class="info-item"><label>Obs. do RH</label><span>${obsRH}</span></div>` : ''}
           </div>
           ${respHTML}
           <div class="acao-box">

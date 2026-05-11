@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Solicitações — ZenFisio RH</title>
+  <title>Painel de Solicitações — ZenFisio RH</title>
   <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -14,453 +14,461 @@
       --radius: 12px; --radius-sm: 8px;
     }
     body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
-    header { background: var(--accent); color: #fff; padding: 20px 32px; display: flex; align-items: center; gap: 16px; }
+
+    /* LOGIN */
+    .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; }
+    .login-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 40px 36px; width: 100%; max-width: 380px; }
+    .login-card h1 { font-family: 'Lora', serif; font-size: 22px; font-weight: 600; margin-bottom: 6px; }
+    .login-card p { font-size: 13px; color: var(--text-hint); margin-bottom: 28px; }
+    .login-field { margin-bottom: 16px; }
+    .login-field label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+    .login-field input { width: 100%; padding: 10px 13px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none; transition: border-color .15s; }
+    .login-field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(74,124,89,0.1); }
+    .btn-login { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 8px; transition: background .15s; }
+    .btn-login:hover { background: #3a6347; }
+    .login-erro { font-size: 12px; color: #c0392b; margin-top: 10px; display: none; text-align: center; }
+
+    /* HEADER */
+    header { background: var(--accent); color: #fff; padding: 16px 28px; display: flex; align-items: center; justify-content: space-between; }
+    .header-left { display: flex; align-items: center; gap: 16px; }
     .header-back { color: rgba(255,255,255,0.7); text-decoration: none; font-size: 13px; transition: color .2s; }
     .header-back:hover { color: #fff; }
-    .header-title { font-family: 'Lora', serif; font-size: 20px; font-weight: 600; }
-    .container { max-width: 620px; margin: 0 auto; padding: 32px 16px 48px; }
-    .tabs { display: flex; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 5px; gap: 4px; margin-bottom: 24px; }
-    .tab-btn { flex: 1; padding: 10px; border: none; border-radius: var(--radius-sm); background: transparent; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; color: var(--text-muted); cursor: pointer; transition: all .15s; }
-    .tab-btn.active { background: var(--accent); color: #fff; }
-    .tab-btn:not(.active):hover { background: var(--accent-light); color: var(--accent-text); }
-    .form-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; display: none; }
-    .form-card.active { display: block; }
-    .form-card h2 { font-family: 'Lora', serif; font-size: 17px; font-weight: 600; margin-bottom: 4px; }
-    .form-card p { font-size: 13px; color: var(--text-hint); margin-bottom: 24px; line-height: 1.5; }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    @media (max-width: 500px) { .form-row { grid-template-columns: 1fr; } }
-    .form-field { margin-bottom: 16px; }
-    .form-field label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
-    .form-field input, .form-field select, .form-field textarea {
-      width: 100%; padding: 10px 13px; border: 1px solid var(--border); border-radius: var(--radius-sm);
-      font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text); background: white;
-      outline: none; transition: border-color .15s, box-shadow .15s;
-    }
-    .form-field input:focus, .form-field select:focus, .form-field textarea:focus {
-      border-color: var(--accent); box-shadow: 0 0 0 3px rgba(74,124,89,0.1);
-    }
-    .form-field textarea { min-height: 90px; resize: vertical; }
-    .tipo-pills { display: flex; gap: 8px; flex-wrap: wrap; }
-    .tipo-pill {
-      padding: 8px 16px; border: 1.5px solid var(--border); border-radius: 20px;
-      font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
-      color: var(--text-muted); cursor: pointer; transition: all .15s; user-select: none; background: white;
-    }
-    .tipo-pill:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
-    .tipo-pill.selected { border-color: var(--accent); background: var(--accent); color: white; }
-    .dias-badge {
-      display: inline-block; background: var(--accent-light); color: var(--accent-text);
-      border: 1px solid #c3dac9; border-radius: var(--radius-sm);
-      padding: 8px 14px; font-size: 13px; font-weight: 600; margin-top: 2px;
-    }
-    .aviso {
-      background: var(--accent-light); border: 1px solid #c3dac9; border-radius: var(--radius-sm);
-      padding: 10px 14px; font-size: 12px; color: var(--accent-text); margin-bottom: 20px; line-height: 1.5;
-    }
-    .aviso-info {
-      background: #e8f3fb; border: 1px solid #b8d9f0; border-radius: var(--radius-sm);
-      padding: 10px 14px; font-size: 12px; color: #1a5276; margin-bottom: 20px; line-height: 1.5;
-    }
-    .btn-enviar {
-      width: 100%; padding: 13px; background: var(--accent); color: white; border: none;
-      border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 15px;
-      font-weight: 600; cursor: pointer; transition: background .15s; margin-top: 8px;
-    }
-    .btn-enviar:hover { background: #3a6347; }
-    .btn-enviar:disabled { background: var(--text-hint); cursor: not-allowed; }
-    .sucesso { display: none; text-align: center; padding: 40px 20px; }
-    .sucesso-icon { width: 60px; height: 60px; border-radius: 50%; background: var(--accent-light); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 26px; }
-    .sucesso h3 { font-family: 'Lora', serif; font-size: 18px; font-weight: 600; color: var(--accent); margin-bottom: 8px; }
-    .sucesso p { font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 24px; }
-    .btn-nova { padding: 10px 28px; background: var(--accent); color: white; border: none; border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: background .15s; }
-    .btn-nova:hover { background: #3a6347; }
-    .erro-msg { font-size: 11px; color: #c0392b; margin-top: 4px; display: none; }
+    .header-title { font-family: 'Lora', serif; font-size: 18px; font-weight: 600; }
+    .header-user { font-size: 12px; color: rgba(255,255,255,0.7); }
+    .btn-sair { background: rgba(255,255,255,0.15); border: none; color: white; padding: 6px 14px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: background .15s; }
+    .btn-sair:hover { background: rgba(255,255,255,0.25); }
+
+    /* PAINEL */
+    .painel { max-width: 1100px; margin: 0 auto; padding: 28px 20px 48px; }
+
+    .filtros { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+    .tab-aba { padding: 8px 18px; border: 1.5px solid var(--border); border-radius: 20px; background: white; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; color: var(--text-muted); cursor: pointer; transition: all .15s; }
+    .tab-aba.active { background: var(--accent); color: white; border-color: var(--accent); }
+    .tab-aba:not(.active):hover { border-color: var(--accent); color: var(--accent); }
+    .filtro-status { padding: 8px 13px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text); background: white; outline: none; margin-left: auto; }
+
+    .contador { font-size: 13px; color: var(--text-hint); margin-bottom: 12px; }
+
+    /* CARDS */
+    .cards-lista { display: flex; flex-direction: column; gap: 12px; }
+    .sol-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; transition: box-shadow .15s; }
+    .sol-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.07); }
+    .sol-header { display: flex; align-items: center; gap: 14px; padding: 16px 20px; cursor: pointer; }
+    .sol-status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .sol-info { flex: 1; min-width: 0; }
+    .sol-nome { font-size: 15px; font-weight: 600; color: var(--text); }
+    .sol-meta { font-size: 12px; color: var(--text-hint); margin-top: 2px; }
+    .sol-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+    .badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+    .badge-pendente { background: #f5f4f0; color: #5E6659; }
+    .badge-aprovado { background: #d4edda; color: #1e6b3a; }
+    .badge-reprovado { background: #f8d7da; color: #8b1a27; }
+    .badge-ajuste { background: #fff3cd; color: #856404; }
+    .badge-tipo { background: var(--accent-light); color: var(--accent-text); }
+    .sol-toggle { color: var(--text-hint); font-size: 18px; transition: transform .2s; }
+    .sol-toggle.open { transform: rotate(180deg); }
+
+    .sol-body { display: none; border-top: 1px solid var(--border); padding: 20px; }
+    .sol-body.open { display: block; }
+
+    .info-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; margin-bottom: 20px; }
+    .info-item label { display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--text-hint); margin-bottom: 3px; }
+    .info-item span { font-size: 14px; color: var(--text); }
+
+    .acao-box { background: var(--bg); border-radius: var(--radius-sm); padding: 16px; }
+    .acao-box h4 { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 14px; }
+
+    .status-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    .status-pill { padding: 6px 14px; border: 1.5px solid var(--border); border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all .15s; background: white; }
+    .status-pill[data-s="Aprovado"] { color: #1e6b3a; border-color: #1e6b3a; }
+    .status-pill[data-s="Aprovado"].sel { background: #1e6b3a; color: white; }
+    .status-pill[data-s="Reprovado"] { color: #8b1a27; border-color: #8b1a27; }
+    .status-pill[data-s="Reprovado"].sel { background: #8b1a27; color: white; }
+    .status-pill[data-s="Aprovado com ajuste"] { color: #856404; border-color: #856404; }
+    .status-pill[data-s="Aprovado com ajuste"].sel { background: #856404; color: white; }
+    .status-pill[data-s="Pendente"] { color: #5E6659; border-color: #5E6659; }
+    .status-pill[data-s="Pendente"].sel { background: #5E6659; color: white; }
+
+    .ajuste-campos { display: none; background: white; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 14px; }
+    .ajuste-campos.show { display: block; }
+    .ajuste-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+    @media (max-width: 600px) { .ajuste-row { grid-template-columns: 1fr; } }
+    .ajuste-campo label { display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--text-hint); margin-bottom: 5px; }
+    .ajuste-campo input { width: 100%; padding: 8px 11px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 13px; outline: none; }
+    .ajuste-campo input:focus { border-color: var(--accent); }
+    .ajuste-dias { font-size: 12px; font-weight: 600; color: var(--accent-text); margin-top: 6px; }
+
+    .obs-field { margin-bottom: 14px; }
+    .obs-field label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+    .obs-field textarea { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 13px; resize: vertical; min-height: 70px; outline: none; }
+    .obs-field textarea:focus { border-color: var(--accent); }
+
+    .btn-confirmar { padding: 10px 24px; background: var(--accent); color: white; border: none; border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: background .15s; }
+    .btn-confirmar:hover { background: #3a6347; }
+    .btn-confirmar:disabled { background: var(--text-hint); cursor: not-allowed; }
+
+    .resp-colaborador { margin-top: 12px; padding: 10px 14px; border-radius: var(--radius-sm); font-size: 13px; }
+    .resp-concordo { background: #d4edda; color: #1e6b3a; }
+    .resp-discordo { background: #f8d7da; color: #8b1a27; }
+    .resp-pendente { background: #fff3cd; color: #856404; }
+
+    .empty { text-align: center; padding: 48px 20px; color: var(--text-hint); font-size: 14px; }
+    .loading { text-align: center; padding: 48px 20px; color: var(--text-hint); font-size: 14px; }
   </style>
 </head>
 <body>
-<header>
-  <a class="header-back" href="../">← Portal RH</a>
-  <span class="header-title">Solicitações</span>
-</header>
 
-<div class="container">
-  <div class="tabs">
-    <button class="tab-btn active" onclick="trocarTab('ferias')">🏖️ Férias</button>
-    <button class="tab-btn" onclick="trocarTab('folga')">📅 Folga</button>
+<!-- LOGIN -->
+<div class="login-wrap" id="login-wrap">
+  <div class="login-card">
+    <h1>🔒 Painel de Solicitações</h1>
+    <p>Acesso restrito ao RH e gestores autorizados.</p>
+    <div class="login-field">
+      <label>Usuário</label>
+      <input type="text" id="login-user" placeholder="usuário" onkeydown="if(event.key==='Enter')fazerLogin()"/>
+    </div>
+    <div class="login-field">
+      <label>Senha</label>
+      <input type="password" id="login-pass" placeholder="senha" onkeydown="if(event.key==='Enter')fazerLogin()"/>
+    </div>
+    <button class="btn-login" onclick="fazerLogin()">Entrar</button>
+    <div class="login-erro" id="login-erro">Usuário ou senha incorretos.</div>
   </div>
+</div>
 
-  <!-- FÉRIAS -->
-  <div class="form-card active" id="form-ferias">
-    <div id="ferias-form-inner">
-      <h2>Solicitação de Férias</h2>
-      <p>Preencha os dados abaixo. Você receberá uma confirmação no seu e-mail assim que a solicitação for registrada.</p>
-      <div class="aviso">📌 A aprovação está sujeita à análise do RH e do seu gestor. Em caso de ajuste, informe o período anterior nas observações.</div>
-
-      <div class="form-field">
-        <label>Tipo de solicitação *</label>
-        <div class="tipo-pills">
-          <span class="tipo-pill" onclick="selecionarPill(this,'ferias-tipo')">Nova solicitação</span>
-          <span class="tipo-pill" onclick="selecionarPill(this,'ferias-tipo')">Ajuste de solicitação</span>
-        </div>
-        <div class="erro-msg" id="err-ferias-tipo">Selecione o tipo de solicitação.</div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-field">
-          <label>Nome completo *</label>
-          <input type="text" id="ferias-nome" placeholder="Seu nome completo"/>
-          <div class="erro-msg" id="err-ferias-nome">Campo obrigatório.</div>
-        </div>
-        <div class="form-field">
-          <label>E-mail *</label>
-          <input type="email" id="ferias-email" placeholder="seu@email.com"/>
-          <div class="erro-msg" id="err-ferias-email">Informe um e-mail válido.</div>
-        </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-field">
-          <label>Data de início *</label>
-          <input type="date" id="ferias-inicio" oninput="calcularDiasFerias()"/>
-          <div class="erro-msg" id="err-ferias-inicio">Campo obrigatório.</div>
-        </div>
-        <div class="form-field">
-          <label>Data de fim *</label>
-          <input type="date" id="ferias-fim" oninput="calcularDiasFerias()"/>
-          <div class="erro-msg" id="err-ferias-fim">Campo obrigatório.</div>
-        </div>
-      </div>
-
-      <div class="form-field">
-        <label>Quantidade de dias (corridos)</label>
-        <div class="dias-badge" id="ferias-dias-badge">Preencha as datas acima</div>
-      </div>
-
-      <div class="form-field">
-        <label>Observações</label>
-        <textarea id="ferias-obs" placeholder="Ex: período anterior programado era 01/06 a 15/06..."></textarea>
-      </div>
-
-      <button class="btn-enviar" id="btn-ferias" onclick="enviarFerias()">Enviar solicitação</button>
+<!-- PAINEL -->
+<div id="painel-wrap" style="display:none;">
+  <header>
+    <div class="header-left">
+      <a class="header-back" href="../">← Portal RH</a>
+      <span class="header-title">Painel de Solicitações</span>
     </div>
-    <div class="sucesso" id="ferias-sucesso">
-      <div class="sucesso-icon">✅</div>
-      <h3>Solicitação enviada!</h3>
-      <p>Sua solicitação de férias foi registrada.<br>Você receberá uma confirmação no e-mail informado.</p>
-      <button class="btn-nova" onclick="novaSolicitacao('ferias')">Nova solicitação</button>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span class="header-user" id="header-user"></span>
+      <button class="btn-sair" onclick="sair()">Sair</button>
     </div>
-  </div>
+  </header>
 
-  <!-- FOLGA -->
-  <div class="form-card" id="form-folga">
-    <div id="folga-form-inner">
-      <h2>Solicitação de Folga</h2>
-      <p>Preencha os dados abaixo. Você receberá uma confirmação no seu e-mail assim que a solicitação for registrada.</p>
-      <div class="aviso">📌 A aprovação está sujeita à análise do RH e do seu gestor. Em caso de ajuste, informe a data anterior nas observações.</div>
-      <div class="aviso-info">ℹ️ A quantidade de dias é calculada considerando apenas <strong>dias úteis</strong> (segunda a sexta-feira). Finais de semana não são contabilizados como folga.</div>
-
-      <div class="form-field">
-        <label>Tipo de solicitação *</label>
-        <div class="tipo-pills">
-          <span class="tipo-pill" onclick="selecionarPill(this,'folga-tipo')">Nova solicitação</span>
-          <span class="tipo-pill" onclick="selecionarPill(this,'folga-tipo')">Ajuste de solicitação</span>
-        </div>
-        <div class="erro-msg" id="err-folga-tipo">Selecione o tipo de solicitação.</div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-field">
-          <label>Nome completo *</label>
-          <input type="text" id="folga-nome" placeholder="Seu nome completo"/>
-          <div class="erro-msg" id="err-folga-nome">Campo obrigatório.</div>
-        </div>
-        <div class="form-field">
-          <label>E-mail *</label>
-          <input type="email" id="folga-email" placeholder="seu@email.com"/>
-          <div class="erro-msg" id="err-folga-email">Informe um e-mail válido.</div>
-        </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-field">
-          <label>Tipo de folga *</label>
-          <select id="folga-tipo-folga" onchange="toggleOutro()">
-            <option value="">Selecione...</option>
-            <option value="Antecipação de férias">Antecipação de férias</option>
-            <option value="Abono">Abono</option>
-            <option value="Outro">Outro</option>
-          </select>
-          <div class="erro-msg" id="err-folga-tipo-folga">Selecione o tipo de folga.</div>
-        </div>
-        <div class="form-field" id="folga-outro-campo" style="display:none;">
-          <label>Especifique *</label>
-          <input type="text" id="folga-outro-texto" placeholder="Descreva o tipo de folga"/>
-        </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-field">
-          <label>Data de início *</label>
-          <input type="date" id="folga-inicio" oninput="calcularDiasFolga()"/>
-          <div class="erro-msg" id="err-folga-inicio">Campo obrigatório.</div>
-        </div>
-        <div class="form-field">
-          <label>Data de fim *</label>
-          <input type="date" id="folga-fim" oninput="calcularDiasFolga()"/>
-          <div class="erro-msg" id="err-folga-fim">Campo obrigatório.</div>
-        </div>
-      </div>
-
-      <div class="form-field">
-        <label>Quantidade de dias úteis</label>
-        <div class="dias-badge" id="folga-dias-badge">Preencha as datas acima</div>
-      </div>
-
-      <div class="form-field">
-        <label>Observações</label>
-        <textarea id="folga-obs" placeholder="Informações adicionais, justificativa..."></textarea>
-      </div>
-
-      <button class="btn-enviar" id="btn-folga" onclick="enviarFolga()">Enviar solicitação</button>
+  <div class="painel">
+    <div class="filtros">
+      <button class="tab-aba active" onclick="trocarAba('Férias')">🏖️ Férias</button>
+      <button class="tab-aba" onclick="trocarAba('Folgas')">📅 Folgas</button>
+      <select class="filtro-status" id="filtro-status" onchange="renderCards()">
+        <option value="">Todos os status</option>
+        <option value="Pendente">Pendente</option>
+        <option value="Aprovado">Aprovado</option>
+        <option value="Aprovado com ajuste">Aprovado com ajuste</option>
+        <option value="Reprovado">Reprovado</option>
+      </select>
     </div>
-    <div class="sucesso" id="folga-sucesso">
-      <div class="sucesso-icon">✅</div>
-      <h3>Solicitação enviada!</h3>
-      <p>Sua solicitação de folga foi registrada.<br>Você receberá uma confirmação no e-mail informado.</p>
-      <button class="btn-nova" onclick="novaSolicitacao('folga')">Nova solicitação</button>
+    <div class="contador" id="contador"></div>
+    <div class="cards-lista" id="cards-lista">
+      <div class="loading">Carregando...</div>
     </div>
   </div>
 </div>
 
 <script>
   const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyzI5AplyuA2-mc8G8S2zCiC1yj-g60zCJ30YdS8S4IlyXNz_Rg_fuqXmkMnLN_5jcbhQ/exec';
-  const pillSelecionado = {};
+  let usuarioLogado = null;
+  let abaAtual = 'Férias';
+  let dadosAtuais = [];
+  let statusSelecionado = {};
 
-  // Abre aba correta via URL
-  const _params = new URLSearchParams(window.location.search);
-  if (_params.get('aba') === 'folga') trocarTab('folga');
-
-  function trocarTab(aba) {
-    document.querySelectorAll('.tab-btn').forEach((b, i) => {
-      b.classList.toggle('active', (i === 0 && aba === 'ferias') || (i === 1 && aba === 'folga'));
-    });
-    document.getElementById('form-ferias').classList.toggle('active', aba === 'ferias');
-    document.getElementById('form-folga').classList.toggle('active', aba === 'folga');
-  }
-
-  function selecionarPill(el, grupo) {
-    el.closest('.form-field').querySelectorAll('.tipo-pill').forEach(p => p.classList.remove('selected'));
-    el.classList.add('selected');
-    pillSelecionado[grupo] = el.textContent.trim();
-    document.getElementById('err-' + grupo).style.display = 'none';
-  }
-
-  function toggleOutro() {
-    const val = document.getElementById('folga-tipo-folga').value;
-    document.getElementById('folga-outro-campo').style.display = val === 'Outro' ? 'block' : 'none';
-  }
-
-  // Dias corridos (férias)
-  function calcularDiasFerias() {
-    const ini = document.getElementById('ferias-inicio').value;
-    const fim = document.getElementById('ferias-fim').value;
-    const badge = document.getElementById('ferias-dias-badge');
-    if (ini && fim) {
-      const d1 = new Date(ini), d2 = new Date(fim);
-      if (d2 >= d1) {
-        const dias = Math.round((d2 - d1) / 86400000) + 1;
-        badge.textContent = dias + (dias === 1 ? ' dia' : ' dias');
+  // ── LOGIN ─────────────────────────────────────────────────
+  async function fazerLogin() {
+    const user = document.getElementById('login-user').value.trim();
+    const pass = document.getElementById('login-pass').value.trim();
+    if (!user || !pass) return;
+    try {
+      const r = await fetch(`${SCRIPT_URL}?acao=login&user=${encodeURIComponent(user)}&pass=${encodeURIComponent(pass)}`);
+      const data = await r.json();
+      if (data.ok) {
+        usuarioLogado = data.user;
+        document.getElementById('login-wrap').style.display = 'none';
+        document.getElementById('painel-wrap').style.display = 'block';
+        document.getElementById('header-user').textContent = user;
+        carregarDados();
       } else {
-        badge.textContent = 'Data de fim deve ser após o início';
+        document.getElementById('login-erro').style.display = 'block';
       }
-    } else {
-      badge.textContent = 'Preencha as datas acima';
+    } catch(e) {
+      document.getElementById('login-erro').style.display = 'block';
     }
   }
 
-  // Dias úteis (folgas)
-  function calcularDiasFolga() {
-    const ini = document.getElementById('folga-inicio').value;
-    const fim = document.getElementById('folga-fim').value;
-    const badge = document.getElementById('folga-dias-badge');
+  function sair() {
+    usuarioLogado = null;
+    document.getElementById('login-wrap').style.display = 'flex';
+    document.getElementById('painel-wrap').style.display = 'none';
+    document.getElementById('login-user').value = '';
+    document.getElementById('login-pass').value = '';
+  }
+
+  // ── DADOS ─────────────────────────────────────────────────
+  async function carregarDados() {
+    document.getElementById('cards-lista').innerHTML = '<div class="loading">Carregando...</div>';
+    try {
+      const r = await fetch(`${SCRIPT_URL}?acao=listar&aba=${encodeURIComponent(abaAtual)}`);
+      const data = await r.json();
+      dadosAtuais = data.dados || [];
+      dadosAtuais.reverse(); // mais recentes primeiro
+      renderCards();
+    } catch(e) {
+      document.getElementById('cards-lista').innerHTML = '<div class="empty">Erro ao carregar dados.</div>';
+    }
+  }
+
+  function trocarAba(aba) {
+    abaAtual = aba;
+    document.querySelectorAll('.tab-aba').forEach((b, i) => {
+      b.classList.toggle('active', (i === 0 && aba === 'Férias') || (i === 1 && aba === 'Folgas'));
+    });
+    statusSelecionado = {};
+    carregarDados();
+  }
+
+  // ── RENDER ────────────────────────────────────────────────
+  function renderCards() {
+    const filtro = document.getElementById('filtro-status').value;
+    let lista = dadosAtuais;
+    if (filtro) lista = lista.filter(d => d['Status'] === filtro);
+
+    document.getElementById('contador').textContent = `${lista.length} solicitaç${lista.length === 1 ? 'ão' : 'ões'}`;
+
+    if (lista.length === 0) {
+      document.getElementById('cards-lista').innerHTML = '<div class="empty">Nenhuma solicitação encontrada.</div>';
+      return;
+    }
+
+    document.getElementById('cards-lista').innerHTML = lista.map(d => cardHTML(d)).join('');
+  }
+
+  function statusDot(status) {
+    const cores = { 'Aprovado': '#1e6b3a', 'Reprovado': '#8b1a27', 'Aprovado com ajuste': '#856404', 'Pendente': '#9AA394' };
+    return cores[status] || '#9AA394';
+  }
+
+  function badgeClass(status) {
+    const m = { 'Aprovado': 'badge-aprovado', 'Reprovado': 'badge-reprovado', 'Aprovado com ajuste': 'badge-ajuste', 'Pendente': 'badge-pendente' };
+    return m[status] || 'badge-pendente';
+  }
+
+  function cardHTML(d) {
+    const linha = d['_linha'];
+    const nome = d['Nome'] || '—';
+    const email = d['E-mail'] || '—';
+    const tipo = d['Tipo'] || '—';
+    const status = d['Status'] || 'Pendente';
+    const ts = formatarTimestamp(d['Timestamp'] || '');
+    const obs = d['Observações'] || '—';
+    const obsRH = d['Observação RH'] || '';
+    const aprovadoPor = d['Aprovado por'] || '';
+    const respColaborador = d['Resposta Colaborador'] || '';
+
+    // Campos variáveis por aba
+    let periodoHTML = '';
+    let isFerias = abaAtual === 'Férias';
+    if (isFerias) {
+      const ini = formatarCampoData(d['Início']), fim = formatarCampoData(d['Fim']), dias = d['Dias'] || '—';
+      periodoHTML = `
+        <div class="info-item"><label>Início</label><span>${ini}</span></div>
+        <div class="info-item"><label>Fim</label><span>${fim}</span></div>
+        <div class="info-item"><label>Dias</label><span>${dias} dias corridos</span></div>`;
+    } else {
+      const tipoF = d['Tipo de Folga'] || '—';
+      const ini = formatarCampoData(d['Data início']), fim = formatarCampoData(d['Data fim']), dias = d['Dias'] || '—';
+      periodoHTML = `
+        <div class="info-item"><label>Tipo de Folga</label><span>${tipoF}</span></div>
+        <div class="info-item"><label>Início</label><span>${ini}</span></div>
+        <div class="info-item"><label>Fim</label><span>${fim}</span></div>
+        <div class="info-item"><label>Dias</label><span>${dias} dias úteis</span></div>`;
+    }
+
+    // Resposta colaborador
+    let respHTML = '';
+    if (status === 'Aprovado com ajuste') {
+      if (respColaborador.includes('Concordo')) {
+        respHTML = `<div class="resp-colaborador resp-concordo">✅ Colaborador concordou com o ajuste — ${respColaborador}</div>`;
+      } else if (respColaborador.includes('Discordo')) {
+        respHTML = `<div class="resp-colaborador resp-discordo">❌ Colaborador discordou do ajuste — ${respColaborador}</div>`;
+      } else {
+        respHTML = `<div class="resp-colaborador resp-pendente">⏳ Aguardando confirmação do colaborador</div>`;
+      }
+    }
+
+    // Pills de status
+    const pills = ['Aprovado','Reprovado','Aprovado com ajuste','Pendente'].map(s =>
+      `<span class="status-pill${statusSelecionado[linha] === s ? ' sel' : ''}" data-s="${s}" onclick="selecionarStatus(${linha},'${s}')">${s}</span>`
+    ).join('');
+
+    // Campos de ajuste (só para férias)
+    const ajusteHTML = isFerias ? `
+      <div class="ajuste-campos" id="ajuste-${linha}">
+        <div class="ajuste-row">
+          <div class="ajuste-campo"><label>Novo início</label><input type="date" id="adj-ini-${linha}" oninput="calcAjuste(${linha})"/></div>
+          <div class="ajuste-campo"><label>Novo fim</label><input type="date" id="adj-fim-${linha}" oninput="calcAjuste(${linha})"/></div>
+          <div class="ajuste-campo"><label>Dias</label><div class="ajuste-dias" id="adj-dias-${linha}">—</div></div>
+        </div>
+      </div>` : `<div class="ajuste-campos" id="ajuste-${linha}">
+        <div class="ajuste-row">
+          <div class="ajuste-campo"><label>Novo início</label><input type="date" id="adj-ini-${linha}" oninput="calcAjusteFolga(${linha})"/></div>
+          <div class="ajuste-campo"><label>Novo fim</label><input type="date" id="adj-fim-${linha}" oninput="calcAjusteFolga(${linha})"/></div>
+          <div class="ajuste-campo"><label>Dias úteis</label><div class="ajuste-dias" id="adj-dias-${linha}">—</div></div>
+        </div>
+      </div>`;
+
+    return `
+      <div class="sol-card" id="card-${linha}">
+        <div class="sol-header" onclick="toggleCard(${linha})">
+          <div class="sol-status-dot" style="background:${statusDot(status)}"></div>
+          <div class="sol-info">
+            <div class="sol-nome">${nome}</div>
+            <div class="sol-meta">${email} · ${ts}</div>
+            <div class="sol-badges">
+              <span class="badge ${badgeClass(status)}">${status}</span>
+              <span class="badge badge-tipo">${tipo}</span>
+            </div>
+          </div>
+          <span class="sol-toggle" id="tog-${linha}">▾</span>
+        </div>
+        <div class="sol-body" id="body-${linha}">
+          <div class="info-grid">
+            ${periodoHTML}
+            <div class="info-item"><label>Observações</label><span>${obs}</span></div>
+            ${aprovadoPor ? `<div class="info-item"><label>Aprovado por</label><span>${aprovadoPor}</span></div>` : ''}
+            ${obsRH ? `<div class="info-item"><label>Obs. do RH</label><span>${obsRH}</span></div>` : ''}
+          </div>
+          ${respHTML}
+          <div class="acao-box">
+            <h4>Ação</h4>
+            <div class="status-pills">${pills}</div>
+            ${ajusteHTML}
+            <div class="obs-field">
+              <label>Observação para o colaborador</label>
+              <textarea id="obs-rh-${linha}" placeholder="Mensagem que será enviada por e-mail ao colaborador...">${obsRH}</textarea>
+            </div>
+            <button class="btn-confirmar" id="btn-conf-${linha}" onclick="confirmarAcao(${linha})">Confirmar</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function toggleCard(linha) {
+    const body = document.getElementById(`body-${linha}`);
+    const tog = document.getElementById(`tog-${linha}`);
+    const open = body.classList.toggle('open');
+    tog.classList.toggle('open', open);
+  }
+
+  function selecionarStatus(linha, status) {
+    statusSelecionado[linha] = status;
+    document.querySelectorAll(`#card-${linha} .status-pill`).forEach(p => {
+      p.classList.toggle('sel', p.dataset.s === status);
+    });
+    const ajuste = document.getElementById(`ajuste-${linha}`);
+    if (ajuste) ajuste.classList.toggle('show', status === 'Aprovado com ajuste');
+  }
+
+  function calcAjuste(linha) {
+    const ini = document.getElementById(`adj-ini-${linha}`).value;
+    const fim = document.getElementById(`adj-fim-${linha}`).value;
+    const el = document.getElementById(`adj-dias-${linha}`);
+    if (ini && fim) {
+      const dias = Math.round((new Date(fim) - new Date(ini)) / 86400000) + 1;
+      el.textContent = dias > 0 ? dias + ' dias' : 'Inválido';
+    } else { el.textContent = '—'; }
+  }
+
+  function calcAjusteFolga(linha) {
+    const ini = document.getElementById(`adj-ini-${linha}`).value;
+    const fim = document.getElementById(`adj-fim-${linha}`).value;
+    const el = document.getElementById(`adj-dias-${linha}`);
     if (ini && fim) {
       const d1 = new Date(ini + 'T00:00:00'), d2 = new Date(fim + 'T00:00:00');
-      if (d2 >= d1) {
-        let count = 0;
-        const cur = new Date(d1);
-        while (cur <= d2) {
-          const dow = cur.getDay();
-          if (dow !== 0 && dow !== 6) count++;
-          cur.setDate(cur.getDate() + 1);
-        }
-        badge.textContent = count + (count === 1 ? ' dia útil' : ' dias úteis');
-      } else {
-        badge.textContent = 'Data de fim deve ser após o início';
-      }
-    } else {
-      badge.textContent = 'Preencha as datas acima';
-    }
-  }
-
-  function getDiasFerias() {
-    const ini = document.getElementById('ferias-inicio').value;
-    const fim = document.getElementById('ferias-fim').value;
-    if (!ini || !fim) return 0;
-    return Math.round((new Date(fim) - new Date(ini)) / 86400000) + 1;
-  }
-
-  function getDiasFolga() {
-    const ini = document.getElementById('folga-inicio').value;
-    const fim = document.getElementById('folga-fim').value;
-    if (!ini || !fim) return 0;
-    const d1 = new Date(ini + 'T00:00:00'), d2 = new Date(fim + 'T00:00:00');
-    let count = 0;
-    const cur = new Date(d1);
-    while (cur <= d2) {
-      const dow = cur.getDay();
-      if (dow !== 0 && dow !== 6) count++;
-      cur.setDate(cur.getDate() + 1);
-    }
-    return count;
+      let count = 0;
+      const cur = new Date(d1);
+      while (cur <= d2) { if (cur.getDay() !== 0 && cur.getDay() !== 6) count++; cur.setDate(cur.getDate() + 1); }
+      el.textContent = count > 0 ? count + ' dias úteis' : 'Inválido';
+    } else { el.textContent = '—'; }
   }
 
   function formatarData(v) {
-    if (!v) return '';
+    if (!v) return '—';
     const [a, m, d] = v.split('-');
     return `${d}/${m}/${a}`;
   }
 
-  function validarEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
-
-  function marcarErro(id, erroId, msg) {
-    const el = document.getElementById(id);
-    if (el) el.style.borderColor = '#c0392b';
-    const err = document.getElementById(erroId);
-    if (err) { if (msg) err.textContent = msg; err.style.display = 'block'; }
+  // Formata qualquer valor de data vindo do Sheets (ISO, DD/MM/AAAA, etc.)
+  function formatarCampoData(v) {
+    if (!v) return '—';
+    const s = String(v);
+    // Já está no formato DD/MM/AAAA
+    if (/^\d{2}\/\d{2}\/\d{4}/.test(s)) return s.slice(0, 10);
+    // Formato ISO: 2026-08-03T03:00:00.000Z
+    if (s.includes('T') || s.includes('-')) {
+      const d = new Date(s);
+      if (!isNaN(d)) {
+        return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+      }
+    }
+    return s;
   }
-  function limparErro(id, erroId) {
-    const el = document.getElementById(id);
-    if (el) el.style.borderColor = '';
-    const err = document.getElementById(erroId);
-    if (err) err.style.display = 'none';
+
+  // Formata timestamp vindo do Sheets
+  function formatarTimestamp(v) {
+    if (!v) return '—';
+    const s = String(v);
+    // Já formatado (ex: "11/05/2026, 16:46")
+    if (/^\d{2}\/\d{2}\/\d{4}/.test(s)) return s;
+    // ISO
+    const d = new Date(s);
+    if (!isNaN(d)) {
+      return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}, ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    }
+    return s;
   }
 
-  async function enviarFerias() {
-    let ok = true;
-    if (!pillSelecionado['ferias-tipo']) { document.getElementById('err-ferias-tipo').style.display = 'block'; ok = false; }
-    else document.getElementById('err-ferias-tipo').style.display = 'none';
+  async function confirmarAcao(linha) {
+    const status = statusSelecionado[linha];
+    if (!status) { alert('Selecione um status antes de confirmar.'); return; }
 
-    const nome = document.getElementById('ferias-nome').value.trim();
-    const email = document.getElementById('ferias-email').value.trim();
-    const inicio = document.getElementById('ferias-inicio').value;
-    const fim = document.getElementById('ferias-fim').value;
-    const obs = document.getElementById('ferias-obs').value.trim();
+    const obsRH = document.getElementById(`obs-rh-${linha}`).value.trim();
+    const btn = document.getElementById(`btn-conf-${linha}`);
 
-    if (!nome) { marcarErro('ferias-nome','err-ferias-nome'); ok = false; } else limparErro('ferias-nome','err-ferias-nome');
-    if (!email || !validarEmail(email)) { marcarErro('ferias-email','err-ferias-email'); ok = false; } else limparErro('ferias-email','err-ferias-email');
-    if (!inicio) { marcarErro('ferias-inicio','err-ferias-inicio'); ok = false; } else limparErro('ferias-inicio','err-ferias-inicio');
-    if (!fim) { marcarErro('ferias-fim','err-ferias-fim'); ok = false; } else limparErro('ferias-fim','err-ferias-fim');
-    if (!ok) return;
+    let payload = { acao: 'atualizar_status', aba: abaAtual, linha, status, obsRH, aprovadoPor: usuarioLogado };
 
-    const dias = getDiasFerias();
-    if (dias <= 0) { marcarErro('ferias-fim','err-ferias-fim','Data de fim deve ser após o início.'); return; }
+    if (status === 'Aprovado com ajuste') {
+      const ini = document.getElementById(`adj-ini-${linha}`)?.value;
+      const fim = document.getElementById(`adj-fim-${linha}`)?.value;
+      if (!ini || !fim) { alert('Preencha o novo período para aprovar com ajuste.'); return; }
+      const isFerias = abaAtual === 'Férias';
+      let dias;
+      if (isFerias) {
+        dias = Math.round((new Date(fim) - new Date(ini)) / 86400000) + 1;
+      } else {
+        const d1 = new Date(ini + 'T00:00:00'), d2 = new Date(fim + 'T00:00:00');
+        let count = 0;
+        const cur = new Date(d1);
+        while (cur <= d2) { if (cur.getDay() !== 0 && cur.getDay() !== 6) count++; cur.setDate(cur.getDate() + 1); }
+        dias = count;
+      }
+      payload.novoInicio = formatarData(ini);
+      payload.novoFim = formatarData(fim);
+      payload.novosDias = dias;
+    }
 
-    const btn = document.getElementById('btn-ferias');
-    btn.disabled = true; btn.textContent = 'Enviando...';
+    btn.disabled = true; btn.textContent = 'Salvando...';
 
     try {
       await fetch(SCRIPT_URL, {
         method: 'POST', mode: 'no-cors',
-        body: JSON.stringify({
-          acao: 'salvar_ferias',
-          tipoSolicitacao: pillSelecionado['ferias-tipo'],
-          nome, email,
-          inicio: formatarData(inicio),
-          fim: formatarData(fim),
-          dias, observacoes: obs
-        })
+        body: JSON.stringify(payload)
       });
-      document.getElementById('ferias-form-inner').style.display = 'none';
-      document.getElementById('ferias-sucesso').style.display = 'block';
+      await carregarDados();
     } catch(e) {
-      btn.disabled = false; btn.textContent = 'Enviar solicitação';
-      alert('Erro ao enviar. Tente novamente.');
-    }
-  }
-
-  async function enviarFolga() {
-    let ok = true;
-    if (!pillSelecionado['folga-tipo']) { document.getElementById('err-folga-tipo').style.display = 'block'; ok = false; }
-    else document.getElementById('err-folga-tipo').style.display = 'none';
-
-    const nome = document.getElementById('folga-nome').value.trim();
-    const email = document.getElementById('folga-email').value.trim();
-    const tipoFolgaSelect = document.getElementById('folga-tipo-folga').value;
-    const inicio = document.getElementById('folga-inicio').value;
-    const fim = document.getElementById('folga-fim').value;
-    const obs = document.getElementById('folga-obs').value.trim();
-
-    if (!nome) { marcarErro('folga-nome','err-folga-nome'); ok = false; } else limparErro('folga-nome','err-folga-nome');
-    if (!email || !validarEmail(email)) { marcarErro('folga-email','err-folga-email'); ok = false; } else limparErro('folga-email','err-folga-email');
-    if (!tipoFolgaSelect) { marcarErro('folga-tipo-folga','err-folga-tipo-folga'); ok = false; } else limparErro('folga-tipo-folga','err-folga-tipo-folga');
-    if (!inicio) { marcarErro('folga-inicio','err-folga-inicio'); ok = false; } else limparErro('folga-inicio','err-folga-inicio');
-    if (!fim) { marcarErro('folga-fim','err-folga-fim'); ok = false; } else limparErro('folga-fim','err-folga-fim');
-
-    let tipoFolga = tipoFolgaSelect;
-    if (tipoFolgaSelect === 'Outro') {
-      const outro = document.getElementById('folga-outro-texto').value.trim();
-      if (!outro) { marcarErro('folga-outro-texto',''); ok = false; }
-      else tipoFolga = outro;
-    }
-    if (!ok) return;
-
-    const dias = getDiasFolga();
-    if (dias <= 0) { marcarErro('folga-fim','err-folga-fim','Data de fim deve ser após o início.'); return; }
-
-    const btn = document.getElementById('btn-folga');
-    btn.disabled = true; btn.textContent = 'Enviando...';
-
-    try {
-      await fetch(SCRIPT_URL, {
-        method: 'POST', mode: 'no-cors',
-        body: JSON.stringify({
-          acao: 'salvar_folga',
-          tipoSolicitacao: pillSelecionado['folga-tipo'],
-          nome, email, tipoFolga,
-          inicio: formatarData(inicio),
-          fim: formatarData(fim),
-          dias, observacoes: obs
-        })
-      });
-      document.getElementById('folga-form-inner').style.display = 'none';
-      document.getElementById('folga-sucesso').style.display = 'block';
-    } catch(e) {
-      btn.disabled = false; btn.textContent = 'Enviar solicitação';
-      alert('Erro ao enviar. Tente novamente.');
-    }
-  }
-
-  function novaSolicitacao(tipo) {
-    if (tipo === 'ferias') {
-      document.getElementById('ferias-form-inner').style.display = 'block';
-      document.getElementById('ferias-sucesso').style.display = 'none';
-      ['ferias-nome','ferias-email','ferias-inicio','ferias-fim','ferias-obs'].forEach(id => document.getElementById(id).value = '');
-      document.getElementById('ferias-dias-badge').textContent = 'Preencha as datas acima';
-      document.querySelectorAll('#form-ferias .tipo-pill').forEach(p => p.classList.remove('selected'));
-      pillSelecionado['ferias-tipo'] = null;
-      document.getElementById('btn-ferias').disabled = false;
-      document.getElementById('btn-ferias').textContent = 'Enviar solicitação';
-    } else {
-      document.getElementById('folga-form-inner').style.display = 'block';
-      document.getElementById('folga-sucesso').style.display = 'none';
-      ['folga-nome','folga-email','folga-inicio','folga-fim','folga-obs','folga-outro-texto'].forEach(id => document.getElementById(id).value = '');
-      document.getElementById('folga-tipo-folga').value = '';
-      document.getElementById('folga-outro-campo').style.display = 'none';
-      document.getElementById('folga-dias-badge').textContent = 'Preencha as datas acima';
-      document.querySelectorAll('#form-folga .tipo-pill').forEach(p => p.classList.remove('selected'));
-      pillSelecionado['folga-tipo'] = null;
-      document.getElementById('btn-folga').disabled = false;
-      document.getElementById('btn-folga').textContent = 'Enviar solicitação';
+      btn.disabled = false; btn.textContent = 'Confirmar';
+      alert('Erro ao salvar. Tente novamente.');
     }
   }
 </script>

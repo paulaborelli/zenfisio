@@ -406,7 +406,7 @@ function renderModal() {
   if (r['Editado por']) {
     const linhasHist = (r['Histórico'] || '').split('\n').filter(l => l.trim());
     const itensHist = linhasHist.length > 0
-      ? linhasHist.map(l => `<div style="padding:4px 0;border-bottom:1px solid #f0e68c;font-size:0.8rem;">${l}</div>`).join('')
+      ? linhasHist.map(l => `<div style="padding:4px 0;border-bottom:1px solid #f0e68c;font-size:0.8rem;white-space:pre-wrap;">${l}</div>`).join('')
       : `<div style="font-size:0.8rem;">Sem registros anteriores.</div>`;
     body += `<div class="historico-box">
       <div style="font-weight:700;margin-bottom:6px;">📋 Histórico de edições</div>

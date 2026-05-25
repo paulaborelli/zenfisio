@@ -14,12 +14,9 @@
     --red: #9b3a2e; --red-light: #fdf0ee;
   }
   body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
-
-  /* ── LOGIN ── */
   #tela-login { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem 1rem; }
   .login-box { background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 2.5rem 2rem; width: 100%; max-width: 380px; box-shadow: 0 8px 32px rgba(0,0,0,0.08); }
   .login-logo { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.75rem; }
-  .login-logo img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; }
   .login-logo h1 { font-family: 'Lora', serif; font-size: 1.15rem; font-weight: 700; color: var(--accent); line-height: 1.2; }
   .login-logo p { font-size: 0.78rem; color: var(--text-hint); }
   .login-field { margin-bottom: 1rem; }
@@ -29,8 +26,6 @@
   .login-btn { width: 100%; padding: 11px; background: var(--accent); color: white; border: none; border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 600; cursor: pointer; margin-top: 0.5rem; transition: background 0.15s; }
   .login-btn:hover { background: #3a6347; }
   .login-erro { background: var(--red-light); border: 1px solid #e8b4ae; border-radius: var(--radius-sm); padding: 0.6rem 0.9rem; font-size: 0.85rem; color: var(--red); margin-top: 0.75rem; display: none; }
-
-  /* ── PAINEL ── */
   #tela-painel { display: none; padding: 2rem 1rem 5rem; }
   .container { max-width: 900px; margin: 0 auto; }
   .page-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem; }
@@ -64,8 +59,6 @@
   .empty { text-align: center; padding: 3rem 1rem; color: var(--text-hint); }
   .empty-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
   .loading { text-align: center; padding: 2rem; color: var(--text-hint); }
-
-  /* ── MODAL ── */
   .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 1000; align-items: flex-start; justify-content: center; padding: 2rem 1rem; overflow-y: auto; }
   .modal-overlay.open { display: flex; }
   .modal { background: white; border-radius: var(--radius); width: 100%; max-width: 780px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); margin: auto; }
@@ -216,11 +209,11 @@ function podeEditar(registro) {
   if (!usuarioLogado) return false;
   if (usuarioLogado.perfil === 'rh') return true;
   if (tipoAtual === 'lider' && usuarioLogado.perfil === 'lider') {
-    const liderReg  = (registro['Líder Avaliador'] || '').toLowerCase().trim();
-    const nomeUser  = usuarioLogado.nome.toLowerCase().trim();
+    const liderReg = (registro['Líder Avaliador'] || '').toLowerCase().trim();
+    const nomeUser = usuarioLogado.nome.toLowerCase().trim();
     return liderReg.includes(nomeUser) || nomeUser.includes(liderReg);
   }
-  return false; // lider nunca edita aba colaborador
+  return false;
 }
 
 // ── CARREGAR ─────────────────────────────────────────────────
@@ -276,9 +269,9 @@ function renderLista(registros) {
   }
   const isLider = tipoAtual === 'lider';
   const html = registros.map((r, i) => {
-    const nome   = r['Nome'] || r['Colaborador'] || '—';
-    const funcao = r['Função'] || '—';
-    const data   = formatarData(r['Data'] || r['Timestamp']);
+    const nome    = r['Nome'] || r['Colaborador'] || '—';
+    const funcao  = r['Função'] || '—';
+    const data    = formatarData(r['Data'] || r['Timestamp']);
     const parecer = isLider ? (r['Parecer Final'] || '') : (r['Deseja Seguir'] || '');
     const badgeClass = isLider
       ? (parecer.includes('Efetiv') ? 'badge-ef' : parecer.includes('Deslig') ? 'badge-ds' : 'badge-lider')
@@ -384,7 +377,6 @@ function renderModal() {
       campo('Gestor', r['Gestor'], false),
     ]);
   } else {
-    // ── ABA COLABORADOR ──
     body += secao('Identificação', [
       campo('Nome', r['Nome'], false),
       campo('Data', formatarData(r['Data']), false),
@@ -406,7 +398,7 @@ function renderModal() {
     body += secao('Sugestões', [
       campoText('Treinamento', r['Treinamento'], 'treinamento', true),
       campoText('Sugestões', r['Sugestões'], 'sugestao', true),
-     campoText('Deseja Seguir', r['Deseja Seguir'], 'q7', false),
+      campoText('Deseja Seguir', r['Deseja Seguir'], 'q7', false),
     ]);
   }
 
@@ -422,6 +414,9 @@ function renderModal() {
       <div style="border-top:1px solid #f0e68c;padding-top:6px;">${itensHist}</div>
     </div>`;
   }
+
+  document.getElementById('modal-body').innerHTML = body;
+}
 
 // ── HELPERS DE CAMPO ─────────────────────────────────────────
 function secao(titulo, campos) {
@@ -487,8 +482,8 @@ function formatarDataHora(d) {
   try {
     return new Date(s).toLocaleString('pt-BR', {timeZone: 'America/Sao_Paulo'});
   } catch(e) { return s; }
-} 
- 
+}
+
 // ── EDIÇÃO ───────────────────────────────────────────────────
 function ativarEdicao() {
   modoEdicao = true;
@@ -536,25 +531,25 @@ async function salvarEdicao() {
       parecer_final:        g('parecer_final'),
       obs_final:            g('obs_final'),
       editado_por:          usuarioLogado.nome,
-      editado_em: new Date().toLocaleString('pt-BR', {timeZone: 'America/Sao_Paulo'}),
+      editado_em:           new Date().toLocaleString('pt-BR', {timeZone: 'America/Sao_Paulo'}),
     };
   } else {
     dados = {
       tipo: 'editar_colaborador',
       linha: r._linha,
-      q1:            g('q1'),
-      q2:            g('q2'),
-      q6_adaptacao:  g('q6_adaptacao'),
-      dificuldade:   g('dificuldade'),
-      q3:            g('q3'),
-      q4:            g('q4'),
-      q5:            g('q5'),
-      ajudaLider:    g('ajudaLider'),
-      treinamento:   g('treinamento'),
-      sugestao:      g('sugestao'),
-      q7:            g('q7'),
-      editado_por:   usuarioLogado.nome,
-      editado_em:    new Date().toLocaleString('pt-BR', {timeZone: 'America/Sao_Paulo'}),
+      q1:           g('q1'),
+      q2:           g('q2'),
+      q6_adaptacao: g('q6_adaptacao'),
+      dificuldade:  g('dificuldade'),
+      q3:           g('q3'),
+      q4:           g('q4'),
+      q5:           g('q5'),
+      ajudaLider:   g('ajudaLider'),
+      treinamento:  g('treinamento'),
+      sugestao:     g('sugestao'),
+      q7:           g('q7'),
+      editado_por:  usuarioLogado.nome,
+      editado_em:   new Date().toLocaleString('pt-BR', {timeZone: 'America/Sao_Paulo'}),
     };
   }
 
@@ -564,22 +559,37 @@ async function salvarEdicao() {
   try {
     await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(dados) });
 
+    const novaEntradaHist = `[${dados.editado_em}] ${dados.editado_por}: campos editados`;
+
     if (isLider) {
       Object.assign(r, {
-        'Disciplina': dados.disciplina, 'Coment. Disciplina': dados.coment_disciplina,
-        'Pontualidade': dados.pontualidade, 'Coment. Pontualidade': dados.coment_pontualidade,
-        'Coletividade': dados.coletividade, 'Coment. Coletividade': dados.coment_coletividade,
-        'Fit Cultural': dados.fit_cultural, 'Coment. Fit Cultural': dados.coment_fit,
-        'Produtividade': dados.produtividade, 'Coment. Produtividade': dados.coment_produtividade,
-        'Cooperação': dados.cooperacao, 'Coment. Cooperação': dados.coment_cooperacao,
-        'Iniciativa': dados.iniciativa, 'Coment. Iniciativa': dados.coment_iniciativa,
-        'Organização': dados.organizacao, 'Coment. Organização': dados.coment_organizacao,
-        'Tecnologias': dados.tecnologias, 'Coment. Tecnologias': dados.coment_tecnologias,
-        'Aspectos Positivos': dados.aspectos_positivos, 'Aspectos a Melhorar': dados.aspectos_melhoria,
-        'Desempenho Geral': dados.desempenho_geral, 'Parecer Final': dados.parecer_final,
+        'Disciplina': dados.disciplina,
+        'Coment. Disciplina': dados.coment_disciplina,
+        'Pontualidade': dados.pontualidade,
+        'Coment. Pontualidade': dados.coment_pontualidade,
+        'Coletividade': dados.coletividade,
+        'Coment. Coletividade': dados.coment_coletividade,
+        'Fit Cultural': dados.fit_cultural,
+        'Coment. Fit Cultural': dados.coment_fit,
+        'Produtividade': dados.produtividade,
+        'Coment. Produtividade': dados.coment_produtividade,
+        'Cooperação': dados.cooperacao,
+        'Coment. Cooperação': dados.coment_cooperacao,
+        'Iniciativa': dados.iniciativa,
+        'Coment. Iniciativa': dados.coment_iniciativa,
+        'Organização': dados.organizacao,
+        'Coment. Organização': dados.coment_organizacao,
+        'Tecnologias': dados.tecnologias,
+        'Coment. Tecnologias': dados.coment_tecnologias,
+        'Aspectos Positivos': dados.aspectos_positivos,
+        'Aspectos a Melhorar': dados.aspectos_melhoria,
+        'Desempenho Geral': dados.desempenho_geral,
+        'Parecer Final': dados.parecer_final,
         'Observações Finais': dados.obs_final,
-        'Editado por': dados.editado_por, 'Editado em': dados.editado_em,
-        'Histórico': (r['Histórico'] ? r['Histórico'] + '\n' : '') + `[${dados.editado_em}] ${dados.editado_por}: campos editados`,
+        'Editado por': dados.editado_por,
+        'Editado em': dados.editado_em,
+        'Histórico': (r['Histórico'] ? r['Histórico'] + '\n' : '') + novaEntradaHist,
+      });
     } else {
       Object.assign(r, {
         'Adaptação Normas/Horários': dados.q1,
@@ -593,9 +603,10 @@ async function salvarEdicao() {
         'Treinamento': dados.treinamento,
         'Sugestões': dados.sugestao,
         'Deseja Seguir': dados.q7,
-        'Editado por': dados.editado_por, 'Editado em': dados.editado_em,
-        'Histórico': (r['Histórico'] ? r['Histórico'] + '\n' : '') + `[${dados.editado_em}] ${dados.editado_por}: campos editados`,
-    });
+        'Editado por': dados.editado_por,
+        'Editado em': dados.editado_em,
+        'Histórico': (r['Histórico'] ? r['Histórico'] + '\n' : '') + novaEntradaHist,
+      });
     }
 
     modoEdicao = false;

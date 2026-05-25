@@ -412,7 +412,7 @@ function renderModal() {
 
   // Histórico de edições
   if (r['Editado por']) {
-    body += `<div class="historico-box">✏️ Última edição por <b>${r['Editado por']}</b> em ${r['Editado em'] || '—'}</div>`;
+    body += `<div class="historico-box">✏️ Última edição por <b>${r['Editado por']}</b> em ${formatarDataHora(r['Editado em'])}</div>`;
   }
 
   document.getElementById('modal-body').innerHTML = body;
@@ -475,6 +475,15 @@ function campoSelectParecer(label, valor, id, cor) {
   </div>`;
 }
 
+function formatarDataHora(d) {
+  if (!d) return '—';
+  const s = d.toString();
+  if (s.includes('/')) return s;
+  try {
+    return new Date(s).toLocaleString('pt-BR', {timeZone: 'America/Sao_Paulo'});
+  } catch(e) { return s; }
+} 
+ 
 // ── EDIÇÃO ───────────────────────────────────────────────────
 function ativarEdicao() {
   modoEdicao = true;
@@ -522,7 +531,7 @@ async function salvarEdicao() {
       parecer_final:        g('parecer_final'),
       obs_final:            g('obs_final'),
       editado_por:          usuarioLogado.nome,
-      editado_em:           new Date().toLocaleString('pt-BR'),
+      editado_em: new Date().toLocaleString('pt-BR', {timeZone: 'America/Sao_Paulo'}),
     };
   } else {
     dados = {

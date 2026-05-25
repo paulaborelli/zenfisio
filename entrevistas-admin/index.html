@@ -412,11 +412,16 @@ function renderModal() {
 
   // Histórico de edições
   if (r['Editado por']) {
-    body += `<div class="historico-box">✏️ Última edição por <b>${r['Editado por']}</b> em ${formatarDataHora(r['Editado em'])}</div>`;
+    const linhasHist = (r['Histórico'] || '').split('\n').filter(l => l.trim());
+    const itensHist = linhasHist.length > 0
+      ? linhasHist.map(l => `<div style="padding:4px 0;border-bottom:1px solid #f0e68c;font-size:0.8rem;">${l}</div>`).join('')
+      : `<div style="font-size:0.8rem;">Sem registros anteriores.</div>`;
+    body += `<div class="historico-box">
+      <div style="font-weight:700;margin-bottom:6px;">📋 Histórico de edições</div>
+      <div style="margin-bottom:6px;font-size:0.82rem;">Última edição: <b>${r['Editado por']}</b> em ${formatarDataHora(r['Editado em'])}</div>
+      <div style="border-top:1px solid #f0e68c;padding-top:6px;">${itensHist}</div>
+    </div>`;
   }
-
-  document.getElementById('modal-body').innerHTML = body;
-}
 
 // ── HELPERS DE CAMPO ─────────────────────────────────────────
 function secao(titulo, campos) {
@@ -574,7 +579,7 @@ async function salvarEdicao() {
         'Desempenho Geral': dados.desempenho_geral, 'Parecer Final': dados.parecer_final,
         'Observações Finais': dados.obs_final,
         'Editado por': dados.editado_por, 'Editado em': dados.editado_em,
-      });
+        'Histórico': (r['Histórico'] ? r['Histórico'] + '\n' : '') + `[${dados.editado_em}] ${dados.editado_por}: campos editados`,
     } else {
       Object.assign(r, {
         'Adaptação Normas/Horários': dados.q1,
@@ -588,8 +593,9 @@ async function salvarEdicao() {
         'Treinamento': dados.treinamento,
         'Sugestões': dados.sugestao,
         'Deseja Seguir': dados.q7,
-        'Editado por': dados.editado_por,
-      });
+        'Editado por': dados.editado_por, 'Editado em': dados.editado_em,
+        'Histórico': (r['Histórico'] ? r['Histórico'] + '\n' : '') + `[${dados.editado_em}] ${dados.editado_por}: campos editados`,
+    });
     }
 
     modoEdicao = false;

@@ -547,8 +547,9 @@ async function salvarEdicao() {
       ajudaLider:    g('ajudaLider'),
       treinamento:   g('treinamento'),
       sugestao:      g('sugestao'),
+      q7:            g('q7'),
       editado_por:   usuarioLogado.nome,
-      editado_em:    new Date().toLocaleString('pt-BR'),
+      editado_em:    new Date().toLocaleString('pt-BR', {timeZone: 'America/Sao_Paulo'}),
     };
   }
 

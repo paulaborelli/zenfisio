@@ -406,7 +406,7 @@ function renderModal() {
     body += secao('Sugestões', [
       campoText('Treinamento', r['Treinamento'], 'treinamento', true),
       campoText('Sugestões', r['Sugestões'], 'sugestao', true),
-      campo('Deseja Seguir', r['Deseja Seguir'], false),
+     campoText('Deseja Seguir', r['Deseja Seguir'], 'q7', false),
     ]);
   }
 
@@ -577,7 +577,8 @@ async function salvarEdicao() {
         'Como o Líder Pode Ajudar': dados.ajudaLider,
         'Treinamento': dados.treinamento,
         'Sugestões': dados.sugestao,
-        'Editado por': dados.editado_por, 'Editado em': dados.editado_em,
+        'Deseja Seguir': dados.q7,
+        'Editado por': dados.editado_por,
       });
     }
 

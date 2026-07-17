@@ -313,7 +313,8 @@ renderUploadGrid();
 
 document.getElementById('fileInput').addEventListener('change', e => {
   for (const file of e.target.files) {
-    const tipo = TIPOS.find(t => t.match.test(file.name));
+    const nomeNormalizado = file.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const tipo = TIPOS.find(t => t.match.test(nomeNormalizado));
     if (tipo) {
       arquivosCarregados[tipo.chave] = file;
     }

@@ -770,6 +770,17 @@ async function salvarMesAtual() {
   document.getElementById('statusIndividual').textContent = 'Nenhum ponto individual carregado ainda.';
 }
 
+function normalizarMesAno(valor) {
+  const s = String(valor).trim();
+  let m = s.match(/^(\d{4})-(\d{2})$/);
+  if (m) return `${m[1]}-${m[2]}`;
+  m = s.match(/^(\d{4})-(\d{2})-\d{2}/);
+  if (m) return `${m[1]}-${m[2]}`;
+  m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+  if (m) return `${m[3]}-${m[2]}`;
+  return s;
+}
+
 // ---------- HISTÓRICO ----------
 async function carregarHistorico() {
   if (!SCRIPT_ANALISE_PONTO || SCRIPT_ANALISE_PONTO.includes('COLE_AQUI')) return;
@@ -777,7 +788,10 @@ async function carregarHistorico() {
     const resp = await fetch(SCRIPT_ANALISE_PONTO);
     const json = await resp.json();
     for (const row of json) {
-      try { historico[row.mesAno] = JSON.parse(row.dataJSON); } catch (e) {}
+      try {
+        const chaveMes = normalizarMesAno(row.mesAno);
+        historico[chaveMes] = JSON.parse(row.dataJSON);
+      } catch (e) {}
     }
     renderTabs();
     const meses = Object.keys(historico).sort();

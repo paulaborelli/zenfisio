@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
   * { box-sizing: border-box; }
   body {
@@ -94,6 +95,18 @@
   }
   button.primary:disabled { background: #B4B2A9; cursor: not-allowed; }
   button.primary:hover:not(:disabled) { background: #3d6549; }
+  button.secondary {
+    background: #fff;
+    color: #4A7C59;
+    border: 1.5px solid #4A7C59;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+  button.secondary:hover { background: #EAF2EC; }
 
   .kpi-grid {
     display: grid;
@@ -123,6 +136,7 @@
   }
   .pill.attn { background: #FAECE7; color: #993C1D; }
   .pill.ok { background: #EAF3DE; color: #27500A; }
+  .pill.info { background: #E6F1FB; color: #0C447C; }
 
   .status-msg { font-size: 0.85rem; color: #5F5E5A; margin-top: 8px; }
   .hidden { display: none !important; }
@@ -157,6 +171,80 @@
     padding: 0;
     margin-top: 10px;
   }
+
+  /* ABAS DE MÊS */
+  .mes-tabs {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    margin-bottom: 1.5rem;
+  }
+  .mes-tab {
+    flex-shrink: 0;
+    background: #fff;
+    border: 1px solid #DDE0D8;
+    border-radius: 999px;
+    padding: 8px 18px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #5F5E5A;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .mes-tab:hover { border-color: #4A7C59; }
+  .mes-tab.active { background: #4A7C59; color: #fff; border-color: #4A7C59; }
+
+  /* CONFIRMAÇÃO DE PERÍODO */
+  .confirma-periodo {
+    background: #F2F4F0;
+    border: 1px solid #DDE0D8;
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 1.25rem;
+  }
+  .confirma-periodo label { font-size: 0.85rem; color: #5F5E5A; }
+  .confirma-periodo select, .confirma-periodo input {
+    padding: 8px 10px;
+    border: 1px solid #DDE0D8;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+  }
+
+  .periodo-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 1rem;
+  }
+  .periodo-tab {
+    background: #F2F4F0;
+    border: 1px solid #DDE0D8;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    color: #5F5E5A;
+  }
+  .periodo-tab.active { background: #4A7C59; color: #fff; border-color: #4A7C59; }
+
+  .aviso-cobertura {
+    font-size: 0.8rem;
+    color: #854F0B;
+    background: #FAEEDA;
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 1rem;
+  }
+
+  .chart-wrap { position: relative; height: 240px; margin-bottom: 1.5rem; }
 </style>
 </head>
 <body>
@@ -187,7 +275,7 @@
   <div class="wrap">
 
     <div class="card">
-      <h2>1. Envie os relatórios do mês</h2>
+      <h2>Enviar relatórios de um mês</h2>
       <div class="upload-grid" id="uploadGrid"></div>
 
       <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
@@ -197,6 +285,18 @@
 
       <button class="primary" id="processBtn" onclick="processarArquivos()" disabled>Processar relatórios</button>
       <div class="status-msg" id="statusMsg"></div>
+
+      <div class="confirma-periodo hidden" id="confirmaPeriodo">
+        <label>Mês/ano detectado:</label>
+        <select id="selMes"></select>
+        <input type="number" id="selAno" style="width:90px" min="2020" max="2100">
+        <button class="primary" onclick="salvarMesAtual()">Salvar este mês no histórico</button>
+        <span class="status-msg" id="salvarStatus"></span>
+      </div>
+    </div>
+
+    <div id="tabsWrap" class="hidden">
+      <div class="mes-tabs" id="mesTabs"></div>
     </div>
 
     <div id="dashboard" class="hidden">
@@ -206,10 +306,17 @@
         <div class="kpi-grid" id="kpiGrid"></div>
       </div>
 
+      <div class="card" id="cardGraficos">
+        <h2>Tendência mensal</h2>
+        <div class="chart-wrap"><canvas id="chartFalta"></canvas></div>
+        <div class="chart-wrap"><canvas id="chartAjustes"></canvas></div>
+        <div class="chart-wrap"><canvas id="chartBanco"></canvas></div>
+      </div>
+
       <div class="card">
         <h2>Ranking de pontualidade</h2>
         <p style="font-size:0.85rem; color:#5F5E5A; margin-top:-8px; margin-bottom:1rem;">
-          Combina % de falta, nº de justificativas de ponto e saldo de banco de horas. Quanto maior o score, mais atenção o caso pede.
+          Combina % de falta, nº de justificativas de ponto e saldo de banco de horas do mês selecionado.
         </p>
         <table>
           <thead><tr><th>Colaborador</th><th class="num">Falta %</th><th class="num">Ajustes</th><th class="num">Banco total</th><th>Situação</th></tr></thead>
@@ -218,7 +325,21 @@
       </div>
 
       <div class="card">
-        <h2>Mais justificativas de ponto</h2>
+        <h2>Ranking por período</h2>
+        <div class="periodo-tabs">
+          <div class="periodo-tab active" data-n="3" onclick="mudarPeriodoRanking(3, this)">Trimestral</div>
+          <div class="periodo-tab" data-n="6" onclick="mudarPeriodoRanking(6, this)">Semestral</div>
+          <div class="periodo-tab" data-n="12" onclick="mudarPeriodoRanking(12, this)">Anual</div>
+        </div>
+        <div class="aviso-cobertura hidden" id="avisoCobertura"></div>
+        <table>
+          <thead><tr><th>Colaborador</th><th class="num">Falta média %</th><th class="num">Ajustes (soma)</th><th class="num">Banco total</th></tr></thead>
+          <tbody id="rankingPeriodoBody"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Mais justificativas de ponto (mês selecionado)</h2>
         <table>
           <thead><tr><th>Colaborador</th><th class="num">Ocorrências no mês</th></tr></thead>
           <tbody id="ajustesBody"></tbody>
@@ -226,7 +347,7 @@
       </div>
 
       <div class="card">
-        <h2>Extremos de banco de horas</h2>
+        <h2>Extremos de banco de horas (mês selecionado)</h2>
         <table>
           <thead><tr><th>Colaborador</th><th class="num">Saldo do mês</th></tr></thead>
           <tbody id="bancoBody"></tbody>
@@ -234,7 +355,7 @@
       </div>
 
       <div class="card">
-        <h2>Ausências por categoria</h2>
+        <h2>Ausências por categoria (mês selecionado)</h2>
         <table>
           <thead><tr><th>Motivo</th><th class="num">Ocorrências</th></tr></thead>
           <tbody id="ausenciasBody"></tbody>
@@ -254,11 +375,12 @@
 </div>
 
 <script>
+// ---------- CONFIGURAÇÃO ----------
+// Substitua pela URL do seu Apps Script implantado (ver analise-ponto-codigo.gs)
+const SCRIPT_ANALISE_PONTO = 'https://script.google.com/macros/s/AKfycbz83lEelyV1VIbZdz4XjbKYYow6f6nyz0Nsy-d4eU_abDjz4MmnWOLYnAzd3aaKIsr7/exec';
+
 // ---------- LOGIN ----------
-const CREDENCIAIS = {
-  'rh': 'zen@rh',
-  'cledison': 'zen@cledison'
-};
+const CREDENCIAIS = { 'rh': 'zen@rh', 'cledison': 'zen@cledison' };
 
 function tentarLogin() {
   const u = document.getElementById('loginUser').value.trim().toLowerCase();
@@ -270,19 +392,13 @@ function tentarLogin() {
     document.getElementById('loginError').textContent = 'Usuário ou senha incorretos.';
   }
 }
-
 function mostrarApp() {
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('appScreen').classList.remove('hidden');
+  carregarHistorico();
 }
-
-if (sessionStorage.getItem('zf_analise_ponto_auth')) {
-  mostrarApp();
-}
-
-document.getElementById('loginPass')?.addEventListener('keydown', e => {
-  if (e.key === 'Enter') tentarLogin();
-});
+if (sessionStorage.getItem('zf_analise_ponto_auth')) mostrarApp();
+document.getElementById('loginPass')?.addEventListener('keydown', e => { if (e.key === 'Enter') tentarLogin(); });
 
 // ---------- CONFIG DOS TIPOS DE RELATÓRIO ----------
 const TIPOS = [
@@ -293,13 +409,19 @@ const TIPOS = [
   { chave: 'sintetico',   label: 'Ponto Sintético', match: /sintet/i },
   { chave: 'saldo',       label: 'Saldo Geral', match: /saldo/i },
 ];
+const NOMES_MES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
 const arquivosCarregados = {};
+let historico = {};        // { 'YYYY-MM': resumoObj }
+let mesAtivo = null;
+let resumoPendente = null; // resumo processado aguardando confirmação de mês/ano
+let chartFaltaObj, chartAjustesObj, chartBancoObj;
+let periodoAtivo = 3;
 
 function renderUploadGrid() {
   const grid = document.getElementById('uploadGrid');
   grid.innerHTML = TIPOS.map(t => `
-    <div class="upload-slot ${arquivosCarregados[t.chave] ? 'filled' : ''}" id="slot-${t.chave}">
+    <div class="upload-slot ${arquivosCarregados[t.chave] ? 'filled' : ''}">
       <div class="dot"></div>
       <div>
         <div class="label">${t.label}</div>
@@ -315,9 +437,7 @@ document.getElementById('fileInput').addEventListener('change', e => {
   for (const file of e.target.files) {
     const nomeNormalizado = file.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     const tipo = TIPOS.find(t => t.match.test(nomeNormalizado));
-    if (tipo) {
-      arquivosCarregados[tipo.chave] = file;
-    }
+    if (tipo) arquivosCarregados[tipo.chave] = file;
   }
   renderUploadGrid();
 });
@@ -346,7 +466,7 @@ async function extrairTexto(file) {
   return textoCompleto;
 }
 
-// ---------- PARSERS ----------
+// ---------- HELPERS DE HORA ----------
 function paraMinutos(hhmm) {
   if (!hhmm) return 0;
   const neg = hhmm.trim().startsWith('-');
@@ -362,12 +482,24 @@ function formatarMinutos(min) {
   const m = min % 60;
   return (neg ? '-' : '') + String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
 }
+function chave(nome) { return nome.trim().toUpperCase().replace(/\s+/g, ' '); }
+function formatarLabelMes(mesAno) {
+  const [ano, mes] = mesAno.split('-');
+  return NOMES_MES[parseInt(mes, 10) - 1].slice(0, 3) + '/' + ano.slice(2);
+}
 
+// ---------- PARSERS ----------
 const NOME_RE = "[A-ZÀÁÂÃÉÊÍÓÔÕÚÜÇ][A-ZÀÁÂÃÉÊÍÓÔÕÚÜÇ' ]+";
 const HHMM_RE = "-?\\d{1,3}(?:\\.\\d{2})?:\\d{2}";
 
-function chave(nome) {
-  return nome.trim().toUpperCase().replace(/\s+/g, ' ');
+function detectarMesAno(dados) {
+  for (const key of ['absenteismo', 'sintetico', 'banco', 'saldo', 'ajustes', 'ausencias']) {
+    const t = dados[key];
+    if (!t) continue;
+    const m = t.match(/(\d{2})\/(\d{2})\/(\d{4})\s*(?:-|a|até)\s*\d{2}\/\d{2}\/\d{4}/i);
+    if (m) return `${m[3]}-${m[2]}`;
+  }
+  return null;
 }
 
 function parseAbsenteismo(texto) {
@@ -376,17 +508,10 @@ function parseAbsenteismo(texto) {
   const re = new RegExp(`^(${NOME_RE})\\s+(${HHMM_RE})\\s+(${HHMM_RE})\\s+(${HHMM_RE})\\s+([\\d,]+)\\s*$`);
   for (const linha of linhas) {
     const m = linha.trim().match(re);
-    if (m) {
-      const nome = m[1].trim();
-      resultado[nome] = {
-        prevista: m[2], trabalhada: m[3], falta: m[4],
-        faltaPct: parseFloat(m[5].replace(',', '.'))
-      };
-    }
+    if (m) resultado[m[1].trim()] = { faltaPct: parseFloat(m[5].replace(',', '.')) };
   }
   return resultado;
 }
-
 function parseSintetico(texto) {
   const linhas = texto.split('\n');
   const resultado = {};
@@ -398,28 +523,20 @@ function parseSintetico(texto) {
     for (const t of tokens) nome = nome.split(t)[0];
     nome = nome.trim();
     if (!nome || nome.includes('COLABORADOR') || nome.length < 3) continue;
-    resultado[nome] = {
-      previstas: tokens[0],
-      diurnas: tokens[1],
-      bancoTotal: tokens[tokens.length - 1]
-    };
+    resultado[nome] = { bancoTotal: tokens[tokens.length - 1] };
   }
   return resultado;
 }
-
 function parseSaldo(texto) {
   const linhas = texto.split('\n');
   const resultado = {};
   const re = new RegExp(`^(${NOME_RE})\\s+(${HHMM_RE})\\s+(.+)$`);
   for (const linha of linhas) {
     const m = linha.trim().match(re);
-    if (m) {
-      resultado[m[1].trim()] = { saldo: m[2] };
-    }
+    if (m) resultado[m[1].trim()] = { saldo: m[2] };
   }
   return resultado;
 }
-
 function parseAjustes(texto) {
   const partes = texto.split(/Colaborador:\s*/i).slice(1);
   const resultado = {};
@@ -433,23 +550,19 @@ function parseAjustes(texto) {
   }
   return resultado;
 }
-
 function parseAusencias(texto, nomesConhecidos) {
   const nomesOrdenados = [...nomesConhecidos].sort((a, b) => b.length - a.length);
   const textoUnico = texto.replace(/\n/g, ' ').replace(/\s+/g, ' ');
   const categorias = {};
   const detalhes = [];
-
   const dataRe = /\d{2}\/\d{2}\/\d{4}(?:\s*-\s*\d{2}\/\d{2}\/\d{4})?/g;
   const nomeAlt = nomesOrdenados.map(n => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
   const blocoRe = new RegExp(`(${nomeAlt})\\s+(.+?)\\s+(${dataRe.source})`, 'g');
-
   let m;
   while ((m = blocoRe.exec(textoUnico)) !== null) {
     const nome = m[1].trim();
     let motivo = m[2].trim();
     const data = m[3].trim();
-    motivo = motivo.replace(/^(Confraternização Universal|Abono Final de Ano)$/i, s => s);
     let categoria = 'Outros';
     if (/f[ée]rias/i.test(motivo)) categoria = 'Férias';
     else if (/atestado/i.test(motivo)) categoria = 'Atestado médico';
@@ -458,11 +571,33 @@ function parseAusencias(texto, nomesConhecidos) {
     else if (/confraterniza|abono/i.test(motivo)) categoria = 'Feriado / abono';
     else if (/antecipa/i.test(motivo)) categoria = 'Antecipação de férias';
     else if (/carga hor[áa]ria/i.test(motivo)) categoria = 'Carga horária diferenciada';
-
     categorias[categoria] = (categorias[categoria] || 0) + 1;
     detalhes.push({ nome, motivo, data });
   }
   return { categorias, detalhes };
+}
+
+// ---------- MONTAGEM DO RESUMO NORMALIZADO ----------
+function construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nomes) {
+  const employees = nomes.map(n => {
+    const faltaPct = absenteismo[n]?.faltaPct || 0;
+    const ajustesN = ajustes[n]?.total || 0;
+    const bancoMin = sintetico[n] ? paraMinutos(sintetico[n].bancoTotal) : (saldo[n] ? paraMinutos(saldo[n].saldo) : 0);
+    return { nome: n, faltaPct, ajustes: ajustesN, bancoMin };
+  });
+
+  const totalAjustes = employees.reduce((a, e) => a + e.ajustes, 0);
+  const faltaPcts = employees.map(e => e.faltaPct).filter(v => !isNaN(v));
+  const faltaMedia = faltaPcts.length ? (faltaPcts.reduce((a, b) => a + b, 0) / faltaPcts.length) : 0;
+  const saldoNegativoCount = employees.filter(e => e.bancoMin < 0).length;
+  const bancoTotalEmpresa = employees.reduce((a, e) => a + e.bancoMin, 0);
+
+  return {
+    employees,
+    kpis: { totalAjustes, faltaMedia, saldoNegativoCount, bancoTotalEmpresa },
+    ausenciasCategorias: ausencias.categorias || {},
+    ausenciasDetalhes: ausencias.detalhes || []
+  };
 }
 
 // ---------- PROCESSAMENTO ----------
@@ -485,83 +620,222 @@ async function processarArquivos() {
   const sintetico = dados.sintetico ? parseSintetico(dados.sintetico) : {};
   const saldo = dados.saldo ? parseSaldo(dados.saldo) : {};
   const ajustes = dados.ajustes ? parseAjustes(dados.ajustes) : {};
-
-  const nomes = new Set([
-    ...Object.keys(absenteismo), ...Object.keys(sintetico), ...Object.keys(saldo)
-  ]);
+  const nomes = [...new Set([...Object.keys(absenteismo), ...Object.keys(sintetico), ...Object.keys(saldo)])];
   const ausencias = dados.ausencias ? parseAusencias(dados.ausencias, nomes) : { categorias: {}, detalhes: [] };
 
-  renderDashboard({ absenteismo, sintetico, saldo, ajustes, ausencias, nomes: [...nomes] });
+  resumoPendente = construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nomes);
 
-  statusMsg.textContent = 'Pronto — ' + Object.keys(dados).length + ' de 6 relatórios processados.';
+  const mesDetectado = detectarMesAno(dados);
+  const hoje = new Date();
+  const [anoDetectado, mesNum] = mesDetectado ? mesDetectado.split('-') : [hoje.getFullYear(), hoje.getMonth() + 1];
+
+  const selMes = document.getElementById('selMes');
+  selMes.innerHTML = NOMES_MES.map((nm, i) => `<option value="${i + 1}">${nm}</option>`).join('');
+  selMes.value = parseInt(mesNum, 10);
+  document.getElementById('selAno').value = anoDetectado;
+  document.getElementById('confirmaPeriodo').classList.remove('hidden');
+  document.getElementById('salvarStatus').textContent = '';
+
+  statusMsg.textContent = `Pronto — ${Object.keys(dados).length} de 6 relatórios processados. Confira o mês antes de salvar.`;
   document.getElementById('processBtn').disabled = false;
+
+  // pré-visualização imediata (ainda não salva no histórico)
+  mesAtivo = null;
+  renderDashboardResumo(resumoPendente);
   document.getElementById('dashboard').classList.remove('hidden');
 }
 
-// ---------- RENDER ----------
-function renderDashboard({ absenteismo, sintetico, saldo, ajustes, ausencias, nomes }) {
+async function salvarMesAtual() {
+  if (!resumoPendente) return;
+  const mes = document.getElementById('selMes').value.padStart(2, '0');
+  const ano = document.getElementById('selAno').value;
+  const mesAno = `${ano}-${mes}`;
+  const salvarStatus = document.getElementById('salvarStatus');
+  salvarStatus.textContent = 'Salvando...';
 
-  const totalAjustes = Object.values(ajustes).reduce((a, b) => a + b.total, 0);
-  const faltaPcts = Object.values(absenteismo).map(v => v.faltaPct).filter(v => !isNaN(v));
-  const faltaMedia = faltaPcts.length ? (faltaPcts.reduce((a, b) => a + b, 0) / faltaPcts.length) : 0;
+  historico[mesAno] = resumoPendente;
+  mesAtivo = mesAno;
 
-  const bancoEntries = nomes.map(n => ({
-    nome: n,
-    minutos: sintetico[n] ? paraMinutos(sintetico[n].bancoTotal) : (saldo[n] ? paraMinutos(saldo[n].saldo) : 0)
-  }));
-  const saldoNegativoCount = bancoEntries.filter(e => e.minutos < 0).length;
-  const bancoTotalEmpresa = bancoEntries.reduce((a, e) => a + e.minutos, 0);
+  try {
+    await fetch(SCRIPT_ANALISE_PONTO, {
+      method: 'POST', mode: 'no-cors',
+      body: JSON.stringify({ mesAno, resumo: resumoPendente })
+    });
+    salvarStatus.textContent = 'Mês salvo no histórico.';
+  } catch (e) {
+    salvarStatus.textContent = 'Não foi possível salvar no histórico (verifique a URL do script).';
+  }
+
+  renderTabs();
+  renderDashboardResumo(historico[mesAno]);
+  renderGraficos();
+  renderRankingPeriodo();
+}
+
+// ---------- HISTÓRICO ----------
+async function carregarHistorico() {
+  if (!SCRIPT_ANALISE_PONTO || SCRIPT_ANALISE_PONTO.includes('COLE_AQUI')) return;
+  try {
+    const resp = await fetch(SCRIPT_ANALISE_PONTO);
+    const json = await resp.json();
+    for (const row of json) {
+      try { historico[row.mesAno] = JSON.parse(row.dataJSON); } catch (e) {}
+    }
+    renderTabs();
+    const meses = Object.keys(historico).sort();
+    if (meses.length) {
+      mesAtivo = meses[meses.length - 1];
+      renderDashboardResumo(historico[mesAtivo]);
+      renderGraficos();
+      renderRankingPeriodo();
+      document.getElementById('dashboard').classList.remove('hidden');
+    }
+  } catch (e) {
+    console.warn('Não foi possível carregar histórico:', e);
+  }
+}
+
+function renderTabs() {
+  const meses = Object.keys(historico).sort();
+  if (!meses.length) return;
+  document.getElementById('tabsWrap').classList.remove('hidden');
+  document.getElementById('mesTabs').innerHTML = meses.map(m => `
+    <div class="mes-tab ${m === mesAtivo ? 'active' : ''}" onclick="selecionarMes('${m}')">${formatarLabelMes(m)}</div>
+  `).join('');
+}
+
+function selecionarMes(mesAno) {
+  mesAtivo = mesAno;
+  renderTabs();
+  renderDashboardResumo(historico[mesAno]);
+}
+
+// ---------- RENDER DASHBOARD (mês selecionado) ----------
+function renderDashboardResumo(resumo) {
+  if (!resumo) return;
+  const { employees, kpis, ausenciasCategorias, ausenciasDetalhes } = resumo;
 
   document.getElementById('kpiGrid').innerHTML = `
-    <div class="kpi"><div class="label">Justificativas no mês</div><div class="value">${totalAjustes}</div></div>
-    <div class="kpi"><div class="label">Falta média</div><div class="value">${faltaMedia.toFixed(2).replace('.', ',')}%</div></div>
-    <div class="kpi"><div class="label">Saldo negativo</div><div class="value ${saldoNegativoCount ? 'bad' : ''}">${saldoNegativoCount} pessoa${saldoNegativoCount === 1 ? '' : 's'}</div></div>
-    <div class="kpi"><div class="label">Banco acumulado (empresa)</div><div class="value ${bancoTotalEmpresa >= 0 ? 'good' : 'bad'}">${formatarMinutos(bancoTotalEmpresa)}</div></div>
+    <div class="kpi"><div class="label">Justificativas no mês</div><div class="value">${kpis.totalAjustes}</div></div>
+    <div class="kpi"><div class="label">Falta média</div><div class="value">${kpis.faltaMedia.toFixed(2).replace('.', ',')}%</div></div>
+    <div class="kpi"><div class="label">Saldo negativo</div><div class="value ${kpis.saldoNegativoCount ? 'bad' : ''}">${kpis.saldoNegativoCount} pessoa${kpis.saldoNegativoCount === 1 ? '' : 's'}</div></div>
+    <div class="kpi"><div class="label">Banco acumulado (empresa)</div><div class="value ${kpis.bancoTotalEmpresa >= 0 ? 'good' : 'bad'}">${formatarMinutos(kpis.bancoTotalEmpresa)}</div></div>
   `;
 
-  // Ranking de pontualidade (score)
-  const ranking = nomes.map(n => {
-    const faltaPct = absenteismo[n]?.faltaPct || 0;
-    const ajustesN = ajustes[n]?.total || 0;
-    const bancoMin = sintetico[n] ? paraMinutos(sintetico[n].bancoTotal) : 0;
-    const score = faltaPct * 10 + ajustesN * 2 + (bancoMin < 0 ? 5 : 0);
-    return { nome: n, faltaPct, ajustesN, bancoMin, score };
+  const ranking = employees.map(e => {
+    const score = e.faltaPct * 10 + e.ajustes * 2 + (e.bancoMin < 0 ? 5 : 0);
+    return { ...e, score };
   }).sort((a, b) => b.score - a.score);
 
   document.getElementById('rankingBody').innerHTML = ranking.slice(0, 10).map(r => `
     <tr>
       <td>${r.nome}</td>
       <td class="num">${r.faltaPct.toFixed(2).replace('.', ',')}%</td>
-      <td class="num">${r.ajustesN}</td>
+      <td class="num">${r.ajustes}</td>
       <td class="num ${r.bancoMin < 0 ? 'bad' : 'good'}">${formatarMinutos(r.bancoMin)}</td>
       <td>${r.score >= 15 ? '<span class="pill attn">Atenção</span>' : '<span class="pill ok">Em dia</span>'}</td>
     </tr>
   `).join('');
 
-  // Ranking de ajustes
-  const ajustesOrdenados = Object.values(ajustes).sort((a, b) => b.total - a.total).filter(e => e.total > 0);
+  const ajustesOrdenados = [...employees].filter(e => e.ajustes > 0).sort((a, b) => b.ajustes - a.ajustes);
   document.getElementById('ajustesBody').innerHTML = ajustesOrdenados.map(e => `
-    <tr><td>${e.nome}</td><td class="num ${e.total >= 5 ? 'bad' : ''}">${e.total}</td></tr>
+    <tr><td>${e.nome}</td><td class="num ${e.ajustes >= 5 ? 'bad' : ''}">${e.ajustes}</td></tr>
   `).join('') || '<tr><td colspan="2">Nenhum ajuste registrado.</td></tr>';
 
-  // Extremos de banco de horas
-  const bancoOrdenado = [...bancoEntries].sort((a, b) => b.minutos - a.minutos);
+  const bancoOrdenado = [...employees].sort((a, b) => b.bancoMin - a.bancoMin);
   const top = bancoOrdenado.slice(0, 5);
   const bottom = bancoOrdenado.slice(-5).reverse();
   const combinados = [...top, ...bottom.filter(b => !top.includes(b))];
   document.getElementById('bancoBody').innerHTML = combinados.map(e => `
-    <tr><td>${e.nome}</td><td class="num ${e.minutos < 0 ? 'bad' : 'good'}">${formatarMinutos(e.minutos)}</td></tr>
+    <tr><td>${e.nome}</td><td class="num ${e.bancoMin < 0 ? 'bad' : 'good'}">${formatarMinutos(e.bancoMin)}</td></tr>
   `).join('');
 
-  // Ausências por categoria
-  const catEntries = Object.entries(ausencias.categorias).sort((a, b) => b[1] - a[1]);
+  const catEntries = Object.entries(ausenciasCategorias).sort((a, b) => b[1] - a[1]);
   document.getElementById('ausenciasBody').innerHTML = catEntries.map(([cat, n]) => `
     <tr><td>${cat}</td><td class="num">${n}</td></tr>
   `).join('') || '<tr><td colspan="2">Nenhum dado de ausência carregado.</td></tr>';
 
-  document.getElementById('ausenciasDetalheBody').innerHTML = ausencias.detalhes.map(d => `
+  document.getElementById('ausenciasDetalheBody').innerHTML = (ausenciasDetalhes || []).map(d => `
     <tr><td>${d.nome}</td><td>${d.motivo}</td><td>${d.data}</td></tr>
   `).join('');
+}
+
+// ---------- GRÁFICOS ----------
+function renderGraficos() {
+  const meses = Object.keys(historico).sort();
+  if (!meses.length) return;
+  const labels = meses.map(formatarLabelMes);
+  const faltaData = meses.map(m => Number(historico[m].kpis.faltaMedia.toFixed(2)));
+  const ajustesData = meses.map(m => historico[m].kpis.totalAjustes);
+  const bancoData = meses.map(m => Number((historico[m].kpis.bancoTotalEmpresa / 60).toFixed(1)));
+
+  const opcoesBase = { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } }, maintainAspectRatio: false };
+
+  if (chartFaltaObj) chartFaltaObj.destroy();
+  chartFaltaObj = new Chart(document.getElementById('chartFalta'), {
+    type: 'line',
+    data: { labels, datasets: [{ label: 'Falta média (%)', data: faltaData, borderColor: '#4A7C59', backgroundColor: '#EAF2EC', fill: true, tension: 0.3 }] },
+    options: { ...opcoesBase, plugins: { title: { display: true, text: 'Falta média por mês (%)', font: { family: 'DM Sans' } }, legend: { display: false } } }
+  });
+
+  if (chartAjustesObj) chartAjustesObj.destroy();
+  chartAjustesObj = new Chart(document.getElementById('chartAjustes'), {
+    type: 'bar',
+    data: { labels, datasets: [{ label: 'Justificativas', data: ajustesData, backgroundColor: '#7F77DD' }] },
+    options: { ...opcoesBase, plugins: { title: { display: true, text: 'Justificativas de ponto por mês', font: { family: 'DM Sans' } }, legend: { display: false } } }
+  });
+
+  if (chartBancoObj) chartBancoObj.destroy();
+  chartBancoObj = new Chart(document.getElementById('chartBanco'), {
+    type: 'line',
+    data: { labels, datasets: [{ label: 'Banco de horas (h)', data: bancoData, borderColor: '#378ADD', backgroundColor: '#E6F1FB', fill: true, tension: 0.3 }] },
+    options: { ...opcoesBase, scales: { y: { beginAtZero: false } }, plugins: { title: { display: true, text: 'Banco de horas total da empresa (h)', font: { family: 'DM Sans' } }, legend: { display: false } } }
+  });
+}
+
+// ---------- RANKING POR PERÍODO ----------
+function mudarPeriodoRanking(n, el) {
+  periodoAtivo = n;
+  document.querySelectorAll('.periodo-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderRankingPeriodo();
+}
+
+function computarRankingPeriodo(nMeses) {
+  const mesesOrdenados = Object.keys(historico).sort();
+  const mesesConsiderados = mesesOrdenados.slice(-nMeses);
+  const agregados = {};
+  for (const m of mesesConsiderados) {
+    for (const emp of historico[m].employees) {
+      if (!agregados[emp.nome]) agregados[emp.nome] = { nome: emp.nome, ajustes: 0, faltaSum: 0, faltaCount: 0, bancoMin: 0 };
+      agregados[emp.nome].ajustes += emp.ajustes;
+      agregados[emp.nome].faltaSum += emp.faltaPct;
+      agregados[emp.nome].faltaCount += 1;
+      agregados[emp.nome].bancoMin += emp.bancoMin;
+    }
+  }
+  const lista = Object.values(agregados).map(a => ({ ...a, faltaMedia: a.faltaSum / a.faltaCount }));
+  lista.sort((a, b) => (b.faltaMedia * 10 + b.ajustes * 2) - (a.faltaMedia * 10 + a.ajustes * 2));
+  return { lista, mesesCobertos: mesesConsiderados.length };
+}
+
+function renderRankingPeriodo() {
+  const { lista, mesesCobertos } = computarRankingPeriodo(periodoAtivo);
+  const aviso = document.getElementById('avisoCobertura');
+  if (mesesCobertos < periodoAtivo) {
+    aviso.textContent = `Só há ${mesesCobertos} mês(es) de histórico carregado — o ranking abaixo cobre apenas esse período, não os ${periodoAtivo} meses completos.`;
+    aviso.classList.remove('hidden');
+  } else {
+    aviso.classList.add('hidden');
+  }
+  document.getElementById('rankingPeriodoBody').innerHTML = lista.slice(0, 10).map(r => `
+    <tr>
+      <td>${r.nome}</td>
+      <td class="num">${r.faltaMedia.toFixed(2).replace('.', ',')}%</td>
+      <td class="num">${r.ajustes}</td>
+      <td class="num ${r.bancoMin < 0 ? 'bad' : 'good'}">${formatarMinutos(r.bancoMin)}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="4">Sem dados suficientes.</td></tr>';
 }
 </script>
 

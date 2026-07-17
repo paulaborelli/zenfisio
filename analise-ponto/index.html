@@ -67,7 +67,7 @@
   .upload-slot .label { font-weight: 500; }
   .upload-slot .sub { color: #5F5E5A; font-size: 0.78rem; }
 
-  #fileInput { display: none; }
+  #fileInput, #fileInputIndividual { display: none; }
   .drop-zone {
     border: 2px dashed #4A7C59;
     border-radius: 12px;
@@ -286,6 +286,18 @@
       <button class="primary" id="processBtn" onclick="processarArquivos()" disabled>Processar relatórios</button>
       <div class="status-msg" id="statusMsg"></div>
 
+      <div style="border-top:1px solid #DDE0D8; margin-top:1.5rem; padding-top:1.25rem;">
+        <h2 style="font-size:1rem; margin-bottom:0.5rem;">Pontos individuais (opcional — para pontualidade real)</h2>
+        <p style="font-size:0.85rem; color:#5F5E5A; margin-bottom:0.75rem;">
+          Envie os espelhos de ponto individuais (um PDF por colaborador) para calcular atrasos reais comparando com a jornada contratual. Sem isso, o painel usa uma estimativa baseada em falta% e ajustes.
+        </p>
+        <div class="drop-zone" style="padding:1.25rem;" onclick="document.getElementById('fileInputIndividual').click()">
+          <p><strong>Clique para selecionar os PDFs individuais</strong><br>pode selecionar vários de uma vez</p>
+        </div>
+        <input type="file" id="fileInputIndividual" accept="application/pdf" multiple>
+        <div class="status-msg" id="statusIndividual">Nenhum ponto individual carregado ainda.</div>
+      </div>
+
       <div class="confirma-periodo hidden" id="confirmaPeriodo">
         <label>Mês/ano detectado:</label>
         <select id="selMes"></select>
@@ -306,21 +318,61 @@
         <div class="kpi-grid" id="kpiGrid"></div>
       </div>
 
-      <div class="card" id="cardGraficos">
-        <h2>Tendência mensal</h2>
-        <div class="chart-wrap"><canvas id="chartFalta"></canvas></div>
-        <div class="chart-wrap"><canvas id="chartAjustes"></canvas></div>
-        <div class="chart-wrap"><canvas id="chartBanco"></canvas></div>
+      <div class="card">
+        <h2>Detalhe por colaborador</h2>
+        <select id="selColaborador" onchange="renderDetalheColaborador()" style="width:100%; padding:10px 12px; border:1px solid #DDE0D8; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:0.9rem; margin-bottom:1rem;">
+          <option value="">Selecione um colaborador…</option>
+        </select>
+        <div id="colabConteudo" class="hidden">
+          <div class="chart-wrap"><canvas id="chartColabFalta"></canvas></div>
+          <div class="chart-wrap"><canvas id="chartColabBanco"></canvas></div>
+          <p class="status-msg" id="colabAvisoPontualidade" style="margin-bottom:8px;"></p>
+          <table>
+            <thead><tr><th>Mês</th><th class="num">Falta %</th><th class="num">Ajustes</th><th class="num">Banco</th><th class="num">Dias atraso</th><th class="num">Min. atraso</th></tr></thead>
+            <tbody id="colabHistoricoBody"></tbody>
+          </table>
+        </div>
       </div>
 
       <div class="card">
         <h2>Ranking de pontualidade</h2>
         <p style="font-size:0.85rem; color:#5F5E5A; margin-top:-8px; margin-bottom:1rem;">
-          Combina % de falta, nº de justificativas de ponto e saldo de banco de horas do mês selecionado.
+          Prioriza atraso real (quando há ponto individual carregado); senão, combina % de falta, ajustes e banco de horas do mês selecionado.
         </p>
         <table>
-          <thead><tr><th>Colaborador</th><th class="num">Falta %</th><th class="num">Ajustes</th><th class="num">Banco total</th><th>Situação</th></tr></thead>
+          <thead><tr><th>Colaborador</th><th class="num">Falta %</th><th class="num">Ajustes</th><th class="num">Banco total</th><th class="num">Dias atraso</th><th class="num">Min. atraso</th><th>Situação</th></tr></thead>
           <tbody id="rankingBody"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Mais justificativas de ponto (mês selecionado)</h2>
+        <table>
+          <thead><tr><th>Colaborador</th><th class="num">Ocorrências no mês</th></tr></thead>
+          <tbody id="ajustesBody"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Ausências por categoria (mês selecionado)</h2>
+        <table>
+          <thead><tr><th>Motivo</th><th class="num">Ocorrências</th></tr></thead>
+          <tbody id="ausenciasBody"></tbody>
+        </table>
+        <button class="toggle-details" onclick="document.getElementById('ausenciasDetalhe').classList.toggle('hidden')">Ver detalhamento por data</button>
+        <div id="ausenciasDetalhe" class="hidden" style="margin-top:12px; max-height:300px; overflow-y:auto;">
+          <table>
+            <thead><tr><th>Colaborador</th><th>Motivo</th><th>Data</th></tr></thead>
+            <tbody id="ausenciasDetalheBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Extremos de banco de horas (mês selecionado)</h2>
+        <table>
+          <thead><tr><th>Colaborador</th><th class="num">Saldo do mês</th></tr></thead>
+          <tbody id="bancoBody"></tbody>
         </table>
       </div>
 
@@ -338,50 +390,11 @@
         </table>
       </div>
 
-      <div class="card">
-        <h2>Detalhe por colaborador</h2>
-        <select id="selColaborador" onchange="renderDetalheColaborador()" style="width:100%; padding:10px 12px; border:1px solid #DDE0D8; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:0.9rem; margin-bottom:1rem;">
-          <option value="">Selecione um colaborador…</option>
-        </select>
-        <div id="colabConteudo" class="hidden">
-          <div class="chart-wrap"><canvas id="chartColabFalta"></canvas></div>
-          <div class="chart-wrap"><canvas id="chartColabBanco"></canvas></div>
-          <table>
-            <thead><tr><th>Mês</th><th class="num">Falta %</th><th class="num">Ajustes</th><th class="num">Banco</th></tr></thead>
-            <tbody id="colabHistoricoBody"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>Mais justificativas de ponto (mês selecionado)</h2>
-        <table>
-          <thead><tr><th>Colaborador</th><th class="num">Ocorrências no mês</th></tr></thead>
-          <tbody id="ajustesBody"></tbody>
-        </table>
-      </div>
-
-      <div class="card">
-        <h2>Extremos de banco de horas (mês selecionado)</h2>
-        <table>
-          <thead><tr><th>Colaborador</th><th class="num">Saldo do mês</th></tr></thead>
-          <tbody id="bancoBody"></tbody>
-        </table>
-      </div>
-
-      <div class="card">
-        <h2>Ausências por categoria (mês selecionado)</h2>
-        <table>
-          <thead><tr><th>Motivo</th><th class="num">Ocorrências</th></tr></thead>
-          <tbody id="ausenciasBody"></tbody>
-        </table>
-        <button class="toggle-details" onclick="document.getElementById('ausenciasDetalhe').classList.toggle('hidden')">Ver detalhamento por data</button>
-        <div id="ausenciasDetalhe" class="hidden" style="margin-top:12px; max-height:300px; overflow-y:auto;">
-          <table>
-            <thead><tr><th>Colaborador</th><th>Motivo</th><th>Data</th></tr></thead>
-            <tbody id="ausenciasDetalheBody"></tbody>
-          </table>
-        </div>
+      <div class="card" id="cardGraficos">
+        <h2>Tendência mensal</h2>
+        <div class="chart-wrap"><canvas id="chartFalta"></canvas></div>
+        <div class="chart-wrap"><canvas id="chartAjustes"></canvas></div>
+        <div class="chart-wrap"><canvas id="chartBanco"></canvas></div>
       </div>
 
     </div>
@@ -427,6 +440,7 @@ const TIPOS = [
 const NOMES_MES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
 const arquivosCarregados = {};
+let arquivosIndividuais = [];
 let historico = {};        // { 'YYYY-MM': resumoObj }
 let mesAtivo = null;
 let resumoPendente = null; // resumo processado aguardando confirmação de mês/ano
@@ -456,6 +470,12 @@ document.getElementById('fileInput').addEventListener('change', e => {
     if (tipo) arquivosCarregados[tipo.chave] = file;
   }
   renderUploadGrid();
+});
+
+document.getElementById('fileInputIndividual').addEventListener('change', e => {
+  for (const file of e.target.files) arquivosIndividuais.push(file);
+  document.getElementById('statusIndividual').textContent =
+    arquivosIndividuais.length + ' arquivo(s) individual(is) pronto(s) para processar.';
 });
 
 // ---------- EXTRAÇÃO DE TEXTO DO PDF ----------
@@ -593,13 +613,57 @@ function parseAusencias(texto, nomesConhecidos) {
   return { categorias, detalhes };
 }
 
+// ---------- PONTUALIDADE INDIVIDUAL (espelho de ponto por colaborador) ----------
+function paraMinutosDoDia(hhmm) {
+  const [h, m] = hhmm.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function parseJornada(texto) {
+  const m = texto.match(/(\d{1,2}:\d{2})-\d{1,2}:\d{2},?\s*\d{1,2}:\d{2}-(\d{1,2}:\d{2})/);
+  if (!m) return null;
+  return { entrada: paraMinutosDoDia(m[1]), saida: paraMinutosDoDia(m[2]) };
+}
+
+function parseIndividual(texto) {
+  const nomeMatch = texto.match(/Colaborador:\s*([^\n]+?)\s*(?:CPF:|Crach[áa]:|$)/);
+  const nome = nomeMatch ? nomeMatch[1].trim() : null;
+  const jornada = parseJornada(texto);
+  if (!nome || !jornada) return null;
+
+  const linhas = texto.split('\n');
+  let diasAtraso = 0, minutosAtrasoTotal = 0, diasSaidaAntecipada = 0, minutosSaidaTotal = 0, diasCompletos = 0;
+  const dataLinhaRe = /^(\d{2})\/(\d{2})\s+\S{3}\b/;
+
+  for (const linhaRaw of linhas) {
+    const linha = linhaRaw.trim();
+    if (!dataLinhaRe.test(linha)) continue;
+    const tokens = [...linha.matchAll(/(\d{1,2}:\d{2})[~*^]?/g)].map(t => t[1]);
+    if (tokens.length < 6) continue;
+    diasCompletos++;
+    const entradaReal = paraMinutosDoDia(tokens[0]);
+    const saidaReal = paraMinutosDoDia(tokens[3]);
+    if (entradaReal > jornada.entrada) {
+      diasAtraso++;
+      minutosAtrasoTotal += (entradaReal - jornada.entrada);
+    }
+    if (saidaReal < jornada.saida) {
+      diasSaidaAntecipada++;
+      minutosSaidaTotal += (jornada.saida - saidaReal);
+    }
+  }
+
+  return { nome, diasAtraso, minutosAtrasoTotal, diasSaidaAntecipada, minutosSaidaTotal, diasCompletos };
+}
+
 // ---------- MONTAGEM DO RESUMO NORMALIZADO ----------
-function construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nomes) {
+function construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nomes, pontualidadePorNome) {
   const employees = nomes.map(n => {
     const faltaPct = absenteismo[n]?.faltaPct || 0;
     const ajustesN = ajustes[n]?.total || 0;
     const bancoMin = sintetico[n] ? paraMinutos(sintetico[n].bancoTotal) : (saldo[n] ? paraMinutos(saldo[n].saldo) : 0);
-    return { nome: n, faltaPct, ajustes: ajustesN, bancoMin };
+    const pontualidade = (pontualidadePorNome && pontualidadePorNome[n]) ? pontualidadePorNome[n] : null;
+    return { nome: n, faltaPct, ajustes: ajustesN, bancoMin, pontualidade };
   });
 
   const totalAjustes = employees.reduce((a, e) => a + e.ajustes, 0);
@@ -639,7 +703,21 @@ async function processarArquivos() {
   const nomes = [...new Set([...Object.keys(absenteismo), ...Object.keys(sintetico), ...Object.keys(saldo)])];
   const ausencias = dados.ausencias ? parseAusencias(dados.ausencias, nomes) : { categorias: {}, detalhes: [] };
 
-  resumoPendente = construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nomes);
+  const pontualidadePorNome = {};
+  if (arquivosIndividuais.length) {
+    statusMsg.textContent = `Lendo ${arquivosIndividuais.length} ponto(s) individual(is)...`;
+    for (const file of arquivosIndividuais) {
+      try {
+        const texto = await extrairTexto(file);
+        const resultado = parseIndividual(texto);
+        if (resultado) pontualidadePorNome[chave(resultado.nome)] = resultado;
+      } catch (e) {
+        console.warn('Falha ao processar ponto individual', file.name, e);
+      }
+    }
+  }
+
+  resumoPendente = construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nomes, pontualidadePorNome);
 
   const mesDetectado = detectarMesAno(dados);
   const hoje = new Date();
@@ -687,6 +765,9 @@ async function salvarMesAtual() {
   renderGraficos();
   renderRankingPeriodo();
   renderSeletorColaboradores();
+
+  arquivosIndividuais = [];
+  document.getElementById('statusIndividual').textContent = 'Nenhum ponto individual carregado ainda.';
 }
 
 // ---------- HISTÓRICO ----------
@@ -741,7 +822,8 @@ function renderDashboardResumo(resumo) {
   `;
 
   const ranking = employees.map(e => {
-    const score = e.faltaPct * 10 + e.ajustes * 2 + (e.bancoMin < 0 ? 5 : 0);
+    const p = e.pontualidade;
+    const score = (p ? p.minutosAtrasoTotal * 0.5 + p.diasAtraso * 3 : 0) + e.faltaPct * 10 + e.ajustes * 2 + (e.bancoMin < 0 ? 5 : 0);
     return { ...e, score };
   }).sort((a, b) => b.score - a.score);
 
@@ -751,6 +833,8 @@ function renderDashboardResumo(resumo) {
       <td class="num">${r.faltaPct.toFixed(2).replace('.', ',')}%</td>
       <td class="num">${r.ajustes}</td>
       <td class="num ${r.bancoMin < 0 ? 'bad' : 'good'}">${formatarMinutos(r.bancoMin)}</td>
+      <td class="num">${r.pontualidade ? r.pontualidade.diasAtraso : '—'}</td>
+      <td class="num ${r.pontualidade && r.pontualidade.minutosAtrasoTotal > 60 ? 'bad' : ''}">${r.pontualidade ? r.pontualidade.minutosAtrasoTotal + ' min' : '—'}</td>
       <td>${r.score >= 15 ? '<span class="pill attn">Atenção</span>' : '<span class="pill ok">Em dia</span>'}</td>
     </tr>
   `).join('');
@@ -848,8 +932,15 @@ function renderDetalheColaborador() {
       <td class="num">${l.faltaPct.toFixed(2).replace('.', ',')}%</td>
       <td class="num">${l.ajustes}</td>
       <td class="num ${l.bancoMin < 0 ? 'bad' : 'good'}">${formatarMinutos(l.bancoMin)}</td>
+      <td class="num">${l.pontualidade ? l.pontualidade.diasAtraso : '—'}</td>
+      <td class="num">${l.pontualidade ? l.pontualidade.minutosAtrasoTotal + ' min' : '—'}</td>
     </tr>
-  `).join('') || '<tr><td colspan="4">Sem dados para este colaborador.</td></tr>';
+  `).join('') || '<tr><td colspan="6">Sem dados para este colaborador.</td></tr>';
+
+  const temPontualidade = linhas.some(l => l.pontualidade);
+  document.getElementById('colabAvisoPontualidade').textContent = temPontualidade
+    ? ''
+    : 'Pontualidade real ainda não disponível — envie o ponto individual deste colaborador ao processar o mês.';
 
   const labels = linhas.map(l => formatarLabelMes(l.mesAno));
   const faltaData = linhas.map(l => Number(l.faltaPct.toFixed(2)));

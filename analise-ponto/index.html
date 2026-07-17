@@ -339,6 +339,21 @@
       </div>
 
       <div class="card">
+        <h2>Detalhe por colaborador</h2>
+        <select id="selColaborador" onchange="renderDetalheColaborador()" style="width:100%; padding:10px 12px; border:1px solid #DDE0D8; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:0.9rem; margin-bottom:1rem;">
+          <option value="">Selecione um colaborador…</option>
+        </select>
+        <div id="colabConteudo" class="hidden">
+          <div class="chart-wrap"><canvas id="chartColabFalta"></canvas></div>
+          <div class="chart-wrap"><canvas id="chartColabBanco"></canvas></div>
+          <table>
+            <thead><tr><th>Mês</th><th class="num">Falta %</th><th class="num">Ajustes</th><th class="num">Banco</th></tr></thead>
+            <tbody id="colabHistoricoBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
         <h2>Mais justificativas de ponto (mês selecionado)</h2>
         <table>
           <thead><tr><th>Colaborador</th><th class="num">Ocorrências no mês</th></tr></thead>
@@ -416,6 +431,7 @@ let historico = {};        // { 'YYYY-MM': resumoObj }
 let mesAtivo = null;
 let resumoPendente = null; // resumo processado aguardando confirmação de mês/ano
 let chartFaltaObj, chartAjustesObj, chartBancoObj;
+let chartColabFaltaObj, chartColabBancoObj;
 let periodoAtivo = 3;
 
 function renderUploadGrid() {
@@ -670,6 +686,7 @@ async function salvarMesAtual() {
   renderDashboardResumo(historico[mesAno]);
   renderGraficos();
   renderRankingPeriodo();
+  renderSeletorColaboradores();
 }
 
 // ---------- HISTÓRICO ----------
@@ -688,6 +705,7 @@ async function carregarHistorico() {
       renderDashboardResumo(historico[mesAtivo]);
       renderGraficos();
       renderRankingPeriodo();
+      renderSeletorColaboradores();
       document.getElementById('dashboard').classList.remove('hidden');
     }
   } catch (e) {
@@ -793,7 +811,67 @@ function renderGraficos() {
   });
 }
 
-// ---------- RANKING POR PERÍODO ----------
+// ---------- DETALHE POR COLABORADOR ----------
+function listarColaboradores() {
+  const nomes = new Set();
+  for (const m of Object.keys(historico)) {
+    for (const e of historico[m].employees) nomes.add(e.nome);
+  }
+  return [...nomes].sort();
+}
+
+function renderSeletorColaboradores() {
+  const sel = document.getElementById('selColaborador');
+  const atual = sel.value;
+  const nomes = listarColaboradores();
+  sel.innerHTML = '<option value="">Selecione um colaborador…</option>' +
+    nomes.map(n => `<option value="${n}">${n}</option>`).join('');
+  if (nomes.includes(atual)) sel.value = atual;
+}
+
+function renderDetalheColaborador() {
+  const nome = document.getElementById('selColaborador').value;
+  const container = document.getElementById('colabConteudo');
+  if (!nome) { container.classList.add('hidden'); return; }
+  container.classList.remove('hidden');
+
+  const meses = Object.keys(historico).sort();
+  const linhas = [];
+  for (const m of meses) {
+    const emp = historico[m].employees.find(e => e.nome === nome);
+    if (emp) linhas.push({ mesAno: m, ...emp });
+  }
+
+  document.getElementById('colabHistoricoBody').innerHTML = linhas.map(l => `
+    <tr>
+      <td>${formatarLabelMes(l.mesAno)}</td>
+      <td class="num">${l.faltaPct.toFixed(2).replace('.', ',')}%</td>
+      <td class="num">${l.ajustes}</td>
+      <td class="num ${l.bancoMin < 0 ? 'bad' : 'good'}">${formatarMinutos(l.bancoMin)}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="4">Sem dados para este colaborador.</td></tr>';
+
+  const labels = linhas.map(l => formatarLabelMes(l.mesAno));
+  const faltaData = linhas.map(l => Number(l.faltaPct.toFixed(2)));
+  const bancoData = linhas.map(l => Number((l.bancoMin / 60).toFixed(1)));
+
+  const opcoesBase = { maintainAspectRatio: false, plugins: { legend: { display: false } } };
+
+  if (chartColabFaltaObj) chartColabFaltaObj.destroy();
+  chartColabFaltaObj = new Chart(document.getElementById('chartColabFalta'), {
+    type: 'line',
+    data: { labels, datasets: [{ label: 'Falta %', data: faltaData, borderColor: '#D85A30', backgroundColor: '#FAECE7', fill: true, tension: 0.3 }] },
+    options: { ...opcoesBase, scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false }, title: { display: true, text: `Falta (%) — ${nome}`, font: { family: 'DM Sans' } } } }
+  });
+
+  if (chartColabBancoObj) chartColabBancoObj.destroy();
+  chartColabBancoObj = new Chart(document.getElementById('chartColabBanco'), {
+    type: 'line',
+    data: { labels, datasets: [{ label: 'Banco (h)', data: bancoData, borderColor: '#378ADD', backgroundColor: '#E6F1FB', fill: true, tension: 0.3 }] },
+    options: { ...opcoesBase, plugins: { legend: { display: false }, title: { display: true, text: `Banco de horas (h) — ${nome}`, font: { family: 'DM Sans' } } } }
+  });
+}
+
 function mudarPeriodoRanking(n, el) {
   periodoAtivo = n;
   document.querySelectorAll('.periodo-tab').forEach(t => t.classList.remove('active'));

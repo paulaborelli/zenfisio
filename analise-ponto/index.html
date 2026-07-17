@@ -829,6 +829,7 @@ function selecionarMes(mesAno) {
   mesAtivo = mesAno;
   renderTabs();
   renderDashboardResumo(historico[mesAno]);
+  renderDetalheColaborador();
 }
 
 // ---------- RENDER DASHBOARD (mês selecionado) ----------
@@ -949,8 +950,9 @@ function renderDetalheColaborador() {
   container.classList.remove('hidden');
 
   const meses = Object.keys(historico).sort();
+  const mesesAteAtivo = mesAtivo ? meses.filter(m => m <= mesAtivo) : meses;
   let linhas = [];
-  for (const m of meses) {
+  for (const m of mesesAteAtivo) {
     const emp = historico[m].employees.find(e => e.nome === nome);
     if (emp) linhas.push({ mesAno: m, ...emp });
   }

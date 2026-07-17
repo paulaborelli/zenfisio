@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Análise de Ponto — ZenFisio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'DM Sans', sans-serif;
+    background: #F2F4F0;
+    color: #2C2C2A;
+  }
+  h1, h2, h3 { font-family: 'Lora', serif; font-weight: 600; margin: 0; }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+  .header-bar {
+    background: #4A7C59;
+    color: #fff;
+    padding: 1.5rem 0;
+    padding-left: 140px;
+  }
+  .header-bar .wrap { padding-top: 0; padding-bottom: 0; }
+  .header-bar h1 { font-size: 1.5rem; color: #fff; }
+  .header-bar p { margin: 4px 0 0; font-size: 0.9rem; opacity: 0.9; }
+
+  .card {
+    background: #FFFFFF;
+    border: 1px solid #DDE0D8;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .card h2 { font-size: 1.1rem; margin-bottom: 1rem; color: #2C2C2A; }
+
+  .upload-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 1.25rem;
+  }
+  .upload-slot {
+    border: 1.5px dashed #DDE0D8;
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .upload-slot.filled {
+    border-color: #4A7C59;
+    background: #EAF2EC;
+    border-style: solid;
+  }
+  .upload-slot .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: #DDE0D8; flex-shrink: 0;
+  }
+  .upload-slot.filled .dot { background: #4A7C59; }
+  .upload-slot .label { font-weight: 500; }
+  .upload-slot .sub { color: #5F5E5A; font-size: 0.78rem; }
+
+  #fileInput { display: none; }
+  .drop-zone {
+    border: 2px dashed #4A7C59;
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    background: #F2F4F0;
+    margin-bottom: 1.25rem;
+    transition: background 0.15s;
+  }
+  .drop-zone:hover { background: #EAF2EC; }
+  .drop-zone p { margin: 0; color: #5F5E5A; font-size: 0.9rem; }
+  .drop-zone strong { color: #4A7C59; }
+
+  button.primary {
+    background: #4A7C59;
+    color: #fff;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+  }
+  button.primary:disabled { background: #B4B2A9; cursor: not-allowed; }
+  button.primary:hover:not(:disabled) { background: #3d6549; }
+
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+  }
+  .kpi {
+    background: #F2F4F0;
+    border-radius: 10px;
+    padding: 1rem 1.1rem;
+  }
+  .kpi .label { font-size: 0.78rem; color: #5F5E5A; margin-bottom: 6px; }
+  .kpi .value { font-size: 1.5rem; font-weight: 600; font-family: 'Lora', serif; }
+  .kpi .value.bad { color: #993C1D; }
+  .kpi .value.good { color: #27500A; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  th { text-align: left; color: #5F5E5A; font-weight: 500; font-size: 0.78rem; padding: 6px 8px; border-bottom: 1.5px solid #DDE0D8; }
+  td { padding: 8px; border-bottom: 1px solid #EFEFEA; }
+  tr:last-child td { border-bottom: none; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .bad { color: #993C1D; font-weight: 600; }
+  .good { color: #27500A; font-weight: 600; }
+  .pill {
+    display: inline-block; padding: 2px 10px; border-radius: 999px;
+    font-size: 0.75rem; font-weight: 600;
+  }
+  .pill.attn { background: #FAECE7; color: #993C1D; }
+  .pill.ok { background: #EAF3DE; color: #27500A; }
+
+  .status-msg { font-size: 0.85rem; color: #5F5E5A; margin-top: 8px; }
+  .hidden { display: none !important; }
+
+  .login-box {
+    max-width: 360px;
+    margin: 15vh auto;
+    background: #fff;
+    border: 1px solid #DDE0D8;
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+  }
+  .login-box input {
+    width: 100%;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    border: 1px solid #DDE0D8;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+  }
+  .login-box .error { color: #993C1D; font-size: 0.85rem; margin-bottom: 10px; min-height: 1em; }
+
+  .toggle-details {
+    font-size: 0.8rem;
+    color: #4A7C59;
+    cursor: pointer;
+    text-decoration: underline;
+    background: none;
+    border: none;
+    padding: 0;
+    margin-top: 10px;
+  }
+</style>
+</head>
+<body>
+
+<a href="../index.html" style="position:fixed;top:1rem;left:1rem;z-index:9999;display:inline-flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;font-size:0.82rem;font-weight:600;color:#4A7C59;text-decoration:none;padding:6px 14px;border-radius:8px;border:1.5px solid #4A7C59;background:white;box-shadow:0 2px 6px rgba(0,0,0,0.08);transition:background 0.15s;" onmouseover="this.style.background='#EAF2EC'" onmouseout="this.style.background='white'">← Início</a>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <h2 style="margin-bottom: 1.5rem;">Análise de Ponto</h2>
+    <input type="text" id="loginUser" placeholder="Usuário">
+    <input type="password" id="loginPass" placeholder="Senha">
+    <div class="error" id="loginError"></div>
+    <button class="primary" style="width:100%" onclick="tentarLogin()">Entrar</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="appScreen" class="hidden">
+
+  <div class="header-bar">
+    <div class="wrap">
+      <h1>Análise de Ponto</h1>
+      <p>ZenFisio · painel de pontualidade e banco de horas</p>
+    </div>
+  </div>
+
+  <div class="wrap">
+
+    <div class="card">
+      <h2>1. Envie os relatórios do mês</h2>
+      <div class="upload-grid" id="uploadGrid"></div>
+
+      <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
+        <p><strong>Clique para selecionar os PDFs</strong><br>ou arraste os 6 arquivos aqui</p>
+      </div>
+      <input type="file" id="fileInput" accept="application/pdf" multiple>
+
+      <button class="primary" id="processBtn" onclick="processarArquivos()" disabled>Processar relatórios</button>
+      <div class="status-msg" id="statusMsg"></div>
+    </div>
+
+    <div id="dashboard" class="hidden">
+
+      <div class="card">
+        <h2>Visão geral do mês</h2>
+        <div class="kpi-grid" id="kpiGrid"></div>
+      </div>
+
+      <div class="card">
+        <h2>Ranking de pontualidade</h2>
+        <p style="font-size:0.85rem; color:#5F5E5A; margin-top:-8px; margin-bottom:1rem;">
+          Combina % de falta, nº de justificativas de ponto e saldo de banco de horas. Quanto maior o score, mais atenção o caso pede.
+        </p>
+        <table>
+          <thead><tr><th>Colaborador</th><th class="num">Falta %</th><th class="num">Ajustes</th><th class="num">Banco total</th><th>Situação</th></tr></thead>
+          <tbody id="rankingBody"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Mais justificativas de ponto</h2>
+        <table>
+          <thead><tr><th>Colaborador</th><th class="num">Ocorrências no mês</th></tr></thead>
+          <tbody id="ajustesBody"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Extremos de banco de horas</h2>
+        <table>
+          <thead><tr><th>Colaborador</th><th class="num">Saldo do mês</th></tr></thead>
+          <tbody id="bancoBody"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Ausências por categoria</h2>
+        <table>
+          <thead><tr><th>Motivo</th><th class="num">Ocorrências</th></tr></thead>
+          <tbody id="ausenciasBody"></tbody>
+        </table>
+        <button class="toggle-details" onclick="document.getElementById('ausenciasDetalhe').classList.toggle('hidden')">Ver detalhamento por data</button>
+        <div id="ausenciasDetalhe" class="hidden" style="margin-top:12px; max-height:300px; overflow-y:auto;">
+          <table>
+            <thead><tr><th>Colaborador</th><th>Motivo</th><th>Data</th></tr></thead>
+            <tbody id="ausenciasDetalheBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ---------- LOGIN ----------
+const CREDENCIAIS = {
+  'rh': 'zen@rh',
+  'cledison': 'zen@cledison'
+};
+
+function tentarLogin() {
+  const u = document.getElementById('loginUser').value.trim().toLowerCase();
+  const p = document.getElementById('loginPass').value;
+  if (CREDENCIAIS[u] && CREDENCIAIS[u] === p) {
+    sessionStorage.setItem('zf_analise_ponto_auth', u);
+    mostrarApp();
+  } else {
+    document.getElementById('loginError').textContent = 'Usuário ou senha incorretos.';
+  }
+}
+
+function mostrarApp() {
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('appScreen').classList.remove('hidden');
+}
+
+if (sessionStorage.getItem('zf_analise_ponto_auth')) {
+  mostrarApp();
+}
+
+document.getElementById('loginPass')?.addEventListener('keydown', e => {
+  if (e.key === 'Enter') tentarLogin();
+});
+
+// ---------- CONFIG DOS TIPOS DE RELATÓRIO ----------
+const TIPOS = [
+  { chave: 'absenteismo', label: 'Absenteísmo', match: /absente/i },
+  { chave: 'ajustes',     label: 'Ajustes', match: /ajuste/i },
+  { chave: 'ausencias',   label: 'Ausências', match: /ausen/i },
+  { chave: 'banco',       label: 'Banco de Horas', match: /banco/i },
+  { chave: 'sintetico',   label: 'Ponto Sintético', match: /sintet/i },
+  { chave: 'saldo',       label: 'Saldo Geral', match: /saldo/i },
+];
+
+const arquivosCarregados = {};
+
+function renderUploadGrid() {
+  const grid = document.getElementById('uploadGrid');
+  grid.innerHTML = TIPOS.map(t => `
+    <div class="upload-slot ${arquivosCarregados[t.chave] ? 'filled' : ''}" id="slot-${t.chave}">
+      <div class="dot"></div>
+      <div>
+        <div class="label">${t.label}</div>
+        <div class="sub">${arquivosCarregados[t.chave] ? arquivosCarregados[t.chave].name : 'aguardando arquivo'}</div>
+      </div>
+    </div>
+  `).join('');
+  document.getElementById('processBtn').disabled = Object.keys(arquivosCarregados).length === 0;
+}
+renderUploadGrid();
+
+document.getElementById('fileInput').addEventListener('change', e => {
+  for (const file of e.target.files) {
+    const tipo = TIPOS.find(t => t.match.test(file.name));
+    if (tipo) {
+      arquivosCarregados[tipo.chave] = file;
+    }
+  }
+  renderUploadGrid();
+});
+
+// ---------- EXTRAÇÃO DE TEXTO DO PDF ----------
+async function extrairTexto(file) {
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  let textoCompleto = '';
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    let lastY = null;
+    let linha = '';
+    for (const item of content.items) {
+      const y = item.transform[5];
+      if (lastY !== null && Math.abs(y - lastY) > 2) {
+        textoCompleto += linha.trim() + '\n';
+        linha = '';
+      }
+      linha += item.str + ' ';
+      lastY = y;
+    }
+    textoCompleto += linha.trim() + '\n';
+  }
+  return textoCompleto;
+}
+
+// ---------- PARSERS ----------
+function paraMinutos(hhmm) {
+  if (!hhmm) return 0;
+  const neg = hhmm.trim().startsWith('-');
+  const limpo = hhmm.replace('-', '').replace('.', '');
+  const [h, m] = limpo.split(':').map(Number);
+  const total = (h || 0) * 60 + (m || 0);
+  return neg ? -total : total;
+}
+function formatarMinutos(min) {
+  const neg = min < 0;
+  min = Math.abs(Math.round(min));
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return (neg ? '-' : '') + String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+}
+
+const NOME_RE = "[A-ZÀÁÂÃÉÊÍÓÔÕÚÜÇ][A-ZÀÁÂÃÉÊÍÓÔÕÚÜÇ' ]+";
+const HHMM_RE = "-?\\d{1,3}(?:\\.\\d{2})?:\\d{2}";
+
+function chave(nome) {
+  return nome.trim().toUpperCase().replace(/\s+/g, ' ');
+}
+
+function parseAbsenteismo(texto) {
+  const linhas = texto.split('\n');
+  const resultado = {};
+  const re = new RegExp(`^(${NOME_RE})\\s+(${HHMM_RE})\\s+(${HHMM_RE})\\s+(${HHMM_RE})\\s+([\\d,]+)\\s*$`);
+  for (const linha of linhas) {
+    const m = linha.trim().match(re);
+    if (m) {
+      const nome = m[1].trim();
+      resultado[nome] = {
+        prevista: m[2], trabalhada: m[3], falta: m[4],
+        faltaPct: parseFloat(m[5].replace(',', '.'))
+      };
+    }
+  }
+  return resultado;
+}
+
+function parseSintetico(texto) {
+  const linhas = texto.split('\n');
+  const resultado = {};
+  for (const linhaRaw of linhas) {
+    const linha = linhaRaw.trim();
+    const tokens = [...linha.matchAll(new RegExp(HHMM_RE, 'g'))].map(m => m[0]);
+    if (tokens.length < 2) continue;
+    let nome = linha;
+    for (const t of tokens) nome = nome.split(t)[0];
+    nome = nome.trim();
+    if (!nome || nome.includes('COLABORADOR') || nome.length < 3) continue;
+    resultado[nome] = {
+      previstas: tokens[0],
+      diurnas: tokens[1],
+      bancoTotal: tokens[tokens.length - 1]
+    };
+  }
+  return resultado;
+}
+
+function parseSaldo(texto) {
+  const linhas = texto.split('\n');
+  const resultado = {};
+  const re = new RegExp(`^(${NOME_RE})\\s+(${HHMM_RE})\\s+(.+)$`);
+  for (const linha of linhas) {
+    const m = linha.trim().match(re);
+    if (m) {
+      resultado[m[1].trim()] = { saldo: m[2] };
+    }
+  }
+  return resultado;
+}
+
+function parseAjustes(texto) {
+  const partes = texto.split(/Colaborador:\s*/i).slice(1);
+  const resultado = {};
+  for (const parte of partes) {
+    const nomeOriginal = parte.split('\n')[0].trim();
+    if (!nomeOriginal) continue;
+    const nomeChave = chave(nomeOriginal);
+    const ocorrencias = (parte.match(/\b(Justificativa|Ajuste)\b/g) || []).length;
+    if (!resultado[nomeChave]) resultado[nomeChave] = { nome: nomeOriginal, total: 0 };
+    resultado[nomeChave].total += ocorrencias;
+  }
+  return resultado;
+}
+
+function parseAusencias(texto, nomesConhecidos) {
+  const nomesOrdenados = [...nomesConhecidos].sort((a, b) => b.length - a.length);
+  const textoUnico = texto.replace(/\n/g, ' ').replace(/\s+/g, ' ');
+  const categorias = {};
+  const detalhes = [];
+
+  const dataRe = /\d{2}\/\d{2}\/\d{4}(?:\s*-\s*\d{2}\/\d{2}\/\d{4})?/g;
+  const nomeAlt = nomesOrdenados.map(n => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+  const blocoRe = new RegExp(`(${nomeAlt})\\s+(.+?)\\s+(${dataRe.source})`, 'g');
+
+  let m;
+  while ((m = blocoRe.exec(textoUnico)) !== null) {
+    const nome = m[1].trim();
+    let motivo = m[2].trim();
+    const data = m[3].trim();
+    motivo = motivo.replace(/^(Confraternização Universal|Abono Final de Ano)$/i, s => s);
+    let categoria = 'Outros';
+    if (/f[ée]rias/i.test(motivo)) categoria = 'Férias';
+    else if (/atestado/i.test(motivo)) categoria = 'Atestado médico';
+    else if (/licen[çc]a maternidade/i.test(motivo)) categoria = 'Licença maternidade';
+    else if (/consulta|exame/i.test(motivo)) categoria = 'Consulta / exame';
+    else if (/confraterniza|abono/i.test(motivo)) categoria = 'Feriado / abono';
+    else if (/antecipa/i.test(motivo)) categoria = 'Antecipação de férias';
+    else if (/carga hor[áa]ria/i.test(motivo)) categoria = 'Carga horária diferenciada';
+
+    categorias[categoria] = (categorias[categoria] || 0) + 1;
+    detalhes.push({ nome, motivo, data });
+  }
+  return { categorias, detalhes };
+}
+
+// ---------- PROCESSAMENTO ----------
+async function processarArquivos() {
+  const statusMsg = document.getElementById('statusMsg');
+  document.getElementById('processBtn').disabled = true;
+  statusMsg.textContent = 'Lendo arquivos...';
+
+  const dados = {};
+  for (const tipo of TIPOS) {
+    const file = arquivosCarregados[tipo.chave];
+    if (!file) continue;
+    statusMsg.textContent = `Lendo ${tipo.label}...`;
+    dados[tipo.chave] = await extrairTexto(file);
+  }
+
+  statusMsg.textContent = 'Processando dados...';
+
+  const absenteismo = dados.absenteismo ? parseAbsenteismo(dados.absenteismo) : {};
+  const sintetico = dados.sintetico ? parseSintetico(dados.sintetico) : {};
+  const saldo = dados.saldo ? parseSaldo(dados.saldo) : {};
+  const ajustes = dados.ajustes ? parseAjustes(dados.ajustes) : {};
+
+  const nomes = new Set([
+    ...Object.keys(absenteismo), ...Object.keys(sintetico), ...Object.keys(saldo)
+  ]);
+  const ausencias = dados.ausencias ? parseAusencias(dados.ausencias, nomes) : { categorias: {}, detalhes: [] };
+
+  renderDashboard({ absenteismo, sintetico, saldo, ajustes, ausencias, nomes: [...nomes] });
+
+  statusMsg.textContent = 'Pronto — ' + Object.keys(dados).length + ' de 6 relatórios processados.';
+  document.getElementById('processBtn').disabled = false;
+  document.getElementById('dashboard').classList.remove('hidden');
+}
+
+// ---------- RENDER ----------
+function renderDashboard({ absenteismo, sintetico, saldo, ajustes, ausencias, nomes }) {
+
+  const totalAjustes = Object.values(ajustes).reduce((a, b) => a + b.total, 0);
+  const faltaPcts = Object.values(absenteismo).map(v => v.faltaPct).filter(v => !isNaN(v));
+  const faltaMedia = faltaPcts.length ? (faltaPcts.reduce((a, b) => a + b, 0) / faltaPcts.length) : 0;
+
+  const bancoEntries = nomes.map(n => ({
+    nome: n,
+    minutos: sintetico[n] ? paraMinutos(sintetico[n].bancoTotal) : (saldo[n] ? paraMinutos(saldo[n].saldo) : 0)
+  }));
+  const saldoNegativoCount = bancoEntries.filter(e => e.minutos < 0).length;
+  const bancoTotalEmpresa = bancoEntries.reduce((a, e) => a + e.minutos, 0);
+
+  document.getElementById('kpiGrid').innerHTML = `
+    <div class="kpi"><div class="label">Justificativas no mês</div><div class="value">${totalAjustes}</div></div>
+    <div class="kpi"><div class="label">Falta média</div><div class="value">${faltaMedia.toFixed(2).replace('.', ',')}%</div></div>
+    <div class="kpi"><div class="label">Saldo negativo</div><div class="value ${saldoNegativoCount ? 'bad' : ''}">${saldoNegativoCount} pessoa${saldoNegativoCount === 1 ? '' : 's'}</div></div>
+    <div class="kpi"><div class="label">Banco acumulado (empresa)</div><div class="value ${bancoTotalEmpresa >= 0 ? 'good' : 'bad'}">${formatarMinutos(bancoTotalEmpresa)}</div></div>
+  `;
+
+  // Ranking de pontualidade (score)
+  const ranking = nomes.map(n => {
+    const faltaPct = absenteismo[n]?.faltaPct || 0;
+    const ajustesN = ajustes[n]?.total || 0;
+    const bancoMin = sintetico[n] ? paraMinutos(sintetico[n].bancoTotal) : 0;
+    const score = faltaPct * 10 + ajustesN * 2 + (bancoMin < 0 ? 5 : 0);
+    return { nome: n, faltaPct, ajustesN, bancoMin, score };
+  }).sort((a, b) => b.score - a.score);
+
+  document.getElementById('rankingBody').innerHTML = ranking.slice(0, 10).map(r => `
+    <tr>
+      <td>${r.nome}</td>
+      <td class="num">${r.faltaPct.toFixed(2).replace('.', ',')}%</td>
+      <td class="num">${r.ajustesN}</td>
+      <td class="num ${r.bancoMin < 0 ? 'bad' : 'good'}">${formatarMinutos(r.bancoMin)}</td>
+      <td>${r.score >= 15 ? '<span class="pill attn">Atenção</span>' : '<span class="pill ok">Em dia</span>'}</td>
+    </tr>
+  `).join('');
+
+  // Ranking de ajustes
+  const ajustesOrdenados = Object.values(ajustes).sort((a, b) => b.total - a.total).filter(e => e.total > 0);
+  document.getElementById('ajustesBody').innerHTML = ajustesOrdenados.map(e => `
+    <tr><td>${e.nome}</td><td class="num ${e.total >= 5 ? 'bad' : ''}">${e.total}</td></tr>
+  `).join('') || '<tr><td colspan="2">Nenhum ajuste registrado.</td></tr>';
+
+  // Extremos de banco de horas
+  const bancoOrdenado = [...bancoEntries].sort((a, b) => b.minutos - a.minutos);
+  const top = bancoOrdenado.slice(0, 5);
+  const bottom = bancoOrdenado.slice(-5).reverse();
+  const combinados = [...top, ...bottom.filter(b => !top.includes(b))];
+  document.getElementById('bancoBody').innerHTML = combinados.map(e => `
+    <tr><td>${e.nome}</td><td class="num ${e.minutos < 0 ? 'bad' : 'good'}">${formatarMinutos(e.minutos)}</td></tr>
+  `).join('');
+
+  // Ausências por categoria
+  const catEntries = Object.entries(ausencias.categorias).sort((a, b) => b[1] - a[1]);
+  document.getElementById('ausenciasBody').innerHTML = catEntries.map(([cat, n]) => `
+    <tr><td>${cat}</td><td class="num">${n}</td></tr>
+  `).join('') || '<tr><td colspan="2">Nenhum dado de ausência carregado.</td></tr>';
+
+  document.getElementById('ausenciasDetalheBody').innerHTML = ausencias.detalhes.map(d => `
+    <tr><td>${d.nome}</td><td>${d.motivo}</td><td>${d.data}</td></tr>
+  `).join('');
+}
+</script>
+
+</body>
+</html>

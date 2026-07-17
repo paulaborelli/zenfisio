@@ -950,7 +950,7 @@ function renderDetalheColaborador() {
   container.classList.remove('hidden');
 
   const meses = Object.keys(historico).sort();
-  const mesesAteAtivo = mesAtivo ? meses.filter(m => m <= mesAtivo) : meses;
+  const mesesAteAtivo = (periodoColabAtivo > 0 && mesAtivo) ? meses.filter(m => m <= mesAtivo) : meses;
   let linhas = [];
   for (const m of mesesAteAtivo) {
     const emp = historico[m].employees.find(e => e.nome === nome);

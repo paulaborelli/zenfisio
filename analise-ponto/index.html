@@ -335,7 +335,7 @@
           <div class="chart-wrap"><canvas id="chartColabBanco"></canvas></div>
           <p class="status-msg" id="colabAvisoPontualidade" style="margin-bottom:8px;"></p>
           <table>
-            <thead><tr><th>Mês</th><th class="num">Falta %</th><th class="num">Ajustes</th><th class="num">Banco</th><th class="num">Dias atraso</th><th class="num">Min. atraso</th></tr></thead>
+            <thead><tr><th>Mês</th><th class="num">Falta %</th><th class="num">Ajustes</th><th class="num">Banco</th><th class="num">Dias atraso</th><th class="num">Atraso total</th></tr></thead>
             <tbody id="colabHistoricoBody"></tbody>
           </table>
         </div>
@@ -347,7 +347,7 @@
           Prioriza atraso real (quando há ponto individual carregado); senão, combina % de falta, ajustes e banco de horas do mês selecionado.
         </p>
         <table>
-          <thead><tr><th>Colaborador</th><th class="num">Falta %</th><th class="num">Ajustes</th><th class="num">Banco total</th><th class="num">Dias atraso</th><th class="num">Min. atraso</th><th>Situação</th></tr></thead>
+          <thead><tr><th>Colaborador</th><th class="num">Falta %</th><th class="num">Ajustes</th><th class="num">Banco total</th><th class="num">Dias atraso</th><th class="num">Atraso total</th><th>Situação</th></tr></thead>
           <tbody id="rankingBody"></tbody>
         </table>
       </div>
@@ -857,7 +857,7 @@ function renderDashboardResumo(resumo) {
       <td class="num">${r.ajustes}</td>
       <td class="num ${r.bancoMin < 0 ? 'bad' : 'good'}">${formatarMinutos(r.bancoMin)}</td>
       <td class="num">${r.pontualidade ? r.pontualidade.diasAtraso : '—'}</td>
-      <td class="num ${r.pontualidade && r.pontualidade.minutosAtrasoTotal > 60 ? 'bad' : ''}">${r.pontualidade ? r.pontualidade.minutosAtrasoTotal + ' min' : '—'}</td>
+      <td class="num ${r.pontualidade && r.pontualidade.minutosAtrasoTotal > 60 ? 'bad' : ''}">${r.pontualidade ? formatarMinutos(r.pontualidade.minutosAtrasoTotal) : '—'}</td>
       <td>${r.score >= 15 ? '<span class="pill attn">Atenção</span>' : '<span class="pill ok">Em dia</span>'}</td>
     </tr>
   `).join('');
@@ -965,7 +965,7 @@ function renderDetalheColaborador() {
       <td class="num">${l.ajustes}</td>
       <td class="num ${l.bancoMin < 0 ? 'bad' : 'good'}">${formatarMinutos(l.bancoMin)}</td>
       <td class="num">${l.pontualidade ? l.pontualidade.diasAtraso : '—'}</td>
-      <td class="num">${l.pontualidade ? l.pontualidade.minutosAtrasoTotal + ' min' : '—'}</td>
+      <td class="num">${l.pontualidade ? formatarMinutos(l.pontualidade.minutosAtrasoTotal) : '—'}</td>
     </tr>
   `).join('') || '<tr><td colspan="6">Sem dados para este colaborador.</td></tr>';
 

@@ -324,6 +324,13 @@
           <option value="">Selecione um colaborador…</option>
         </select>
         <div id="colabConteudo" class="hidden">
+          <div class="periodo-tabs" id="colabPeriodoTabs">
+            <div class="periodo-tab" data-n="1" onclick="mudarPeriodoColab(1, this)">Mensal</div>
+            <div class="periodo-tab" data-n="3" onclick="mudarPeriodoColab(3, this)">Trimestral</div>
+            <div class="periodo-tab" data-n="6" onclick="mudarPeriodoColab(6, this)">Semestral</div>
+            <div class="periodo-tab" data-n="12" onclick="mudarPeriodoColab(12, this)">Anual</div>
+            <div class="periodo-tab active" data-n="0" onclick="mudarPeriodoColab(0, this)">Tudo</div>
+          </div>
           <div class="chart-wrap"><canvas id="chartColabFalta"></canvas></div>
           <div class="chart-wrap"><canvas id="chartColabBanco"></canvas></div>
           <p class="status-msg" id="colabAvisoPontualidade" style="margin-bottom:8px;"></p>
@@ -447,6 +454,7 @@ let resumoPendente = null; // resumo processado aguardando confirmação de mês
 let chartFaltaObj, chartAjustesObj, chartBancoObj;
 let chartColabFaltaObj, chartColabBancoObj;
 let periodoAtivo = 3;
+let periodoColabAtivo = 0; // 0 = tudo
 
 function renderUploadGrid() {
   const grid = document.getElementById('uploadGrid');
@@ -927,6 +935,13 @@ function renderSeletorColaboradores() {
   if (nomes.includes(atual)) sel.value = atual;
 }
 
+function mudarPeriodoColab(n, el) {
+  periodoColabAtivo = n;
+  document.querySelectorAll('#colabPeriodoTabs .periodo-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderDetalheColaborador();
+}
+
 function renderDetalheColaborador() {
   const nome = document.getElementById('selColaborador').value;
   const container = document.getElementById('colabConteudo');
@@ -934,11 +949,12 @@ function renderDetalheColaborador() {
   container.classList.remove('hidden');
 
   const meses = Object.keys(historico).sort();
-  const linhas = [];
+  let linhas = [];
   for (const m of meses) {
     const emp = historico[m].employees.find(e => e.nome === nome);
     if (emp) linhas.push({ mesAno: m, ...emp });
   }
+  if (periodoColabAtivo > 0) linhas = linhas.slice(-periodoColabAtivo);
 
   document.getElementById('colabHistoricoBody').innerHTML = linhas.map(l => `
     <tr>
@@ -952,9 +968,14 @@ function renderDetalheColaborador() {
   `).join('') || '<tr><td colspan="6">Sem dados para este colaborador.</td></tr>';
 
   const temPontualidade = linhas.some(l => l.pontualidade);
-  document.getElementById('colabAvisoPontualidade').textContent = temPontualidade
-    ? ''
-    : 'Pontualidade real ainda não disponível — envie o ponto individual deste colaborador ao processar o mês.';
+  const avisos = [];
+  if (periodoColabAtivo > 0 && linhas.length < periodoColabAtivo) {
+    avisos.push(`Só há ${linhas.length} mês(es) de histórico neste período.`);
+  }
+  if (!temPontualidade) {
+    avisos.push('Pontualidade real ainda não disponível — envie o ponto individual deste colaborador ao processar o mês.');
+  }
+  document.getElementById('colabAvisoPontualidade').textContent = avisos.join(' ');
 
   const labels = linhas.map(l => formatarLabelMes(l.mesAno));
   const faltaData = linhas.map(l => Number(l.faltaPct.toFixed(2)));

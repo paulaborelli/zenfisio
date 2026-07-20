@@ -366,6 +366,10 @@
       <div class="card">
         <h2>Visão geral do mês</h2>
         <div class="kpi-grid" id="kpiGrid"></div>
+        <div style="margin-top:1.25rem; display:flex; align-items:center; gap:12px;">
+          <button class="secondary" onclick="dispararRelatorio()">📧 Disparar relatório deste mês</button>
+          <span class="status-msg" id="statusRelatorio"></span>
+        </div>
       </div>
 
       <div class="card">
@@ -1035,6 +1039,24 @@ function renderGraficos() {
     data: { labels, datasets: [{ label: 'Banco de horas (h)', data: bancoData, borderColor: '#378ADD', backgroundColor: '#E6F1FB', fill: true, tension: 0.3 }] },
     options: { ...opcoesBase, scales: { y: { beginAtZero: false } }, plugins: { title: { display: true, text: 'Banco de horas total da empresa (h)', font: { family: 'DM Sans' } }, legend: { display: false } } }
   });
+}
+
+async function dispararRelatorio() {
+  const statusEl = document.getElementById('statusRelatorio');
+  if (!mesAtivo || !historico[mesAtivo]) {
+    statusEl.textContent = 'Selecione um mês (aba no topo) antes de disparar o relatório.';
+    return;
+  }
+  statusEl.textContent = 'Enviando...';
+  try {
+    await fetch(SCRIPT_ANALISE_PONTO, {
+      method: 'POST', mode: 'no-cors',
+      body: JSON.stringify({ acao: 'enviarRelatorio', mesAno: mesAtivo, resumo: historico[mesAtivo] })
+    });
+    statusEl.textContent = `Relatório de ${formatarLabelMes(mesAtivo)} enviado para rh@zenfisio.com.`;
+  } catch (e) {
+    statusEl.textContent = 'Não foi possível enviar (verifique a URL do script).';
+  }
 }
 
 // ---------- DETALHE POR COLABORADOR ----------

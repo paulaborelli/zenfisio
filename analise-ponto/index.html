@@ -760,14 +760,16 @@ function parseAbonoParcial(texto, jornadaPadraoMin) {
 // 4 vezes (uma por coluna de horário), então dividimos as palavras em 4 partes
 // iguais para recuperar a frase original.
 function parseEventosDia(texto) {
-  const linhas = texto.split('\n');
-  const eventos = [];
+  // Não confiamos na quebra de linha exata que o pdf.js gera (pode variar
+  // dependendo do PDF) — por isso juntamos tudo num texto só, do mesmo jeito
+  // que já é feito para o relatório de Ausências agregado, e buscamos o
+  // padrão "data + dia da semana + texto repetido + 00:00" nesse texto único.
+  const textoUnico = texto.replace(/\n/g, ' ').replace(/\s+/g, ' ');
   const diasSemana = '(?:seg|ter|qua|qui|sex|s[áa]b|dom)';
-  const re = new RegExp(`^(\\d{2}\\/\\d{2})\\s+${diasSemana}\\s+(.+?)\\s+00:00\\s*$`, 'i');
-  for (const linhaRaw of linhas) {
-    const linha = linhaRaw.trim();
-    const m = linha.match(re);
-    if (!m) continue;
+  const re = new RegExp(`(\\d{2}\\/\\d{2})\\s+${diasSemana}\\s+(.+?)\\s+00:00`, 'gi');
+  const eventos = [];
+  let m;
+  while ((m = re.exec(textoUnico)) !== null) {
     const dia = m[1];
     const meio = m[2].trim();
     if (!meio) continue;

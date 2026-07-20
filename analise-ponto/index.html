@@ -734,21 +734,24 @@ function parseJornada(texto) {
 // médico). Não inclui dias inteiros de ausência — esses são tratados à parte
 // via parseEventosDia, pois exigem checar se é feriado (cross-colaborador).
 function parseAbonoParcial(texto, jornadaPadraoMin) {
-  if (!jornadaPadraoMin) return 0;
+  if (!jornadaPadraoMin) return { totalMin: 0, dias: [] };
   const linhas = texto.split('\n');
   const diasSemana = '(?:seg|ter|qua|qui|sex)';
   const re = new RegExp(`^(\\d{2}\\/\\d{2})\\s+${diasSemana}\\s+(?:\\d{1,2}:\\d{2}[~*^]?\\s+){4}(-?\\d{1,3}:\\d{2})`, 'i');
   let totalMin = 0;
+  const dias = [];
   for (const linhaRaw of linhas) {
     const linha = linhaRaw.trim();
     const m = linha.match(re);
     if (!m) continue;
     const previstasDia = paraMinutos(m[2]);
     if (previstasDia > 0 && previstasDia < jornadaPadraoMin) {
-      totalMin += (jornadaPadraoMin - previstasDia);
+      const min = jornadaPadraoMin - previstasDia;
+      totalMin += min;
+      dias.push({ dia: m[1], minutos: min });
     }
   }
-  return totalMin;
+  return { totalMin, dias };
 }
 
 // Extrai dias inteiros em que os horários foram substituídos por um texto
@@ -814,7 +817,7 @@ function parseIndividual(texto) {
   const creditoMatch = texto.match(/B\.Cr[ée]dito:\s*(-?\d{1,3}:\d{2})/i);
   const eventos = parseEventosDia(texto);
   const jornadaPadraoMin = jornada.padraoMin || null;
-  const abonoParcialMin = parseAbonoParcial(texto, jornadaPadraoMin);
+  const abonoParcial = parseAbonoParcial(texto, jornadaPadraoMin);
 
   return {
     nome, diasAtraso, minutosAtrasoTotal, diasSaidaAntecipada, minutosSaidaTotal, diasCompletos,
@@ -824,7 +827,8 @@ function parseIndividual(texto) {
     debitoMin: debitoMatch ? paraMinutos(debitoMatch[1]) : null,
     creditoMin: creditoMatch ? paraMinutos(creditoMatch[1]) : null,
     jornadaPadraoMin,
-    abonoParcialMin,
+    abonoParcialMin: abonoParcial.totalMin,
+    abonoParcialDias: abonoParcial.dias,
     eventos
   };
 }
@@ -871,6 +875,17 @@ function construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nome
     const jornadaMin = (pontualidadePorNome[ev.nomeChave] && pontualidadePorNome[ev.nomeChave].jornadaPadraoMin) || 0;
     abonoDiaInteiroPorNome[ev.nomeChave] = (abonoDiaInteiroPorNome[ev.nomeChave] || 0) + jornadaMin;
   }
+  // Abono parcial (dia trabalhado com Previstas reduzido) — entra na lista de
+  // detalhamento com o total de horas abonadas naquele dia específico.
+  const abonosParciaisDetalhes = [];
+  for (const nomeChave in pontualidadePorNome) {
+    const p = pontualidadePorNome[nomeChave];
+    if (!p.abonoParcialDias) continue;
+    for (const d of p.abonoParcialDias) {
+      abonosParciaisDetalhes.push({ nome: p.nome, motivo: `Abono parcial (${formatarMinutos(d.minutos)})`, data: d.dia });
+    }
+  }
+
   // 4. Para quem NÃO tem ponto individual neste mês, mantém o método antigo
   // (cruzamento por nome com o relatório de Ausências agregado) como fallback.
   const nomesComIndividual = new Set(Object.keys(pontualidadePorNome));
@@ -881,9 +896,10 @@ function construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nome
     ausenciasAntigasCategorias[categoria] = (ausenciasAntigasCategorias[categoria] || 0) + 1;
   }
 
-  const ausenciasDetalhesFinal = [...ausenciasIndividuaisDetalhes, ...ausenciasAntigasDetalhes];
+  const ausenciasDetalhesFinal = [...ausenciasIndividuaisDetalhes, ...abonosParciaisDetalhes, ...ausenciasAntigasDetalhes];
   const ausenciasCategoriasFinal = {};
   for (const [cat, n] of Object.entries(ausenciasIndividuaisCategorias)) ausenciasCategoriasFinal[cat] = (ausenciasCategoriasFinal[cat] || 0) + n;
+  if (abonosParciaisDetalhes.length) ausenciasCategoriasFinal['Abono parcial'] = abonosParciaisDetalhes.length;
   for (const [cat, n] of Object.entries(ausenciasAntigasCategorias)) ausenciasCategoriasFinal[cat] = (ausenciasCategoriasFinal[cat] || 0) + n;
 
   const employees = nomes.map(n => {

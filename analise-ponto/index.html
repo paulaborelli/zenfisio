@@ -731,7 +731,8 @@ function construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nome
   const employees = nomes.map(n => {
     const faltaPct = absenteismo[n]?.faltaPct || 0;
     const ajustesN = ajustes[n]?.total || 0;
-    const bancoMin = sintetico[n] ? paraMinutos(sintetico[n].bancoTotal) : (saldo[n] ? paraMinutos(saldo[n].saldo) : 0);
+    const bancoDisponivel = !!(sintetico[n] || saldo[n]);
+    const bancoMin = sintetico[n] ? paraMinutos(sintetico[n].bancoTotal) : (saldo[n] ? paraMinutos(saldo[n].saldo) : null);
     const pontualidade = (pontualidadePorNome && pontualidadePorNome[n]) ? pontualidadePorNome[n] : null;
 
     const previstaMin = sintetico[n] ? paraMinutos(sintetico[n].previstas) : 0;
@@ -740,14 +741,15 @@ function construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nome
     const normaisMin = Math.min(diurnaMin, previstaMin);
     const extrasMin = Math.max(0, diurnaMin - previstaMin);
 
-    return { nome: n, faltaPct, ajustes: ajustesN, bancoMin, pontualidade, previstaMin, normaisMin, extrasMin, faltaMin };
+    return { nome: n, faltaPct, ajustes: ajustesN, bancoMin, bancoDisponivel, pontualidade, previstaMin, normaisMin, extrasMin, faltaMin };
   });
 
   const totalAjustes = employees.reduce((a, e) => a + e.ajustes, 0);
   const faltaPcts = employees.map(e => e.faltaPct).filter(v => !isNaN(v));
   const faltaMedia = faltaPcts.length ? (faltaPcts.reduce((a, b) => a + b, 0) / faltaPcts.length) : 0;
-  const saldoNegativoCount = employees.filter(e => e.bancoMin < 0).length;
-  const bancoTotalEmpresa = employees.reduce((a, e) => a + e.bancoMin, 0);
+  const comBanco = employees.filter(e => e.bancoDisponivel);
+  const saldoNegativoCount = comBanco.filter(e => e.bancoMin < 0).length;
+  const bancoTotalEmpresa = comBanco.reduce((a, e) => a + e.bancoMin, 0);
 
   return {
     employees,
@@ -969,17 +971,17 @@ function renderDashboardResumo(resumo) {
 
   const ranking = employees.map(e => {
     const p = e.pontualidade;
-    const score = p ? p.minutosAtrasoTotal : (e.faltaPct * 10 + e.ajustes * 2 + (e.bancoMin < 0 ? 5 : 0));
+    const score = p ? p.minutosAtrasoTotal : (e.faltaPct * 10 + e.ajustes * 2 + (e.bancoDisponivel && e.bancoMin < 0 ? 5 : 0));
     const atencao = p ? (p.minutosAtrasoTotal > 180) : (score >= 15);
     return { ...e, score, atencao };
   }).sort((a, b) => b.score - a.score);
 
-  document.getElementById('rankingBody').innerHTML = ranking.slice(0, 10).map(r => `
+  document.getElementById('rankingBody').innerHTML = ranking.map(r => `
     <tr>
       <td>${r.nome}</td>
       <td class="num">${r.faltaPct.toFixed(2).replace('.', ',')}%</td>
       <td class="num">${r.ajustes}</td>
-      <td class="num ${r.bancoMin < 0 ? 'bad' : 'good'}">${formatarMinutos(r.bancoMin)}</td>
+      <td class="num ${r.bancoDisponivel ? (r.bancoMin < 0 ? 'bad' : 'good') : ''}">${r.bancoDisponivel ? formatarMinutos(r.bancoMin) : '—'}</td>
       <td class="num">${r.pontualidade ? r.pontualidade.diasAtraso : '—'}</td>
       <td class="num ${r.pontualidade && r.pontualidade.minutosAtrasoTotal > 180 ? 'bad' : ''}">${r.pontualidade ? formatarMinutos(r.pontualidade.minutosAtrasoTotal) : '—'}</td>
       <td>${r.atencao ? '<span class="pill attn">Atenção</span>' : '<span class="pill ok">Em dia</span>'}</td>
@@ -991,13 +993,13 @@ function renderDashboardResumo(resumo) {
     <tr><td>${e.nome}</td><td class="num ${e.ajustes >= 5 ? 'bad' : ''}">${e.ajustes}</td></tr>
   `).join('') || '<tr><td colspan="2">Nenhum ajuste registrado.</td></tr>';
 
-  const bancoOrdenado = [...employees].sort((a, b) => b.bancoMin - a.bancoMin);
+  const bancoOrdenado = employees.filter(e => e.bancoDisponivel).sort((a, b) => b.bancoMin - a.bancoMin);
   const top = bancoOrdenado.slice(0, 5);
   const bottom = bancoOrdenado.slice(-5).reverse();
   const combinados = [...top, ...bottom.filter(b => !top.includes(b))];
   document.getElementById('bancoBody').innerHTML = combinados.map(e => `
     <tr><td>${e.nome}</td><td class="num ${e.bancoMin < 0 ? 'bad' : 'good'}">${formatarMinutos(e.bancoMin)}</td></tr>
-  `).join('');
+  `).join('') || '<tr><td colspan="2">Sem dados de banco de horas disponíveis.</td></tr>';
 
   const catEntries = Object.entries(ausenciasCategorias).sort((a, b) => b[1] - a[1]);
   document.getElementById('ausenciasBody').innerHTML = catEntries.map(([cat, n]) => `
@@ -1100,16 +1102,19 @@ function renderDetalheColaborador() {
   }
   if (periodoColabAtivo > 0) linhas = linhas.slice(-periodoColabAtivo);
 
-  document.getElementById('colabHistoricoBody').innerHTML = linhas.map(l => `
+  document.getElementById('colabHistoricoBody').innerHTML = linhas.map(l => {
+    const bancoOk = l.bancoDisponivel !== false;
+    return `
     <tr>
       <td>${formatarLabelMes(l.mesAno)}</td>
       <td class="num">${l.faltaPct.toFixed(2).replace('.', ',')}%</td>
       <td class="num">${l.ajustes}</td>
-      <td class="num ${l.bancoMin < 0 ? 'bad' : 'good'}">${formatarMinutos(l.bancoMin)}</td>
+      <td class="num ${bancoOk ? (l.bancoMin < 0 ? 'bad' : 'good') : ''}">${bancoOk ? formatarMinutos(l.bancoMin) : '—'}</td>
       <td class="num">${l.pontualidade ? l.pontualidade.diasAtraso : '—'}</td>
       <td class="num">${l.pontualidade ? formatarMinutos(l.pontualidade.minutosAtrasoTotal) : '—'}</td>
     </tr>
-  `).join('') || '<tr><td colspan="6">Sem dados para este colaborador.</td></tr>';
+  `;
+  }).join('') || '<tr><td colspan="6">Sem dados para este colaborador.</td></tr>';
 
   const temPontualidade = linhas.some(l => l.pontualidade);
   const avisos = [];
@@ -1123,7 +1128,7 @@ function renderDetalheColaborador() {
 
   const labels = linhas.map(l => formatarLabelMes(l.mesAno));
   const faltaData = linhas.map(l => Number(l.faltaPct.toFixed(2)));
-  const bancoData = linhas.map(l => Number((l.bancoMin / 60).toFixed(1)));
+  const bancoData = linhas.map(l => l.bancoDisponivel === false ? null : Number((l.bancoMin / 60).toFixed(1)));
 
   const opcoesBase = { maintainAspectRatio: false, plugins: { legend: { display: false } } };
 

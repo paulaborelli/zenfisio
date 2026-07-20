@@ -292,6 +292,7 @@
     margin-bottom: 12px;
   }
   .colab-status-pill.alerta { background: #FAEEDA; color: #854F0B; }
+  .colab-status-pill.abono { background: #E9E7FA; color: #4A3F9E; }
   .colab-status-pill.ok { background: #EAF3DE; color: #27500A; }
   .barra-linha { margin-bottom: 8px; }
   .barra-label-row {
@@ -310,6 +311,7 @@
   .barra-fill { height: 100%; border-radius: 999px; }
   .barra-fill.normais { background: #378ADD; }
   .barra-fill.extras { background: #E0902E; }
+  .barra-fill.abonos { background: #7F77DD; }
   .barra-fill.faltas { background: #D8503A; }
 </style>
 </head>
@@ -392,7 +394,7 @@
       <div class="card">
         <h2>Resumo em cards</h2>
         <p style="font-size:0.85rem; color:#5F5E5A; margin-top:-8px; margin-bottom:1rem;">
-          Normais e Extras somam a carga horária prevista do mês selecionado; Faltas mostra o saldo devedor não compensado (já descontando abonos/justificativas quando há ponto individual). O selo acima do nome mostra a ausência/evento registrado no mês, se houver.
+          Normais e Extras somam a carga horária prevista do mês selecionado. Abonos mostra as horas cobertas por justificativa (atestado, licença, consulta, saída antecipada abonada etc. — feriados não entram aqui). Faltas/Atrasos mostra só o saldo devedor que não foi coberto por nenhum abono.
         </p>
         <div class="colab-cards-grid" id="colabCardsGrid"></div>
       </div>
@@ -715,9 +717,38 @@ function paraMinutosDoDia(hhmm) {
 }
 
 function parseJornada(texto) {
-  const m = texto.match(/(\d{1,2}:\d{2})-\d{1,2}:\d{2},?\s*\d{1,2}:\d{2}-(\d{1,2}:\d{2})/);
+  const m = texto.match(/(\d{1,2}:\d{2})-(\d{1,2}:\d{2}),?\s*(\d{1,2}:\d{2})-(\d{1,2}:\d{2})/);
   if (!m) return null;
-  return { entrada: paraMinutosDoDia(m[1]), saida: paraMinutosDoDia(m[2]) };
+  const entrada = paraMinutosDoDia(m[1]);
+  const saidaAlmoco = paraMinutosDoDia(m[2]);
+  const voltaAlmoco = paraMinutosDoDia(m[3]);
+  const saida = paraMinutosDoDia(m[4]);
+  // Duração padrão do dia de trabalho (descontando o intervalo de almoço) —
+  // usada para calcular quantas horas um abono de dia inteiro "vale".
+  const padraoMin = (saidaAlmoco - entrada) + (saida - voltaAlmoco);
+  return { entrada, saida, padraoMin };
+}
+
+// Soma o abono parcial dos dias em que o colaborador trabalhou parte do dia
+// mas teve o "Previstas" reduzido (ex: saiu mais cedo para levar filho ao
+// médico). Não inclui dias inteiros de ausência — esses são tratados à parte
+// via parseEventosDia, pois exigem checar se é feriado (cross-colaborador).
+function parseAbonoParcial(texto, jornadaPadraoMin) {
+  if (!jornadaPadraoMin) return 0;
+  const linhas = texto.split('\n');
+  const diasSemana = '(?:seg|ter|qua|qui|sex)';
+  const re = new RegExp(`^(\\d{2}\\/\\d{2})\\s+${diasSemana}\\s+(?:\\d{1,2}:\\d{2}[~*^]?\\s+){4}(-?\\d{1,3}:\\d{2})`, 'i');
+  let totalMin = 0;
+  for (const linhaRaw of linhas) {
+    const linha = linhaRaw.trim();
+    const m = linha.match(re);
+    if (!m) continue;
+    const previstasDia = paraMinutos(m[2]);
+    if (previstasDia > 0 && previstasDia < jornadaPadraoMin) {
+      totalMin += (jornadaPadraoMin - previstasDia);
+    }
+  }
+  return totalMin;
 }
 
 // Extrai dias inteiros em que os horários foram substituídos por um texto
@@ -782,6 +813,8 @@ function parseIndividual(texto) {
   const debitoMatch = texto.match(/B\.D[ée]bito:\s*(-?\d{1,3}:\d{2})/i);
   const creditoMatch = texto.match(/B\.Cr[ée]dito:\s*(-?\d{1,3}:\d{2})/i);
   const eventos = parseEventosDia(texto);
+  const jornadaPadraoMin = jornada.padraoMin || null;
+  const abonoParcialMin = parseAbonoParcial(texto, jornadaPadraoMin);
 
   return {
     nome, diasAtraso, minutosAtrasoTotal, diasSaidaAntecipada, minutosSaidaTotal, diasCompletos,
@@ -790,6 +823,8 @@ function parseIndividual(texto) {
     bancoTotal: bancoTotalMatch ? bancoTotalMatch[1] : null,
     debitoMin: debitoMatch ? paraMinutos(debitoMatch[1]) : null,
     creditoMin: creditoMatch ? paraMinutos(creditoMatch[1]) : null,
+    jornadaPadraoMin,
+    abonoParcialMin,
     eventos
   };
 }
@@ -822,14 +857,19 @@ function construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nome
     const contagem = contagemPorDiaMotivo[k] || 0;
     return contagem >= Math.ceil(totalArquivosIndividuais / 2);
   }
-  // 3. Monta ausências individuais (excluindo feriados), categorizadas.
+  // 3. Monta ausências individuais (excluindo feriados), categorizadas, e
+  // soma as horas de abono de dia inteiro (jornada padrão do colaborador ×
+  // número de dias justificados que não são feriado).
   const ausenciasIndividuaisCategorias = {};
   const ausenciasIndividuaisDetalhes = [];
+  const abonoDiaInteiroPorNome = {};
   for (const ev of todosEventos) {
     if (ehFeriado(ev.dia, ev.motivo)) continue;
     const categoria = categorizarMotivo(ev.motivo);
     ausenciasIndividuaisCategorias[categoria] = (ausenciasIndividuaisCategorias[categoria] || 0) + 1;
     ausenciasIndividuaisDetalhes.push({ nome: ev.nomeExibicao, motivo: ev.motivo, data: ev.dia });
+    const jornadaMin = (pontualidadePorNome[ev.nomeChave] && pontualidadePorNome[ev.nomeChave].jornadaPadraoMin) || 0;
+    abonoDiaInteiroPorNome[ev.nomeChave] = (abonoDiaInteiroPorNome[ev.nomeChave] || 0) + jornadaMin;
   }
   // 4. Para quem NÃO tem ponto individual neste mês, mantém o método antigo
   // (cruzamento por nome com o relatório de Ausências agregado) como fallback.
@@ -875,7 +915,13 @@ function construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nome
     const normaisMin = Math.min(diurnaMin, previstaMin);
     const extrasMin = Math.max(0, diurnaMin - previstaMin);
 
-    return { nome: n, faltaPct, ajustes: ajustesN, bancoMin, bancoDisponivel, pontualidade, previstaMin, normaisMin, extrasMin, faltaMin };
+    // Abonos: parcial (dias com Previstas reduzido) + dia inteiro (atestado,
+    // licença, férias etc., já excluindo feriados detectados acima).
+    const abonoMin = pontualidade
+      ? (pontualidade.abonoParcialMin || 0) + (abonoDiaInteiroPorNome[n] || 0)
+      : (abonoDiaInteiroPorNome[n] || 0);
+
+    return { nome: n, faltaPct, ajustes: ajustesN, bancoMin, bancoDisponivel, pontualidade, previstaMin, normaisMin, extrasMin, faltaMin, abonoMin };
   });
 
   const totalAjustes = employees.reduce((a, e) => a + e.ajustes, 0);
@@ -1051,7 +1097,7 @@ function renderCardsColaboradores(resumo) {
   grid.innerHTML = resumo.employees.map(e => {
     const eventos = (resumo.ausenciasDetalhes || []).filter(d => d.nome === e.nome);
     const status = eventos.length
-      ? `<span class="colab-status-pill alerta">📋 ${eventos[0].motivo} · ${eventos[0].data}</span>`
+      ? `<span class="colab-status-pill abono">📄 Abono: ${eventos[0].motivo} · ${eventos[0].data}</span>`
       : `<span class="colab-status-pill ok">✓ Sem ausências registradas</span>`;
 
     if (e.previstaMin === undefined) {
@@ -1059,7 +1105,7 @@ function renderCardsColaboradores(resumo) {
         <div class="colab-card">
           <div class="colab-card-nome">${e.nome}</div>
           ${status}
-          <p style="font-size:0.78rem; color:#5F5E5A;">Este mês foi salvo antes deste recurso existir — reprocesse o mês para ver Normais/Extras/Faltas.</p>
+          <p style="font-size:0.78rem; color:#5F5E5A;">Este mês foi salvo antes deste recurso existir — reprocesse o mês para ver Normais/Extras/Abonos/Faltas.</p>
         </div>
       `;
     }
@@ -1067,6 +1113,7 @@ function renderCardsColaboradores(resumo) {
     const max = e.previstaMin || 1;
     const pctNormais = Math.min(100, (e.normaisMin / max) * 100);
     const pctExtras = Math.min(100, (e.extrasMin / max) * 100);
+    const pctAbonos = Math.min(100, ((e.abonoMin || 0) / max) * 100);
     const pctFaltas = Math.min(100, (e.faltaMin / max) * 100);
 
     return `
@@ -1082,7 +1129,11 @@ function renderCardsColaboradores(resumo) {
           <div class="barra-fundo"><div class="barra-fill extras" style="width:${pctExtras}%"></div></div>
         </div>
         <div class="barra-linha">
-          <div class="barra-label-row"><span>Faltas</span><span>${formatarHorasMin(e.faltaMin)}</span></div>
+          <div class="barra-label-row"><span>Abonos</span><span>${formatarHorasMin(e.abonoMin || 0)}</span></div>
+          <div class="barra-fundo"><div class="barra-fill abonos" style="width:${pctAbonos}%"></div></div>
+        </div>
+        <div class="barra-linha">
+          <div class="barra-label-row"><span>Faltas/Atrasos</span><span>${formatarHorasMin(e.faltaMin)}</span></div>
           <div class="barra-fundo"><div class="barra-fill faltas" style="width:${pctFaltas}%"></div></div>
         </div>
       </div>

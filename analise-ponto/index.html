@@ -392,7 +392,7 @@
       <div class="card">
         <h2>Resumo em cards</h2>
         <p style="font-size:0.85rem; color:#5F5E5A; margin-top:-8px; margin-bottom:1rem;">
-          Normais e Extras somam a carga horária prevista do mês selecionado; Faltas mostra as horas de ausência não trabalhadas.
+          Normais e Extras somam a carga horária prevista do mês selecionado; Faltas mostra o saldo devedor não compensado (já descontando abonos/justificativas quando há ponto individual). O selo acima do nome mostra a ausência/evento registrado no mês, se houver.
         </p>
         <div class="colab-cards-grid" id="colabCardsGrid"></div>
       </div>
@@ -627,6 +627,19 @@ function detectarMesAno(dados) {
   return null;
 }
 
+// Categorização de motivo de ausência — usada tanto para o relatório de
+// Ausências agregado quanto para os eventos extraídos dos espelhos individuais.
+function categorizarMotivo(motivo) {
+  if (/f[ée]rias/i.test(motivo)) return 'Férias';
+  if (/atestado/i.test(motivo)) return 'Atestado médico';
+  if (/licen[çc]a maternidade/i.test(motivo)) return 'Licença maternidade';
+  if (/consulta|exame/i.test(motivo)) return 'Consulta / exame';
+  if (/confraterniza|abono/i.test(motivo)) return 'Feriado / abono';
+  if (/antecipa/i.test(motivo)) return 'Antecipação de férias';
+  if (/carga hor[áa]ria/i.test(motivo)) return 'Carga horária diferenciada';
+  return 'Outros';
+}
+
 function parseAbsenteismo(texto) {
   const linhas = texto.split('\n');
   const resultado = {};
@@ -688,14 +701,7 @@ function parseAusencias(texto, nomesConhecidos) {
     const nome = m[1].trim();
     let motivo = m[2].trim();
     const data = m[3].trim();
-    let categoria = 'Outros';
-    if (/f[ée]rias/i.test(motivo)) categoria = 'Férias';
-    else if (/atestado/i.test(motivo)) categoria = 'Atestado médico';
-    else if (/licen[çc]a maternidade/i.test(motivo)) categoria = 'Licença maternidade';
-    else if (/consulta|exame/i.test(motivo)) categoria = 'Consulta / exame';
-    else if (/confraterniza|abono/i.test(motivo)) categoria = 'Feriado / abono';
-    else if (/antecipa/i.test(motivo)) categoria = 'Antecipação de férias';
-    else if (/carga hor[áa]ria/i.test(motivo)) categoria = 'Carga horária diferenciada';
+    const categoria = categorizarMotivo(motivo);
     categorias[categoria] = (categorias[categoria] || 0) + 1;
     detalhes.push({ nome, motivo, data });
   }
@@ -712,6 +718,34 @@ function parseJornada(texto) {
   const m = texto.match(/(\d{1,2}:\d{2})-\d{1,2}:\d{2},?\s*\d{1,2}:\d{2}-(\d{1,2}:\d{2})/);
   if (!m) return null;
   return { entrada: paraMinutosDoDia(m[1]), saida: paraMinutosDoDia(m[2]) };
+}
+
+// Extrai dias inteiros em que os horários foram substituídos por um texto
+// (feriado, atestado, licença etc.) — ex: "01/04 qua Atestado Médico Atestado
+// Médico Atestado Médico Atestado Médico 00:00". O texto do motivo se repete
+// 4 vezes (uma por coluna de horário), então dividimos as palavras em 4 partes
+// iguais para recuperar a frase original.
+function parseEventosDia(texto) {
+  const linhas = texto.split('\n');
+  const eventos = [];
+  const diasSemana = '(?:seg|ter|qua|qui|sex|s[áa]b|dom)';
+  const re = new RegExp(`^(\\d{2}\\/\\d{2})\\s+${diasSemana}\\s+(.+?)\\s+00:00\\s*$`, 'i');
+  for (const linhaRaw of linhas) {
+    const linha = linhaRaw.trim();
+    const m = linha.match(re);
+    if (!m) continue;
+    const dia = m[1];
+    const meio = m[2].trim();
+    if (!meio) continue;
+    const palavras = meio.split(/\s+/);
+    if (palavras.length % 4 !== 0) continue;
+    const unidade = palavras.length / 4;
+    const frase = palavras.slice(0, unidade).join(' ');
+    const reconstruida = Array(4).fill(frase).join(' ');
+    if (reconstruida !== meio) continue; // não é um bloco de 4 repetições limpas, ignora
+    eventos.push({ dia, motivo: frase });
+  }
+  return eventos;
 }
 
 function parseIndividual(texto) {
@@ -745,17 +779,73 @@ function parseIndividual(texto) {
   const previstasMatch = texto.match(/Previstas:\s*(-?\d{1,3}:\d{2})/);
   const diurnasMatch = texto.match(/Diurnas:\s*(-?\d{1,3}:\d{2})/);
   const bancoTotalMatch = texto.match(/B\.Total:\s*(-?\d{1,3}:\d{2})/);
+  const debitoMatch = texto.match(/B\.D[ée]bito:\s*(-?\d{1,3}:\d{2})/i);
+  const creditoMatch = texto.match(/B\.Cr[ée]dito:\s*(-?\d{1,3}:\d{2})/i);
+  const eventos = parseEventosDia(texto);
 
   return {
     nome, diasAtraso, minutosAtrasoTotal, diasSaidaAntecipada, minutosSaidaTotal, diasCompletos,
     previstas: previstasMatch ? previstasMatch[1] : null,
     diurnas: diurnasMatch ? diurnasMatch[1] : null,
-    bancoTotal: bancoTotalMatch ? bancoTotalMatch[1] : null
+    bancoTotal: bancoTotalMatch ? bancoTotalMatch[1] : null,
+    debitoMin: debitoMatch ? paraMinutos(debitoMatch[1]) : null,
+    creditoMin: creditoMatch ? paraMinutos(creditoMatch[1]) : null,
+    eventos
   };
 }
 
 // ---------- MONTAGEM DO RESUMO NORMALIZADO ----------
 function construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nomes, pontualidadePorNome) {
+  // --- Eventos de ausência vindos dos espelhos individuais (fonte mais confiável) ---
+  // 1. Coleta todos os eventos de todos os colaboradores com ponto individual.
+  const todosEventos = [];
+  for (const nomeChave in pontualidadePorNome) {
+    const p = pontualidadePorNome[nomeChave];
+    if (p.eventos) {
+      for (const ev of p.eventos) {
+        todosEventos.push({ nomeChave, nomeExibicao: p.nome, dia: ev.dia, motivo: ev.motivo });
+      }
+    }
+  }
+  // 2. Detecta feriados de empresa: se o mesmo (dia + motivo) aparece para a
+  // maioria dos colaboradores com ponto individual naquele mês, é feriado —
+  // não é uma ausência pessoal e não deve virar "falta" de ninguém.
+  const totalArquivosIndividuais = Object.keys(pontualidadePorNome).length;
+  const contagemPorDiaMotivo = {};
+  for (const ev of todosEventos) {
+    const k = ev.dia + '|' + ev.motivo;
+    contagemPorDiaMotivo[k] = (contagemPorDiaMotivo[k] || 0) + 1;
+  }
+  function ehFeriado(dia, motivo) {
+    if (totalArquivosIndividuais < 2) return false;
+    const k = dia + '|' + motivo;
+    const contagem = contagemPorDiaMotivo[k] || 0;
+    return contagem >= Math.ceil(totalArquivosIndividuais / 2);
+  }
+  // 3. Monta ausências individuais (excluindo feriados), categorizadas.
+  const ausenciasIndividuaisCategorias = {};
+  const ausenciasIndividuaisDetalhes = [];
+  for (const ev of todosEventos) {
+    if (ehFeriado(ev.dia, ev.motivo)) continue;
+    const categoria = categorizarMotivo(ev.motivo);
+    ausenciasIndividuaisCategorias[categoria] = (ausenciasIndividuaisCategorias[categoria] || 0) + 1;
+    ausenciasIndividuaisDetalhes.push({ nome: ev.nomeExibicao, motivo: ev.motivo, data: ev.dia });
+  }
+  // 4. Para quem NÃO tem ponto individual neste mês, mantém o método antigo
+  // (cruzamento por nome com o relatório de Ausências agregado) como fallback.
+  const nomesComIndividual = new Set(Object.keys(pontualidadePorNome));
+  const ausenciasAntigasDetalhes = (ausencias.detalhes || []).filter(d => !nomesComIndividual.has(chave(d.nome)));
+  const ausenciasAntigasCategorias = {};
+  for (const d of ausenciasAntigasDetalhes) {
+    const categoria = categorizarMotivo(d.motivo);
+    ausenciasAntigasCategorias[categoria] = (ausenciasAntigasCategorias[categoria] || 0) + 1;
+  }
+
+  const ausenciasDetalhesFinal = [...ausenciasIndividuaisDetalhes, ...ausenciasAntigasDetalhes];
+  const ausenciasCategoriasFinal = {};
+  for (const [cat, n] of Object.entries(ausenciasIndividuaisCategorias)) ausenciasCategoriasFinal[cat] = (ausenciasCategoriasFinal[cat] || 0) + n;
+  for (const [cat, n] of Object.entries(ausenciasAntigasCategorias)) ausenciasCategoriasFinal[cat] = (ausenciasCategoriasFinal[cat] || 0) + n;
+
   const employees = nomes.map(n => {
     const faltaPct = absenteismo[n]?.faltaPct || 0;
     const ajustesN = ajustes[n]?.total || 0;
@@ -774,7 +864,14 @@ function construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nome
     if (pontualidade && pontualidade.previstas) previstaMin = paraMinutos(pontualidade.previstas);
     if (pontualidade && pontualidade.diurnas) diurnaMin = paraMinutos(pontualidade.diurnas);
 
-    const faltaMin = absenteismo[n] ? paraMinutos(absenteismo[n].faltaHoras) : 0;
+    // Faltas: quando há ponto individual, usa o saldo devedor (B.Débito) do
+    // próprio espelho — ele já desconta abonos/justificativas dia a dia.
+    // Sem ponto individual, mantém o valor do relatório agregado de Absenteísmo.
+    let faltaMin = absenteismo[n] ? paraMinutos(absenteismo[n].faltaHoras) : 0;
+    if (pontualidade && pontualidade.debitoMin !== null && pontualidade.debitoMin !== undefined) {
+      faltaMin = Math.max(0, -pontualidade.debitoMin);
+    }
+
     const normaisMin = Math.min(diurnaMin, previstaMin);
     const extrasMin = Math.max(0, diurnaMin - previstaMin);
 
@@ -791,8 +888,8 @@ function construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nome
   return {
     employees,
     kpis: { totalAjustes, faltaMedia, saldoNegativoCount, bancoTotalEmpresa },
-    ausenciasCategorias: ausencias.categorias || {},
-    ausenciasDetalhes: ausencias.detalhes || []
+    ausenciasCategorias: ausenciasCategoriasFinal,
+    ausenciasDetalhes: ausenciasDetalhesFinal
   };
 }
 
@@ -955,7 +1052,7 @@ function renderCardsColaboradores(resumo) {
     const eventos = (resumo.ausenciasDetalhes || []).filter(d => d.nome === e.nome);
     const status = eventos.length
       ? `<span class="colab-status-pill alerta">📋 ${eventos[0].motivo} · ${eventos[0].data}</span>`
-      : `<span class="colab-status-pill ok">✓ Sem faltas</span>`;
+      : `<span class="colab-status-pill ok">✓ Sem ausências registradas</span>`;
 
     if (e.previstaMin === undefined) {
       return `

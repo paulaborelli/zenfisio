@@ -246,12 +246,13 @@
 
   .chart-wrap { position: relative; height: 240px; margin-bottom: 1.5rem; }
 
+  #areaImpressao { display: none; }
+
   @media print {
-    body * { visibility: hidden; }
-    #areaImpressao, #areaImpressao * { visibility: visible; }
+    #loginScreen, #appScreen { display: none !important; }
+    a[href="../index.html"] { display: none !important; }
     #areaImpressao {
       display: block !important;
-      position: absolute; left: 0; top: 0; width: 100%;
       font-family: 'DM Sans', Arial, sans-serif;
     }
     #areaImpressao h2 { font-family: 'Lora', serif; color: #4A7C59; }
@@ -388,8 +389,6 @@
         </div>
       </div>
 
-      <div id="areaImpressao" class="hidden"></div>
-
       <div class="card">
         <h2>Resumo em cards</h2>
         <p style="font-size:0.85rem; color:#5F5E5A; margin-top:-8px; margin-bottom:1rem;">
@@ -488,6 +487,8 @@
 
   </div>
 </div>
+
+<div id="areaImpressao"></div>
 
 <script>
 // ---------- CONFIGURAÇÃO ----------

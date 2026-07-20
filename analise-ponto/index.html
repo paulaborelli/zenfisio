@@ -406,7 +406,7 @@
       <div class="card">
         <h2>Ranking de pontualidade</h2>
         <p style="font-size:0.85rem; color:#5F5E5A; margin-top:-8px; margin-bottom:1rem;">
-          Prioriza atraso real (quando há ponto individual carregado); senão, combina % de falta, ajustes e banco de horas do mês selecionado.
+          Ordenado pelo atraso total do mês (coluna "Atraso total") quando há ponto individual carregado; senão, por uma estimativa combinando % de falta, ajustes e banco de horas. "Atenção" marca quem passou de 3h de atraso acumulado no mês.
         </p>
         <table>
           <thead><tr><th>Colaborador</th><th class="num">Falta %</th><th class="num">Ajustes</th><th class="num">Banco total</th><th class="num">Dias atraso</th><th class="num">Atraso total</th><th>Situação</th></tr></thead>
@@ -969,8 +969,9 @@ function renderDashboardResumo(resumo) {
 
   const ranking = employees.map(e => {
     const p = e.pontualidade;
-    const score = (p ? p.minutosAtrasoTotal * 0.5 + p.diasAtraso * 3 : 0) + e.faltaPct * 10 + e.ajustes * 2 + (e.bancoMin < 0 ? 5 : 0);
-    return { ...e, score };
+    const score = p ? p.minutosAtrasoTotal : (e.faltaPct * 10 + e.ajustes * 2 + (e.bancoMin < 0 ? 5 : 0));
+    const atencao = p ? (p.minutosAtrasoTotal > 180) : (score >= 15);
+    return { ...e, score, atencao };
   }).sort((a, b) => b.score - a.score);
 
   document.getElementById('rankingBody').innerHTML = ranking.slice(0, 10).map(r => `
@@ -980,8 +981,8 @@ function renderDashboardResumo(resumo) {
       <td class="num">${r.ajustes}</td>
       <td class="num ${r.bancoMin < 0 ? 'bad' : 'good'}">${formatarMinutos(r.bancoMin)}</td>
       <td class="num">${r.pontualidade ? r.pontualidade.diasAtraso : '—'}</td>
-      <td class="num ${r.pontualidade && r.pontualidade.minutosAtrasoTotal > 60 ? 'bad' : ''}">${r.pontualidade ? formatarMinutos(r.pontualidade.minutosAtrasoTotal) : '—'}</td>
-      <td>${r.score >= 15 ? '<span class="pill attn">Atenção</span>' : '<span class="pill ok">Em dia</span>'}</td>
+      <td class="num ${r.pontualidade && r.pontualidade.minutosAtrasoTotal > 180 ? 'bad' : ''}">${r.pontualidade ? formatarMinutos(r.pontualidade.minutosAtrasoTotal) : '—'}</td>
+      <td>${r.atencao ? '<span class="pill attn">Atenção</span>' : '<span class="pill ok">Em dia</span>'}</td>
     </tr>
   `).join('');
 

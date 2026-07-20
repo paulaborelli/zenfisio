@@ -246,6 +246,21 @@
 
   .chart-wrap { position: relative; height: 240px; margin-bottom: 1.5rem; }
 
+  @media print {
+    body * { visibility: hidden; }
+    #areaImpressao, #areaImpressao * { visibility: visible; }
+    #areaImpressao {
+      display: block !important;
+      position: absolute; left: 0; top: 0; width: 100%;
+      font-family: 'DM Sans', Arial, sans-serif;
+    }
+    #areaImpressao h2 { font-family: 'Lora', serif; color: #4A7C59; }
+    #areaImpressao table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12px; }
+    #areaImpressao th, #areaImpressao td { border: 1px solid #ccc; padding: 5px 8px; text-align: left; }
+    #areaImpressao th { background: #F2F4F0; }
+    #areaImpressao .num { text-align: right; }
+  }
+
   /* CARDS DE COLABORADOR (resumo em cards) */
   .colab-cards-grid {
     display: grid;
@@ -366,11 +381,14 @@
       <div class="card">
         <h2>Visão geral do mês</h2>
         <div class="kpi-grid" id="kpiGrid"></div>
-        <div style="margin-top:1.25rem; display:flex; align-items:center; gap:12px;">
+        <div style="margin-top:1.25rem; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
           <button class="secondary" onclick="dispararRelatorio()">📧 Disparar relatório deste mês</button>
+          <button class="secondary" onclick="imprimirRelatorio()">🖨️ Imprimir relatório deste mês</button>
           <span class="status-msg" id="statusRelatorio"></span>
         </div>
       </div>
+
+      <div id="areaImpressao" class="hidden"></div>
 
       <div class="card">
         <h2>Resumo em cards</h2>
@@ -1060,6 +1078,61 @@ function renderGraficos() {
     data: { labels, datasets: [{ label: 'Banco de horas (h)', data: bancoData, borderColor: '#378ADD', backgroundColor: '#E6F1FB', fill: true, tension: 0.3 }] },
     options: { ...opcoesBase, scales: { y: { beginAtZero: false } }, plugins: { title: { display: true, text: 'Banco de horas total da empresa (h)', font: { family: 'DM Sans' } }, legend: { display: false } } }
   });
+}
+
+function imprimirRelatorio() {
+  if (!mesAtivo || !historico[mesAtivo]) {
+    alert('Selecione um mês (aba no topo) antes de imprimir.');
+    return;
+  }
+  const resumo = historico[mesAtivo];
+  const { employees, kpis, ausenciasCategorias, ausenciasDetalhes } = resumo;
+
+  const ranking = employees.slice().sort((a, b) => {
+    const scoreA = a.pontualidade ? a.pontualidade.minutosAtrasoTotal : (a.faltaPct * 10 + a.ajustes * 2 + (a.bancoDisponivel !== false && a.bancoMin < 0 ? 5 : 0));
+    const scoreB = b.pontualidade ? b.pontualidade.minutosAtrasoTotal : (b.faltaPct * 10 + b.ajustes * 2 + (b.bancoDisponivel !== false && b.bancoMin < 0 ? 5 : 0));
+    return scoreB - scoreA;
+  });
+
+  let html = `<h2>Relatório de Ponto — ${formatarLabelMes(mesAtivo)}</h2>`;
+
+  html += `<h3>Visão geral</h3><table>
+    <tr><td>Justificativas no mês</td><td class="num">${kpis.totalAjustes}</td></tr>
+    <tr><td>Falta média</td><td class="num">${kpis.faltaMedia.toFixed(2).replace('.', ',')}%</td></tr>
+    <tr><td>Colaboradores com saldo negativo</td><td class="num">${kpis.saldoNegativoCount}</td></tr>
+    <tr><td>Banco acumulado (empresa)</td><td class="num">${formatarMinutos(kpis.bancoTotalEmpresa)}</td></tr>
+  </table>`;
+
+  html += `<h3>Ranking de pontualidade — todos os colaboradores</h3>
+    <p style="font-size:11px; color:#666;">Ordenado do maior atraso para o menor (mais pontual no final).</p>
+    <table><tr><th>Colaborador</th><th>Falta %</th><th>Ajustes</th><th>Banco</th><th>Dias atraso</th><th>Atraso total</th></tr>`;
+  ranking.forEach(e => {
+    html += `<tr>
+      <td>${e.nome}</td>
+      <td class="num">${e.faltaPct.toFixed(2).replace('.', ',')}%</td>
+      <td class="num">${e.ajustes}</td>
+      <td class="num">${e.bancoDisponivel === false ? '—' : formatarMinutos(e.bancoMin)}</td>
+      <td class="num">${e.pontualidade ? e.pontualidade.diasAtraso : '—'}</td>
+      <td class="num">${e.pontualidade ? formatarMinutos(e.pontualidade.minutosAtrasoTotal) : '—'}</td>
+    </tr>`;
+  });
+  html += `</table>`;
+
+  const catEntries = Object.entries(ausenciasCategorias || {}).sort((a, b) => b[1] - a[1]);
+  if (catEntries.length) {
+    html += `<h3>Ausências por categoria</h3><table>`;
+    catEntries.forEach(([cat, n]) => { html += `<tr><td>${cat}</td><td class="num">${n}</td></tr>`; });
+    html += `</table>`;
+  }
+
+  if (ausenciasDetalhes && ausenciasDetalhes.length) {
+    html += `<h3>Detalhamento de ausências</h3><table><tr><th>Colaborador</th><th>Motivo</th><th>Data</th></tr>`;
+    ausenciasDetalhes.forEach(d => { html += `<tr><td>${d.nome}</td><td>${d.motivo}</td><td>${d.data}</td></tr>`; });
+    html += `</table>`;
+  }
+
+  document.getElementById('areaImpressao').innerHTML = html;
+  window.print();
 }
 
 async function dispararRelatorio() {

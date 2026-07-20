@@ -245,6 +245,56 @@
   }
 
   .chart-wrap { position: relative; height: 240px; margin-bottom: 1.5rem; }
+
+  /* CARDS DE COLABORADOR (resumo em cards) */
+  .colab-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 14px;
+  }
+  .colab-card {
+    border: 1px solid #DDE0D8;
+    border-radius: 12px;
+    padding: 1rem 1.1rem;
+    background: #FFFFFF;
+  }
+  .colab-card-nome {
+    font-family: 'Lora', serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #2C2C2A;
+    margin-bottom: 6px;
+  }
+  .colab-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 999px;
+    margin-bottom: 12px;
+  }
+  .colab-status-pill.alerta { background: #FAEEDA; color: #854F0B; }
+  .colab-status-pill.ok { background: #EAF3DE; color: #27500A; }
+  .barra-linha { margin-bottom: 8px; }
+  .barra-label-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: #5F5E5A;
+    margin-bottom: 3px;
+  }
+  .barra-fundo {
+    background: #F2F4F0;
+    border-radius: 999px;
+    height: 7px;
+    overflow: hidden;
+  }
+  .barra-fill { height: 100%; border-radius: 999px; }
+  .barra-fill.normais { background: #378ADD; }
+  .barra-fill.extras { background: #E0902E; }
+  .barra-fill.faltas { background: #D8503A; }
 </style>
 </head>
 <body>
@@ -316,6 +366,14 @@
       <div class="card">
         <h2>Visão geral do mês</h2>
         <div class="kpi-grid" id="kpiGrid"></div>
+      </div>
+
+      <div class="card">
+        <h2>Resumo em cards</h2>
+        <p style="font-size:0.85rem; color:#5F5E5A; margin-top:-8px; margin-bottom:1rem;">
+          Normais e Extras somam a carga horária prevista do mês selecionado; Faltas mostra as horas de ausência não trabalhadas.
+        </p>
+        <div class="colab-cards-grid" id="colabCardsGrid"></div>
       </div>
 
       <div class="card">
@@ -552,7 +610,7 @@ function parseAbsenteismo(texto) {
   const re = new RegExp(`^(${NOME_RE})\\s+(${HHMM_RE})\\s+(${HHMM_RE})\\s+(${HHMM_RE})\\s+([\\d,]+)\\s*$`);
   for (const linha of linhas) {
     const m = linha.trim().match(re);
-    if (m) resultado[m[1].trim()] = { faltaPct: parseFloat(m[5].replace(',', '.')) };
+    if (m) resultado[m[1].trim()] = { faltaPct: parseFloat(m[5].replace(',', '.')), faltaHoras: m[4] };
   }
   return resultado;
 }
@@ -567,7 +625,7 @@ function parseSintetico(texto) {
     for (const t of tokens) nome = nome.split(t)[0];
     nome = nome.trim();
     if (!nome || nome.includes('COLABORADOR') || nome.length < 3) continue;
-    resultado[nome] = { bancoTotal: tokens[tokens.length - 1] };
+    resultado[nome] = { previstas: tokens[0], diurnas: tokens[1], bancoTotal: tokens[tokens.length - 1] };
   }
   return resultado;
 }
@@ -671,7 +729,14 @@ function construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nome
     const ajustesN = ajustes[n]?.total || 0;
     const bancoMin = sintetico[n] ? paraMinutos(sintetico[n].bancoTotal) : (saldo[n] ? paraMinutos(saldo[n].saldo) : 0);
     const pontualidade = (pontualidadePorNome && pontualidadePorNome[n]) ? pontualidadePorNome[n] : null;
-    return { nome: n, faltaPct, ajustes: ajustesN, bancoMin, pontualidade };
+
+    const previstaMin = sintetico[n] ? paraMinutos(sintetico[n].previstas) : 0;
+    const diurnaMin = sintetico[n] ? paraMinutos(sintetico[n].diurnas) : 0;
+    const faltaMin = absenteismo[n] ? paraMinutos(absenteismo[n].faltaHoras) : 0;
+    const normaisMin = Math.min(diurnaMin, previstaMin);
+    const extrasMin = Math.max(0, diurnaMin - previstaMin);
+
+    return { nome: n, faltaPct, ajustes: ajustesN, bancoMin, pontualidade, previstaMin, normaisMin, extrasMin, faltaMin };
   });
 
   const totalAjustes = employees.reduce((a, e) => a + e.ajustes, 0);
@@ -833,6 +898,48 @@ function selecionarMes(mesAno) {
 }
 
 // ---------- RENDER DASHBOARD (mês selecionado) ----------
+function formatarHorasMin(min) {
+  min = Math.max(0, Math.round(min));
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return `${h}h${String(m).padStart(2, '0')}m`;
+}
+
+function renderCardsColaboradores(resumo) {
+  const grid = document.getElementById('colabCardsGrid');
+  if (!resumo) { grid.innerHTML = ''; return; }
+  grid.innerHTML = resumo.employees.map(e => {
+    const eventos = (resumo.ausenciasDetalhes || []).filter(d => d.nome === e.nome);
+    const status = eventos.length
+      ? `<span class="colab-status-pill alerta">📋 ${eventos[0].motivo} · ${eventos[0].data}</span>`
+      : `<span class="colab-status-pill ok">✓ Sem faltas</span>`;
+
+    const max = e.previstaMin || 1;
+    const pctNormais = Math.min(100, (e.normaisMin / max) * 100);
+    const pctExtras = Math.min(100, (e.extrasMin / max) * 100);
+    const pctFaltas = Math.min(100, (e.faltaMin / max) * 100);
+
+    return `
+      <div class="colab-card">
+        <div class="colab-card-nome">${e.nome}</div>
+        ${status}
+        <div class="barra-linha">
+          <div class="barra-label-row"><span>Normais</span><span>${formatarHorasMin(e.normaisMin)}</span></div>
+          <div class="barra-fundo"><div class="barra-fill normais" style="width:${pctNormais}%"></div></div>
+        </div>
+        <div class="barra-linha">
+          <div class="barra-label-row"><span>Extras</span><span>${formatarHorasMin(e.extrasMin)}</span></div>
+          <div class="barra-fundo"><div class="barra-fill extras" style="width:${pctExtras}%"></div></div>
+        </div>
+        <div class="barra-linha">
+          <div class="barra-label-row"><span>Faltas</span><span>${formatarHorasMin(e.faltaMin)}</span></div>
+          <div class="barra-fundo"><div class="barra-fill faltas" style="width:${pctFaltas}%"></div></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
 function renderDashboardResumo(resumo) {
   if (!resumo) return;
   const { employees, kpis, ausenciasCategorias, ausenciasDetalhes } = resumo;
@@ -843,6 +950,8 @@ function renderDashboardResumo(resumo) {
     <div class="kpi"><div class="label">Saldo negativo</div><div class="value ${kpis.saldoNegativoCount ? 'bad' : ''}">${kpis.saldoNegativoCount} pessoa${kpis.saldoNegativoCount === 1 ? '' : 's'}</div></div>
     <div class="kpi"><div class="label">Banco acumulado (empresa)</div><div class="value ${kpis.bancoTotalEmpresa >= 0 ? 'good' : 'bad'}">${formatarMinutos(kpis.bancoTotalEmpresa)}</div></div>
   `;
+
+  renderCardsColaboradores(resumo);
 
   const ranking = employees.map(e => {
     const p = e.pontualidade;

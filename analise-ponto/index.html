@@ -1245,21 +1245,28 @@ function imprimirRelatorio() {
 
   let html = `<h2>Relatório de Ponto — ${formatarLabelMes(mesAtivo)}</h2>`;
 
+  const totalAbonoMin = employees.reduce((a, e) => a + (e.abonoMin || 0), 0);
+  const totalFaltaMin = employees.reduce((a, e) => a + (e.faltaMin || 0), 0);
+
   html += `<h3>Visão geral</h3><table>
     <tr><td>Justificativas no mês</td><td class="num">${kpis.totalAjustes}</td></tr>
     <tr><td>Falta média</td><td class="num">${kpis.faltaMedia.toFixed(2).replace('.', ',')}%</td></tr>
     <tr><td>Colaboradores com saldo negativo</td><td class="num">${kpis.saldoNegativoCount}</td></tr>
     <tr><td>Banco acumulado (empresa)</td><td class="num">${formatarMinutos(kpis.bancoTotalEmpresa)}</td></tr>
+    <tr><td>Abonos (empresa)</td><td class="num">${formatarMinutos(totalAbonoMin)}</td></tr>
+    <tr><td>Faltas/Atrasos (empresa)</td><td class="num">${formatarMinutos(totalFaltaMin)}</td></tr>
   </table>`;
 
   html += `<h3>Ranking de pontualidade — todos os colaboradores</h3>
-    <p style="font-size:11px; color:#666;">Ordenado do maior atraso para o menor (mais pontual no final).</p>
-    <table><tr><th>Colaborador</th><th>Falta %</th><th>Ajustes</th><th>Banco</th><th>Dias atraso</th><th>Atraso total</th></tr>`;
+    <p style="font-size:11px; color:#666;">Ordenado do maior atraso para o menor (mais pontual no final). Abonos = horas cobertas por justificativa (atestado, licença, consulta etc.). Faltas/Atrasos = saldo devedor não coberto por abono.</p>
+    <table><tr><th>Colaborador</th><th>Falta %</th><th>Ajustes</th><th>Abonos</th><th>Faltas/Atrasos</th><th>Banco</th><th>Dias atraso</th><th>Atraso total</th></tr>`;
   ranking.forEach(e => {
     html += `<tr>
       <td>${e.nome}</td>
       <td class="num">${e.faltaPct.toFixed(2).replace('.', ',')}%</td>
       <td class="num">${e.ajustes}</td>
+      <td class="num">${e.pontualidade ? formatarMinutos(e.abonoMin || 0) : '—'}</td>
+      <td class="num">${e.pontualidade ? formatarMinutos(e.faltaMin || 0) : '—'}</td>
       <td class="num">${e.bancoDisponivel === false ? '—' : formatarMinutos(e.bancoMin)}</td>
       <td class="num">${e.pontualidade ? e.pontualidade.diasAtraso : '—'}</td>
       <td class="num">${e.pontualidade ? formatarMinutos(e.pontualidade.minutosAtrasoTotal) : '—'}</td>
@@ -1275,7 +1282,7 @@ function imprimirRelatorio() {
   }
 
   if (ausenciasDetalhes && ausenciasDetalhes.length) {
-    html += `<h3>Detalhamento de ausências</h3><table><tr><th>Colaborador</th><th>Motivo</th><th>Data</th></tr>`;
+    html += `<h3>Detalhamento de abonos/ausências</h3><table><tr><th>Colaborador</th><th>Motivo</th><th>Data</th></tr>`;
     ausenciasDetalhes.forEach(d => { html += `<tr><td>${d.nome}</td><td>${d.motivo}</td><td>${d.data}</td></tr>`; });
     html += `</table>`;
   }

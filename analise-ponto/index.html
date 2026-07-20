@@ -723,7 +723,16 @@ function parseIndividual(texto) {
     }
   }
 
-  return { nome, diasAtraso, minutosAtrasoTotal, diasSaidaAntecipada, minutosSaidaTotal, diasCompletos };
+  const previstasMatch = texto.match(/Previstas:\s*(-?\d{1,3}:\d{2})/);
+  const diurnasMatch = texto.match(/Diurnas:\s*(-?\d{1,3}:\d{2})/);
+  const bancoTotalMatch = texto.match(/B\.Total:\s*(-?\d{1,3}:\d{2})/);
+
+  return {
+    nome, diasAtraso, minutosAtrasoTotal, diasSaidaAntecipada, minutosSaidaTotal, diasCompletos,
+    previstas: previstasMatch ? previstasMatch[1] : null,
+    diurnas: diurnasMatch ? diurnasMatch[1] : null,
+    bancoTotal: bancoTotalMatch ? bancoTotalMatch[1] : null
+  };
 }
 
 // ---------- MONTAGEM DO RESUMO NORMALIZADO ----------
@@ -731,12 +740,21 @@ function construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nome
   const employees = nomes.map(n => {
     const faltaPct = absenteismo[n]?.faltaPct || 0;
     const ajustesN = ajustes[n]?.total || 0;
-    const bancoDisponivel = !!(sintetico[n] || saldo[n]);
-    const bancoMin = sintetico[n] ? paraMinutos(sintetico[n].bancoTotal) : (saldo[n] ? paraMinutos(saldo[n].saldo) : null);
     const pontualidade = (pontualidadePorNome && pontualidadePorNome[n]) ? pontualidadePorNome[n] : null;
 
-    const previstaMin = sintetico[n] ? paraMinutos(sintetico[n].previstas) : 0;
-    const diurnaMin = sintetico[n] ? paraMinutos(sintetico[n].diurnas) : 0;
+    let bancoDisponivel = !!(sintetico[n] || saldo[n]);
+    let bancoMin = sintetico[n] ? paraMinutos(sintetico[n].bancoTotal) : (saldo[n] ? paraMinutos(saldo[n].saldo) : null);
+    let previstaMin = sintetico[n] ? paraMinutos(sintetico[n].previstas) : 0;
+    let diurnaMin = sintetico[n] ? paraMinutos(sintetico[n].diurnas) : 0;
+
+    // O PDF individual (quando enviado) é a fonte mais confiável — sobrescreve o Ponto Sintético.
+    if (pontualidade && pontualidade.bancoTotal) {
+      bancoMin = paraMinutos(pontualidade.bancoTotal);
+      bancoDisponivel = true;
+    }
+    if (pontualidade && pontualidade.previstas) previstaMin = paraMinutos(pontualidade.previstas);
+    if (pontualidade && pontualidade.diurnas) diurnaMin = paraMinutos(pontualidade.diurnas);
+
     const faltaMin = absenteismo[n] ? paraMinutos(absenteismo[n].faltaHoras) : 0;
     const normaisMin = Math.min(diurnaMin, previstaMin);
     const extrasMin = Math.max(0, diurnaMin - previstaMin);

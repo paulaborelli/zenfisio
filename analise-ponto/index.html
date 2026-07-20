@@ -772,11 +772,23 @@ function parseEventosDia(texto) {
     const meio = m[2].trim();
     if (!meio) continue;
     const palavras = meio.split(/\s+/);
-    if (palavras.length % 4 !== 0) continue;
-    const unidade = palavras.length / 4;
-    const frase = palavras.slice(0, unidade).join(' ');
-    const reconstruida = Array(4).fill(frase).join(' ');
-    if (reconstruida !== meio) continue; // não é um bloco de 4 repetições limpas, ignora
+    const total = palavras.length;
+    // O texto do evento (Férias, Atestado Médico, Licença Ma...) se repete uma
+    // vez por coluna de horário do dia — e esse número de colunas varia:
+    // normalmente 4 (Ent.1/Saí.1/Ent.2/Saí.2), mas pode ser 6 quando o
+    // colaborador tem um 3º turno registrado (Ent.3/Saí.3, usado p/ ABONO).
+    // Por isso descobrimos o menor período que reconstrói o texto inteiro,
+    // em vez de fixar a repetição em 4.
+    let frase = null;
+    for (let periodo = 1; periodo <= total; periodo++) {
+      if (total % periodo !== 0) continue;
+      const repeticoes = total / periodo;
+      if (repeticoes < 2) break; // não há repetição — não é um evento de dia inteiro
+      const candidata = palavras.slice(0, periodo).join(' ');
+      const reconstruida = Array(repeticoes).fill(candidata).join(' ');
+      if (reconstruida === meio) { frase = candidata; break; }
+    }
+    if (!frase) continue;
     eventos.push({ dia, motivo: frase });
   }
   return eventos;

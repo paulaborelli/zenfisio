@@ -899,7 +899,7 @@ function selecionarMes(mesAno) {
 
 // ---------- RENDER DASHBOARD (mês selecionado) ----------
 function formatarHorasMin(min) {
-  min = Math.max(0, Math.round(min));
+  min = Math.max(0, Math.round(Number(min) || 0));
   const h = Math.floor(min / 60);
   const m = min % 60;
   return `${h}h${String(m).padStart(2, '0')}m`;
@@ -913,6 +913,16 @@ function renderCardsColaboradores(resumo) {
     const status = eventos.length
       ? `<span class="colab-status-pill alerta">📋 ${eventos[0].motivo} · ${eventos[0].data}</span>`
       : `<span class="colab-status-pill ok">✓ Sem faltas</span>`;
+
+    if (e.previstaMin === undefined) {
+      return `
+        <div class="colab-card">
+          <div class="colab-card-nome">${e.nome}</div>
+          ${status}
+          <p style="font-size:0.78rem; color:#5F5E5A;">Este mês foi salvo antes deste recurso existir — reprocesse o mês para ver Normais/Extras/Faltas.</p>
+        </div>
+      `;
+    }
 
     const max = e.previstaMin || 1;
     const pctNormais = Math.min(100, (e.normaisMin / max) * 100);

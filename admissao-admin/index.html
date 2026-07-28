@@ -324,11 +324,11 @@ function carregarFichas() {
   fetch(SCRIPT_URL)
     .then(r => r.json())
     .then(data => {
-      if (!data.fichas || data.fichas.length === 0) {
+      if (!data.dados || data.dados.length === 0) {
         lista.innerHTML = '<div class="empty">Nenhuma ficha recebida ainda.</div>';
         return;
       }
-      lista.innerHTML = data.fichas.map((f, i) => `
+      lista.innerHTML = data.dados.map((f, i) => `
         <div class="ficha-item" onclick="selecionarFicha(${i})">
           <div>
             <div class="ficha-nome">${f['Nome'] || 'Sem nome'}</div>
@@ -337,7 +337,7 @@ function carregarFichas() {
           <span class="ficha-arrow">→</span>
         </div>
       `).join('');
-      window._fichas = data.fichas;
+      window._fichas = data.dados;
     })
     .catch(() => {
       lista.innerHTML = '<div class="empty">Erro ao carregar. Verifique sua conexão.</div>';

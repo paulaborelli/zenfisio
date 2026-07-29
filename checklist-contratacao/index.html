@@ -374,7 +374,7 @@ async function loadColabs() {
     const data = await res.json();
     const sel = document.getElementById('selectColab');
     sel.innerHTML = '<option value="">— Selecione um colaborador —</option>';
-    const list = data.fichas || [];
+    const list = data.dados || [];
     list.forEach(c => {
       const name = c['Nome'] || '';
       const cargo = c['Funcao'] || c['Função'] || '';

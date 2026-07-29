@@ -318,7 +318,17 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);pad
 <script>
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx6jSF6uqsxoA1a4iJtLMqcIDenmOszini4Z3BuXqA77ENbqWC4QuyKHRrIOqRnKKxn-Q/exec';
 
-function carregarFichas() {
+function formatDataBR(val) {
+    if (!val) return '-';
+    val = String(val);
+    if (val.indexOf('T') > 0 && val.match(/\d{4}-\d{2}-\d{2}/)) {
+          const parts = val.split('T')[0].split('-');
+          return parts[2] + '/' + parts[1] + '/' + parts[0];
+    }
+    return val;
+}
+  
+  function carregarFichas() {
   const lista = document.getElementById('lista-fichas');
   lista.innerHTML = '<div class="loading">Carregando fichas...</div>';
   fetch(SCRIPT_URL)
@@ -332,7 +342,7 @@ function carregarFichas() {
         <div class="ficha-item" onclick="selecionarFicha(${i})">
           <div>
             <div class="ficha-nome">${f['Nome'] || 'Sem nome'}</div>
-            <div class="ficha-data">Enviado em: ${f['Data Envio'] || '—'} · CPF: ${f['CPF'] || '—'}</div>
+            <div class="ficha-data">Enviado em: ${formatDataBR(f['Data Envio']) || '—'} · CPF: ${f['CPF'] || '—'}</div>
           </div>
           <span class="ficha-arrow">→</span>
         </div>

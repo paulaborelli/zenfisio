@@ -827,6 +827,10 @@ function parseIndividual(texto) {
   const previstasMatch = texto.match(/Previstas:\s*(-?\d{1,3}:\d{2})/);
   const diurnasMatch = texto.match(/Diurnas:\s*(-?\d{1,3}:\d{2})/);
   const bancoTotalMatch = texto.match(/B\.Total:\s*(-?\d{1,3}:\d{2})/);
+  // "B.Total" é só o saldo do mês (crédito-débito de julho, por exemplo);
+  // "Saldo" é o acumulado desde o início do controle de banco de horas — é
+  // esse que o resto do painel usa (bate com o relatório de Saldo Geral).
+  const saldoMatch = texto.match(/Saldo:\s*(-?\d{1,3}:\d{2})/i);
   const debitoMatch = texto.match(/B\.D[ée]bito:\s*(-?\d{1,3}:\d{2})/i);
   const creditoMatch = texto.match(/B\.Cr[ée]dito:\s*(-?\d{1,3}:\d{2})/i);
   const eventos = parseEventosDia(texto);
@@ -838,6 +842,7 @@ function parseIndividual(texto) {
     previstas: previstasMatch ? previstasMatch[1] : null,
     diurnas: diurnasMatch ? diurnasMatch[1] : null,
     bancoTotal: bancoTotalMatch ? bancoTotalMatch[1] : null,
+    saldoMin: saldoMatch ? paraMinutos(saldoMatch[1]) : null,
     debitoMin: debitoMatch ? paraMinutos(debitoMatch[1]) : null,
     creditoMin: creditoMatch ? paraMinutos(creditoMatch[1]) : null,
     jornadaPadraoMin,
@@ -927,8 +932,10 @@ function construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nome
     let diurnaMin = sintetico[n] ? paraMinutos(sintetico[n].diurnas) : 0;
 
     // O PDF individual (quando enviado) é a fonte mais confiável — sobrescreve o Ponto Sintético.
-    if (pontualidade && pontualidade.bancoTotal) {
-      bancoMin = paraMinutos(pontualidade.bancoTotal);
+    // Usa o "Saldo" (acumulado) e não o "B.Total" (só do mês), pra bater com
+    // o que o resto do painel usa (relatório de Saldo Geral, KPI de banco acumulado).
+    if (pontualidade && pontualidade.saldoMin !== null && pontualidade.saldoMin !== undefined) {
+      bancoMin = pontualidade.saldoMin;
       bancoDisponivel = true;
     }
     if (pontualidade && pontualidade.previstas) previstaMin = paraMinutos(pontualidade.previstas);

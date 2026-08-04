@@ -313,6 +313,7 @@
   .barra-fill.extras { background: #E0902E; }
   .barra-fill.abonos { background: #7F77DD; }
   .barra-fill.faltas { background: #D8503A; }
+  @keyframes girar { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -337,6 +338,13 @@
     <div class="wrap">
       <h1>Análise de Ponto</h1>
       <p>ZenFisio · painel de pontualidade e banco de horas</p>
+    </div>
+  </div>
+
+  <div id="avisoCarregandoHistorico" class="hidden" style="background:#EAF2EC; border-bottom:1px solid #DDE0D8; padding:10px 0;">
+    <div class="wrap" style="padding-top:0; padding-bottom:0; display:flex; align-items:center; gap:10px;">
+      <span style="display:inline-block; width:14px; height:14px; border:2px solid #4A7C59; border-top-color:transparent; border-radius:50%; animation:girar 0.8s linear infinite;"></span>
+      <span style="font-size:0.88rem; color:#2C2C2A;">Carregando histórico salvo (meses e colaboradores)… isso pode levar alguns segundos.</span>
     </div>
   </div>
 
@@ -1087,6 +1095,8 @@ function normalizarMesAno(valor) {
 // ---------- HISTÓRICO ----------
 async function carregarHistorico() {
   if (!SCRIPT_ANALISE_PONTO || SCRIPT_ANALISE_PONTO.includes('COLE_AQUI')) return;
+  const aviso = document.getElementById('avisoCarregandoHistorico');
+  aviso.classList.remove('hidden');
   try {
     const resp = await fetch(SCRIPT_ANALISE_PONTO);
     const json = await resp.json();
@@ -1108,6 +1118,8 @@ async function carregarHistorico() {
     }
   } catch (e) {
     console.warn('Não foi possível carregar histórico:', e);
+  } finally {
+    aviso.classList.add('hidden');
   }
 }
 

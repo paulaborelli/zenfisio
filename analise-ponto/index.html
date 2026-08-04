@@ -1132,7 +1132,7 @@ function renderCardsColaboradores(resumo) {
   const grid = document.getElementById('colabCardsGrid');
   if (!resumo) { grid.innerHTML = ''; return; }
   grid.innerHTML = resumo.employees.map(e => {
-    const eventos = (resumo.ausenciasDetalhes || []).filter(d => d.nome === e.nome);
+    const eventos = (resumo.ausenciasDetalhes || []).filter(d => d.nome && chave(d.nome) === chave(e.nome));
     const status = eventos.length
       ? `<span class="colab-status-pill abono">📄 Abono: ${eventos[0].motivo} · ${eventos[0].data}</span>`
       : `<span class="colab-status-pill ok">✓ Sem ausências registradas</span>`;

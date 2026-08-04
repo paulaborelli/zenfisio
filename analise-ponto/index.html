@@ -765,13 +765,14 @@ function parseEventosDia(texto) {
   // que já é feito para o relatório de Ausências agregado, e buscamos o
   // padrão "data + dia da semana + texto repetido + 00:00" nesse texto único.
   const textoUnico = texto.replace(/\n/g, ' ').replace(/\s+/g, ' ');
-  const diasSemana = '(?:seg|ter|qua|qui|sex|s[áa]b|dom)';
+  const diasSemana = '(seg|ter|qua|qui|sex|s[áa]b|dom)';
   const re = new RegExp(`(\\d{2}\\/\\d{2})\\s+${diasSemana}\\s+(.+?)\\s+00:00`, 'gi');
   const eventos = [];
   let m;
   while ((m = re.exec(textoUnico)) !== null) {
     const dia = m[1];
-    const meio = m[2].trim();
+    const diaSemana = m[2].toLowerCase();
+    const meio = m[3].trim();
     if (!meio) continue;
     const palavras = meio.split(/\s+/);
     const total = palavras.length;
@@ -791,7 +792,7 @@ function parseEventosDia(texto) {
       if (reconstruida === meio) { frase = candidata; break; }
     }
     if (!frase) continue;
-    eventos.push({ dia, motivo: frase });
+    eventos.push({ dia, diaSemana, motivo: frase });
   }
   return eventos;
 }
@@ -861,7 +862,7 @@ function construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nome
     const p = pontualidadePorNome[nomeChave];
     if (p.eventos) {
       for (const ev of p.eventos) {
-        todosEventos.push({ nomeChave, nomeExibicao: p.nome, dia: ev.dia, motivo: ev.motivo });
+        todosEventos.push({ nomeChave, nomeExibicao: p.nome, dia: ev.dia, diaSemana: ev.diaSemana, motivo: ev.motivo });
       }
     }
   }
@@ -891,8 +892,14 @@ function construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nome
     const categoria = categorizarMotivo(ev.motivo);
     ausenciasIndividuaisCategorias[categoria] = (ausenciasIndividuaisCategorias[categoria] || 0) + 1;
     ausenciasIndividuaisDetalhes.push({ nome: ev.nomeExibicao, motivo: ev.motivo, data: ev.dia });
-    const jornadaMin = (pontualidadePorNome[ev.nomeChave] && pontualidadePorNome[ev.nomeChave].jornadaPadraoMin) || 0;
-    abonoDiaInteiroPorNome[ev.nomeChave] = (abonoDiaInteiroPorNome[ev.nomeChave] || 0) + jornadaMin;
+    // Sábado/domingo não têm jornada prevista mesmo sem licença/férias — não
+    // faz sentido contar horas de abono nesses dias (evita inflar o total
+    // quando o período de licença/férias cobre o mês inteiro, fins de semana incluídos).
+    const ehFimDeSemana = ev.diaSemana === 'sáb' || ev.diaSemana === 'sab' || ev.diaSemana === 'dom';
+    if (!ehFimDeSemana) {
+      const jornadaMin = (pontualidadePorNome[ev.nomeChave] && pontualidadePorNome[ev.nomeChave].jornadaPadraoMin) || 0;
+      abonoDiaInteiroPorNome[ev.nomeChave] = (abonoDiaInteiroPorNome[ev.nomeChave] || 0) + jornadaMin;
+    }
   }
   // Abono parcial (dia trabalhado com Previstas reduzido) — entra na lista de
   // detalhamento com o total de horas abonadas naquele dia específico.

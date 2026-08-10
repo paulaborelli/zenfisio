@@ -239,8 +239,10 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
       <!-- KPI 3: Novos clientes Marketing -->
       <div class="card">
         <h2>KPI 3 — Novos clientes: Equipe de Marketing</h2>
-        <button class="btn-secundario" onclick="buscarDadosIndicadores()">Buscar dados automáticos (planilha Indicadores)</button>
-        <div class="hint" id="indicadores-status" style="margin-bottom:12px;">Nenhum dado buscado ainda.</div>
+        <div class="field-row">
+          <div class="field"><label>Nº de novos clientes no mês</label><input type="text" id="input-novosClientesMkt-clientes" oninput="recalcularMarketing()"/></div>
+          <div class="field"><label>MRR Adicionado (R$)</label><input type="text" id="input-novosClientesMkt-mrr" placeholder="Ex: 13.096,00" oninput="recalcularMarketing()"/></div>
+        </div>
         <table class="niveis-table"><thead><tr><th>Nível</th><th>Meta (clientes)</th><th>Bônus base</th><th>Bônus adicional</th></tr></thead><tbody id="tabela-novosClientesMkt"></tbody></table>
         <div class="resultado-kpi" id="resultado-novosClientesMkt">Aguardando leitura do PDF e busca de dados...</div>
         <div class="bonus-box" style="margin-bottom:16px;"><div class="label">Pool do bônus</div><div class="valor" id="pool-novosClientesMkt">R$ 0,00</div></div>
@@ -607,26 +609,12 @@ function calcularKpiCadastro(chave) {
   atualizarBadgeTotal(chave, total);
   return { nivel, percTotal, pool };
 }
-async function buscarDadosIndicadores() {
-  const mesRef = document.getElementById('mes-referencia-global').value.trim();
-  if (!mesRef) { alert('Preencha o Mês/Ano de referência no topo da página primeiro.'); return; }
-  document.getElementById('indicadores-status').textContent = 'Buscando...';
-  try {
-    const r = await fetch(`${SCRIPT_URL}?acao=resultadosIndicadores&user=${encodeURIComponent(usuarioAtual)}&pass=${encodeURIComponent(senhaAtual)}&mes=${encodeURIComponent(mesRef)}`);
-    const data = await r.json();
-    if (!data.ok) { document.getElementById('indicadores-status').textContent = 'Erro: ' + data.erro; return; }
-    dadosIndicadores = data;
-    document.getElementById('indicadores-status').textContent = `Dados carregados de "${mesRef}" — Clientes: ${data.vendasNovosClientes} · MRR Adicionado: ${fmtBRL(data.vendasMRRAdicionado)}`;
-    recalcularMarketing();
-  } catch(e) { document.getElementById('indicadores-status').textContent = 'Erro: ' + e.message; }
-}
 function calcularKpiNovosClientesMkt() {
   const tiers = tiersMkt.novosClientesMkt;
   const elResultado = document.getElementById('resultado-novosClientesMkt');
   if (!tiers) { elResultado.textContent = 'Aguardando leitura do PDF...'; return { nivel:null, percTotal:0, pool:0 }; }
-  if (!dadosIndicadores) { elResultado.textContent = 'Clique em "Buscar dados automáticos" primeiro.'; return { nivel:null, percTotal:0, pool:0 }; }
-  const clientes = Number(dadosIndicadores.vendasNovosClientes) || 0;
-  const mrrAdicionado = Number(dadosIndicadores.vendasMRRAdicionado) || 0;
+  const clientes = parseInt(document.getElementById('input-novosClientesMkt-clientes').value) || 0;
+  const mrrAdicionado = parseValorBR(document.getElementById('input-novosClientesMkt-mrr').value);
   const ticketMedio = clientes > 0 ? mrrAdicionado / clientes : 0;
   let nivel = null;
   ['diamante','ouro','prata','bronze'].forEach(k => { if (!nivel && clientes >= tiers[k].meta) nivel = k; });

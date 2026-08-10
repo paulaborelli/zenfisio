@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Fechamento de Metas — ZenFisio RH</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #F2F4F0; --surface: #FFFFFF; --border: #DDE0D8;
+  --text: #1C201A; --text-muted: #5E6659; --text-hint: #9AA394;
+  --accent: #4A7C59; --accent-light: #EAF2EC; --accent-text: #2D5438;
+  --radius: 12px; --radius-sm: 8px;
+}
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+.login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; }
+.login-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 40px 36px; width: 100%; max-width: 380px; }
+.login-card h1 { font-family: 'Lora', serif; font-size: 22px; font-weight: 600; margin-bottom: 6px; }
+.login-card p { font-size: 13px; color: var(--text-hint); margin-bottom: 28px; }
+.login-field { margin-bottom: 16px; }
+.login-field label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+.login-field input { width: 100%; padding: 10px 13px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none; }
+.login-field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(74,124,89,0.1); }
+.btn-login { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: var(--radius-sm); font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 8px; }
+.btn-login:hover { background: #3a6347; }
+.login-erro { font-size: 12px; color: #c0392b; margin-top: 10px; display: none; text-align: center; }
+
+header { background: var(--accent); color: #fff; padding: 16px 28px; display: flex; align-items: center; justify-content: space-between; }
+.header-left { display: flex; align-items: center; gap: 16px; }
+.header-back { color: rgba(255,255,255,0.7); text-decoration: none; font-size: 13px; }
+.header-back:hover { color: #fff; }
+.header-title { font-family: 'Lora', serif; font-size: 18px; font-weight: 600; }
+.header-user { font-size: 12px; color: rgba(255,255,255,0.7); }
+.btn-sair { background: rgba(255,255,255,0.15); border: none; color: white; padding: 6px 14px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+.btn-sair:hover { background: rgba(255,255,255,0.25); }
+
+.container { max-width: 900px; margin: 0 auto; padding: 32px 20px 60px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin-bottom: 20px; }
+.card h2 { font-family: 'Lora', serif; font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+.field { margin-bottom: 16px; }
+.field label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+.field input[type=text], .field input[type=number], .field input[type=file] {
+  width: 100%; padding: 10px 13px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none;
+}
+.field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(74,124,89,0.1); }
+.hint { font-size: 12px; color: var(--text-hint); margin-top: 6px; }
+
+.niveis-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 8px; }
+.niveis-table th { padding: 8px 10px; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-hint); text-align: left; border-bottom: 1px solid var(--border); }
+.niveis-table td { padding: 9px 10px; border-bottom: 1px solid var(--border); }
+.niveis-table tr.atingido td { background: var(--accent-light); font-weight: 600; }
+
+.resultado-nivel { text-align: center; padding: 20px; border-radius: var(--radius-sm); margin-bottom: 20px; }
+.resultado-nivel.tem-nivel { background: var(--accent-light); }
+.resultado-nivel.sem-nivel { background: #FCEBEB; }
+.resultado-nivel .rotulo { font-size: 12px; color: var(--text-hint); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+.resultado-nivel .valor { font-family: 'Lora', serif; font-size: 24px; font-weight: 600; }
+.resultado-nivel.tem-nivel .valor { color: var(--accent-text); }
+.resultado-nivel.sem-nivel .valor { color: #A32D2D; }
+
+.bonus-resumo { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 8px; }
+.bonus-box { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; }
+.bonus-box .label { font-size: 11px; color: var(--text-hint); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+.bonus-box .valor { font-family: 'Lora', serif; font-size: 18px; font-weight: 600; color: var(--accent-text); }
+
+.produto-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.produto-table th { padding: 8px 10px; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-hint); text-align: left; border-bottom: 1px solid var(--border); }
+.produto-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+.produto-table input[type=number] { width: 70px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; }
+.produto-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.total-linha { display: flex; justify-content: flex-end; gap: 10px; align-items: center; margin-top: 10px; font-size: 13px; }
+.total-linha .badge { padding: 3px 10px; border-radius: 20px; font-weight: 600; font-size: 12px; }
+.total-linha .badge.ok { background: var(--accent-light); color: var(--accent-text); }
+.total-linha .badge.erro { background: #FCEBEB; color: #A32D2D; }
+
+.btn-primario { background: var(--accent); color: #fff; border: none; padding: 12px 24px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; }
+.btn-primario:hover { background: #3a6347; }
+.btn-primario:disabled { background: var(--text-hint); cursor: not-allowed; }
+.status-msg { font-size: 13px; margin-top: 12px; padding: 10px 14px; border-radius: 8px; display: none; }
+.status-msg.ok { background: var(--accent-light); color: var(--accent-text); display: block; }
+.status-msg.erro { background: #FCEBEB; color: #A32D2D; display: block; }
+.loading-inline { font-size: 13px; color: var(--text-hint); }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="login-wrap">
+  <div class="login-card">
+    <h1>🎯 Fechamento de Metas</h1>
+    <p>Acesso restrito ao RH.</p>
+    <div class="login-field">
+      <label>Usuário</label>
+      <input type="text" id="login-user" placeholder="usuário" onkeydown="if(event.key==='Enter')fazerLogin()"/>
+    </div>
+    <div class="login-field">
+      <label>Senha</label>
+      <input type="password" id="login-pass" placeholder="senha" onkeydown="if(event.key==='Enter')fazerLogin()"/>
+    </div>
+    <button class="btn-login" onclick="fazerLogin()">Entrar</button>
+    <div class="login-erro" id="login-erro">Usuário ou senha incorretos.</div>
+  </div>
+</div>
+
+<!-- PAINEL -->
+<div id="painel-wrap" style="display:none;">
+  <header>
+    <div class="header-left">
+      <a class="header-back" href="../">← Portal RH</a>
+      <span class="header-title">Fechamento de Metas — MRR</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span class="header-user" id="header-user"></span>
+      <button class="btn-sair" onclick="sair()">Sair</button>
+    </div>
+  </header>
+
+  <div class="container">
+
+    <div class="card">
+      <h2>1. Referência do mês</h2>
+      <div class="field">
+        <label>Mês/Ano</label>
+        <input type="text" id="mes-referencia" placeholder="Ex: Junho/2026"/>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>2. PDF de metas do mês</h2>
+      <div class="field">
+        <label>Anexar PDF ("Metas e bonificação por MRR")</label>
+        <input type="file" id="pdf-input" accept="application/pdf" onchange="processarPDF(event)"/>
+        <div class="hint" id="pdf-status">Nenhum arquivo carregado ainda.</div>
+      </div>
+      <table class="niveis-table" id="tabela-niveis" style="display:none;">
+        <thead>
+          <tr><th>Nível</th><th>Crescimento</th><th>Meta (R$)</th><th>Bônus geral</th><th>Bônus Produto</th></tr>
+        </thead>
+        <tbody id="tbody-niveis"></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>3. MRR líquido adicionado do mês</h2>
+      <div class="field">
+        <label>Valor realizado (R$)</label>
+        <input type="text" id="mrr-input" placeholder="Ex: 12.168,51" oninput="recalcular()"/>
+      </div>
+      <div class="resultado-nivel" id="resultado-nivel" style="display:none;">
+        <div class="rotulo">Nível atingido</div>
+        <div class="valor" id="nivel-atingido-texto">—</div>
+      </div>
+    </div>
+
+    <div class="card" id="card-bonus" style="display:none;">
+      <h2>4. Bônus — Marketing, Comercial, Administrativo e CS</h2>
+      <div class="field" style="max-width:220px;">
+        <label>Nº de pessoas nesses setores</label>
+        <input type="number" id="num-pessoas-geral" min="1" value="1" oninput="recalcular()"/>
+      </div>
+      <div class="bonus-resumo">
+        <div class="bonus-box">
+          <div class="label">Valor total do bônus (pool)</div>
+          <div class="valor" id="pool-geral">R$ 0,00</div>
+        </div>
+        <div class="bonus-box">
+          <div class="label">Valor por pessoa</div>
+          <div class="valor" id="valor-por-pessoa-geral">R$ 0,00</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="card-produto" style="display:none;">
+      <h2>5. Bônus — Produto & Desenvolvimento</h2>
+      <div class="bonus-box" style="margin-bottom:16px;">
+        <div class="label">Valor total do bônus (pool)</div>
+        <div class="valor" id="pool-produto">R$ 0,00</div>
+      </div>
+      <div class="loading-inline" id="produto-loading">Carregando colaboradores...</div>
+      <table class="produto-table" id="tabela-produto" style="display:none;">
+        <thead><tr><th>Colaborador</th><th>% do bônus</th><th>Valor</th></tr></thead>
+        <tbody id="tbody-produto"></tbody>
+      </table>
+      <div class="total-linha" id="total-linha-produto" style="display:none;">
+        <span>Total: <strong id="total-percentual-produto">0%</strong></span>
+        <span class="badge" id="badge-total-produto">—</span>
+      </div>
+    </div>
+
+    <div class="card" id="card-salvar" style="display:none;">
+      <button class="btn-primario" onclick="salvarFechamento()" id="btn-salvar">Salvar fechamento do mês</button>
+      <div class="status-msg" id="status-salvar"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzblEIQor7UuPFzO6Ga2UREXjYYkeiCNXtsom4XjCFSUbb9hI7S-djhgi6WioNGSJ2k/exec';
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+let usuarioAtual = null;
+let senhaAtual = null;
+let niveisExtraidos = null;
+let colaboradoresProduto = [];
+
+// ── LOGIN ─────────────────────────────────────────────────
+async function fazerLogin() {
+  const user = document.getElementById('login-user').value.trim();
+  const pass = document.getElementById('login-pass').value.trim();
+  if (!user || !pass) return;
+  try {
+    const r = await fetch(`${SCRIPT_URL}?acao=login&user=${encodeURIComponent(user)}&pass=${encodeURIComponent(pass)}`);
+    const data = await r.json();
+    if (data.ok) {
+      usuarioAtual = user;
+      senhaAtual = pass;
+      document.getElementById('login-wrap').style.display = 'none';
+      document.getElementById('painel-wrap').style.display = 'block';
+      document.getElementById('header-user').textContent = user;
+      carregarColaboradoresProduto();
+    } else {
+      document.getElementById('login-erro').style.display = 'block';
+    }
+  } catch(e) {
+    document.getElementById('login-erro').style.display = 'block';
+  }
+}
+
+function sair() {
+  usuarioAtual = null; senhaAtual = null;
+  document.getElementById('login-wrap').style.display = 'flex';
+  document.getElementById('painel-wrap').style.display = 'none';
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+}
+
+// ── COLABORADORES PRODUTO & DEV ──────────────────────────
+async function carregarColaboradoresProduto() {
+  try {
+    const r = await fetch(`${SCRIPT_URL}?acao=metasColaboradores&user=${encodeURIComponent(usuarioAtual)}&pass=${encodeURIComponent(senhaAtual)}&setor=${encodeURIComponent('Produto & Desenvolvimento')}`);
+    const data = await r.json();
+    document.getElementById('produto-loading').style.display = 'none';
+    if (!data.ok) {
+      document.getElementById('produto-loading').textContent = 'Erro: ' + data.erro;
+      document.getElementById('produto-loading').style.display = 'block';
+      return;
+    }
+    colaboradoresProduto = data.colaboradores.map(nome => ({ nome, percentual: 0 }));
+    const partesIguais = colaboradoresProduto.length > 0 ? +(100 / colaboradoresProduto.length).toFixed(2) : 0;
+    colaboradoresProduto.forEach(c => c.percentual = partesIguais);
+    renderTabelaProduto();
+  } catch(e) {
+    document.getElementById('produto-loading').textContent = 'Erro ao carregar colaboradores.';
+  }
+}
+
+function renderTabelaProduto() {
+  const tbody = document.getElementById('tbody-produto');
+  tbody.innerHTML = colaboradoresProduto.map((c, i) => `
+    <tr>
+      <td>${c.nome}</td>
+      <td><input type="number" step="0.01" min="0" max="100" value="${c.percentual}" onchange="atualizarPercentual(${i}, this.value)"/></td>
+      <td class="num" id="valor-produto-${i}">R$ 0,00</td>
+    </tr>
+  `).join('');
+  document.getElementById('tabela-produto').style.display = 'table';
+  document.getElementById('total-linha-produto').style.display = 'flex';
+  recalcular();
+}
+
+function atualizarPercentual(i, valor) {
+  colaboradoresProduto[i].percentual = parseFloat(valor) || 0;
+  recalcular();
+}
+
+// ── PDF ───────────────────────────────────────────────────
+async function processarPDF(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  document.getElementById('pdf-status').textContent = 'Lendo PDF...';
+  try {
+    const buffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+    let textoCompleto = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      textoCompleto += ' ' + content.items.map(it => it.str).join(' ');
+    }
+    niveisExtraidos = extrairNiveis(textoCompleto);
+    if (!niveisExtraidos || Object.keys(niveisExtraidos).length === 0) {
+      document.getElementById('pdf-status').textContent = 'Não consegui identificar os níveis no PDF. Confira o arquivo.';
+      return;
+    }
+    document.getElementById('pdf-status').textContent = `PDF lido com sucesso — ${Object.keys(niveisExtraidos).length} nível(is) identificado(s).`;
+    renderTabelaNiveis();
+    recalcular();
+  } catch(e) {
+    document.getElementById('pdf-status').textContent = 'Erro ao ler o PDF: ' + e.message;
+  }
+}
+
+function extrairNiveis(texto) {
+  const regexBloco = /(Diamante|Ouro|Prata|Bronze)[^\d]{0,25}(\d+[.,]\d+)\s*%\s*de\s*crescimento\s*-\s*R\$\s*([\d.,]+)/gi;
+  const matches = [...texto.matchAll(regexBloco)].sort((a,b) => a.index - b.index);
+  if (matches.length === 0) return null;
+
+  const niveis = {};
+  matches.forEach((m, idx) => {
+    const nome = m[1].toLowerCase();
+    const crescimento = parseFloat(m[2].replace(',', '.'));
+    const valor = parseFloat(m[3].replace(/\./g,'').replace(',', '.'));
+    const inicio = m.index;
+    const fim = idx + 1 < matches.length ? matches[idx+1].index : texto.length;
+    const trecho = texto.slice(inicio, fim);
+
+    const mGeral = trecho.match(/Bônus de\s*(\d+)\s*%[^.]*?dividido entre os membros/is);
+    const mProduto = trecho.match(/Bônus de\s*(\d+)\s*%[^.]*?dividido de forma proporcional/is);
+
+    niveis[nome] = {
+      crescimento, valor,
+      bonusGeral: mGeral ? parseInt(mGeral[1]) : null,
+      bonusProduto: mProduto ? parseInt(mProduto[1]) : null
+    };
+  });
+  return niveis;
+}
+
+function renderTabelaNiveis() {
+  const ordem = ['diamante','ouro','prata','bronze'];
+  const nomesExibicao = { diamante: '💎 Diamante', ouro: '🥇 Ouro', prata: '🥈 Prata', bronze: '🥉 Bronze' };
+  const tbody = document.getElementById('tbody-niveis');
+  tbody.innerHTML = ordem.filter(k => niveisExtraidos[k]).map(k => {
+    const n = niveisExtraidos[k];
+    return `<tr id="linha-nivel-${k}">
+      <td>${nomesExibicao[k]}</td>
+      <td>${n.crescimento.toLocaleString('pt-BR')}%</td>
+      <td>${fmtBRL(n.valor)}</td>
+      <td>${n.bonusGeral ?? '—'}%</td>
+      <td>${n.bonusProduto ?? '—'}%</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('tabela-niveis').style.display = 'table';
+}
+
+// ── CÁLCULO ───────────────────────────────────────────────
+function parseValorBR(str) {
+  if (!str) return 0;
+  return parseFloat(String(str).replace(/\./g,'').replace(',', '.')) || 0;
+}
+
+function determinarNivel(mrrValor) {
+  if (!niveisExtraidos) return null;
+  const ordem = ['diamante','ouro','prata','bronze'];
+  for (const chave of ordem) {
+    if (niveisExtraidos[chave] && mrrValor >= niveisExtraidos[chave].valor) return chave;
+  }
+  return null;
+}
+
+function recalcular() {
+  if (!niveisExtraidos) return;
+  const mrrValor = parseValorBR(document.getElementById('mrr-input').value);
+  const nivelChave = determinarNivel(mrrValor);
+
+  document.querySelectorAll('#tbody-niveis tr').forEach(tr => tr.classList.remove('atingido'));
+  const resultadoDiv = document.getElementById('resultado-nivel');
+  resultadoDiv.style.display = 'block';
+
+  const nomesExibicao = { diamante: '💎 Diamante', ouro: '🥇 Ouro', prata: '🥈 Prata', bronze: '🥉 Bronze' };
+
+  if (!nivelChave) {
+    resultadoDiv.className = 'resultado-nivel sem-nivel';
+    document.getElementById('nivel-atingido-texto').textContent = 'Nenhum nível atingido este mês';
+    document.getElementById('card-bonus').style.display = 'none';
+    document.getElementById('card-produto').style.display = 'none';
+    document.getElementById('card-salvar').style.display = 'none';
+    return;
+  }
+
+  resultadoDiv.className = 'resultado-nivel tem-nivel';
+  document.getElementById('nivel-atingido-texto').textContent = nomesExibicao[nivelChave];
+  const linha = document.getElementById('linha-nivel-' + nivelChave);
+  if (linha) linha.classList.add('atingido');
+
+  const nivel = niveisExtraidos[nivelChave];
+  document.getElementById('card-bonus').style.display = 'block';
+  document.getElementById('card-produto').style.display = 'block';
+  document.getElementById('card-salvar').style.display = 'block';
+
+  // Bônus geral
+  const poolGeral = mrrValor * (nivel.bonusGeral / 100);
+  const numPessoas = parseInt(document.getElementById('num-pessoas-geral').value) || 1;
+  const porPessoaGeral = poolGeral / numPessoas;
+  document.getElementById('pool-geral').textContent = fmtBRL(poolGeral);
+  document.getElementById('valor-por-pessoa-geral').textContent = fmtBRL(porPessoaGeral);
+
+  // Bônus produto
+  const poolProduto = mrrValor * (nivel.bonusProduto / 100);
+  document.getElementById('pool-produto').textContent = fmtBRL(poolProduto);
+
+  let totalPercentual = 0;
+  colaboradoresProduto.forEach((c, i) => {
+    const valorPessoa = poolProduto * (c.percentual / 100);
+    totalPercentual += c.percentual;
+    const celula = document.getElementById('valor-produto-' + i);
+    if (celula) celula.textContent = fmtBRL(valorPessoa);
+  });
+
+  document.getElementById('total-percentual-produto').textContent = totalPercentual.toFixed(2) + '%';
+  const badge = document.getElementById('badge-total-produto');
+  if (Math.abs(totalPercentual - 100) < 0.01) {
+    badge.textContent = 'OK'; badge.className = 'badge ok';
+  } else {
+    badge.textContent = 'Deveria somar 100%'; badge.className = 'badge erro';
+  }
+}
+
+function fmtBRL(v) {
+  if (v === null || v === undefined || isNaN(v)) return 'R$ 0,00';
+  return 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// ── SALVAR ────────────────────────────────────────────────
+async function salvarFechamento() {
+  const mesReferencia = document.getElementById('mes-referencia').value.trim();
+  const mrrValor = parseValorBR(document.getElementById('mrr-input').value);
+  const nivelChave = determinarNivel(mrrValor);
+  const statusDiv = document.getElementById('status-salvar');
+  const btn = document.getElementById('btn-salvar');
+
+  if (!mesReferencia) {
+    statusDiv.className = 'status-msg erro';
+    statusDiv.textContent = 'Preencha o mês/ano de referência antes de salvar.';
+    return;
+  }
+
+  const nivel = nivelChave ? niveisExtraidos[nivelChave] : null;
+  const numPessoas = parseInt(document.getElementById('num-pessoas-geral').value) || 1;
+  const poolGeral = nivel ? mrrValor * (nivel.bonusGeral / 100) : 0;
+  const poolProduto = nivel ? mrrValor * (nivel.bonusProduto / 100) : 0;
+
+  const payload = {
+    mesReferencia,
+    mrrValor,
+    nivel: nivelChave ? nivelChave.charAt(0).toUpperCase() + nivelChave.slice(1) : 'Nenhum',
+    percBonusGeral: nivel ? nivel.bonusGeral : 0,
+    percBonusProduto: nivel ? nivel.bonusProduto : 0,
+    numPessoasGeral: numPessoas,
+    valorPorPessoaGeral: numPessoas ? poolGeral / numPessoas : 0,
+    produtoDev: colaboradoresProduto.map(c => ({
+      nome: c.nome, percentual: c.percentual, valor: poolProduto * (c.percentual / 100)
+    }))
+  };
+
+  btn.disabled = true;
+  btn.textContent = 'Salvando...';
+  try {
+    const r = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ acao: 'salvarFechamentoMetas', user: usuarioAtual, pass: senhaAtual, payload })
+    });
+    const data = await r.json();
+    if (data.ok) {
+      statusDiv.className = 'status-msg ok';
+      statusDiv.textContent = 'Fechamento salvo com sucesso!';
+    } else {
+      statusDiv.className = 'status-msg erro';
+      statusDiv.textContent = 'Erro ao salvar: ' + data.erro;
+    }
+  } catch(e) {
+    statusDiv.className = 'status-msg erro';
+    statusDiv.textContent = 'Erro ao salvar: ' + e.message;
+  }
+  btn.disabled = false;
+  btn.textContent = 'Salvar fechamento do mês';
+}
+</script>
+</body>
+</html>

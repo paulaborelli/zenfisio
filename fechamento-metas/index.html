@@ -84,6 +84,16 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
 .status-msg.ok { background: var(--accent-light); color: var(--accent-text); display: block; }
 .status-msg.erro { background: #FCEBEB; color: #A32D2D; display: block; }
 .loading-inline { font-size: 13px; color: var(--text-hint); }
+
+/* HISTÓRICO */
+.historico-item { border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 8px; overflow: hidden; }
+.historico-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; cursor: pointer; background: var(--bg); font-size: 13px; }
+.historico-header:hover { background: var(--accent-light); }
+.historico-header .mes { font-weight: 600; flex: 1; }
+.historico-header .nivel { color: var(--accent-text); font-weight: 600; }
+.historico-header .mrr { color: var(--text-muted); }
+.historico-arrow { color: var(--text-hint); }
+.historico-detalhe { padding: 16px; border-top: 1px solid var(--border); background: var(--surface); }
 </style>
 </head>
 <body>
@@ -120,6 +130,12 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
   </header>
 
   <div class="container">
+
+    <div class="card">
+      <h2>Histórico de Fechamentos</h2>
+      <div class="loading-inline" id="historico-loading">Carregando histórico...</div>
+      <div id="historico-lista"></div>
+    </div>
 
     <div class="card">
       <h2>1. Referência do mês</h2>
@@ -223,6 +239,7 @@ async function fazerLogin() {
       document.getElementById('painel-wrap').style.display = 'block';
       document.getElementById('header-user').textContent = user;
       carregarColaboradoresProduto();
+      carregarHistorico();
     } else {
       document.getElementById('login-erro').style.display = 'block';
     }
@@ -237,6 +254,67 @@ function sair() {
   document.getElementById('painel-wrap').style.display = 'none';
   document.getElementById('login-user').value = '';
   document.getElementById('login-pass').value = '';
+}
+
+// ── HISTÓRICO ─────────────────────────────────────────────
+async function carregarHistorico() {
+  document.getElementById('historico-loading').style.display = 'block';
+  try {
+    const r = await fetch(`${SCRIPT_URL}?acao=historicoFechamentos&user=${encodeURIComponent(usuarioAtual)}&pass=${encodeURIComponent(senhaAtual)}`);
+    const data = await r.json();
+    document.getElementById('historico-loading').style.display = 'none';
+    if (!data.ok) {
+      document.getElementById('historico-lista').innerHTML = `<div class="hint">Erro: ${data.erro}</div>`;
+      return;
+    }
+    renderHistorico(data.fechamentos, data.detalhePorMes);
+  } catch(e) {
+    document.getElementById('historico-loading').textContent = 'Erro ao carregar histórico.';
+  }
+}
+
+function renderHistorico(fechamentos, detalhePorMes) {
+  const container = document.getElementById('historico-lista');
+  if (!fechamentos || fechamentos.length === 0) {
+    container.innerHTML = '<div class="hint">Nenhum fechamento registrado ainda.</div>';
+    return;
+  }
+  const ordenado = [...fechamentos].reverse();
+  container.innerHTML = ordenado.map((f, i) => {
+    const detalhes = detalhePorMes[f.mesReferencia] || [];
+    const linhasDetalhe = detalhes.map(d => `
+      <tr><td>${d.nome}</td><td class="num">${d.percentual}%</td><td class="num">${fmtBRL(d.valor)}</td></tr>
+    `).join('');
+    return `
+      <div class="historico-item">
+        <div class="historico-header" onclick="toggleHistorico(${i})">
+          <span class="mes">${f.mesReferencia}</span>
+          <span class="nivel">${f.nivel}</span>
+          <span class="mrr">${fmtBRL(f.mrrValor)}</span>
+          <span class="historico-arrow" id="arrow-hist-${i}">→</span>
+        </div>
+        <div class="historico-detalhe" id="detalhe-hist-${i}" style="display:none;">
+          <div class="bonus-resumo">
+            <div class="bonus-box"><div class="label">% Bônus Geral</div><div class="valor">${f.percGeral}%</div></div>
+            <div class="bonus-box"><div class="label">Valor por pessoa (Geral)</div><div class="valor">${fmtBRL(f.valorPorPessoa)}</div></div>
+          </div>
+          <table class="produto-table">
+            <thead><tr><th>Colaborador (Produto)</th><th>%</th><th>Valor</th></tr></thead>
+            <tbody>${linhasDetalhe}</tbody>
+          </table>
+          <div class="hint" style="margin-top:8px;">Registrado por ${f.registradoPor} em ${f.dataRegistro}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function toggleHistorico(i) {
+  const det = document.getElementById('detalhe-hist-' + i);
+  const arrow = document.getElementById('arrow-hist-' + i);
+  const aberto = det.style.display === 'block';
+  det.style.display = aberto ? 'none' : 'block';
+  arrow.textContent = aberto ? '→' : '↓';
 }
 
 // ── COLABORADORES PRODUTO & DEV ──────────────────────────
@@ -330,6 +408,7 @@ function extrairNiveis(texto) {
   });
   return niveis;
 }
+
 function renderTabelaNiveis() {
   const ordem = ['diamante','ouro','prata','bronze'];
   const nomesExibicao = { diamante: '💎 Diamante', ouro: '🥇 Ouro', prata: '🥈 Prata', bronze: '🥉 Bronze' };
@@ -392,14 +471,12 @@ function recalcular() {
   document.getElementById('card-produto').style.display = 'block';
   document.getElementById('card-salvar').style.display = 'block';
 
-  // Bônus geral
   const poolGeral = mrrValor * (nivel.bonusGeral / 100);
   const numPessoas = parseInt(document.getElementById('num-pessoas-geral').value) || 1;
   const porPessoaGeral = poolGeral / numPessoas;
   document.getElementById('pool-geral').textContent = fmtBRL(poolGeral);
   document.getElementById('valor-por-pessoa-geral').textContent = fmtBRL(porPessoaGeral);
 
-  // Bônus produto
   const poolProduto = mrrValor * (nivel.bonusProduto / 100);
   document.getElementById('pool-produto').textContent = fmtBRL(poolProduto);
 
@@ -422,7 +499,7 @@ function recalcular() {
 
 function fmtBRL(v) {
   if (v === null || v === undefined || isNaN(v)) return 'R$ 0,00';
-  return 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 // ── SALVAR ────────────────────────────────────────────────
@@ -469,6 +546,7 @@ async function salvarFechamento() {
     if (data.ok) {
       statusDiv.className = 'status-msg ok';
       statusDiv.textContent = 'Fechamento salvo com sucesso!';
+      carregarHistorico();
     } else {
       statusDiv.className = 'status-msg erro';
       statusDiv.textContent = 'Erro ao salvar: ' + data.erro;

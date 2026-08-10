@@ -134,7 +134,10 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
   <div class="container">
     <div class="card">
       <h2>Mês/Ano de referência (todas as áreas)</h2>
-      <div class="field"><input type="text" id="mes-referencia-global" placeholder="Ex: Junho/2026"/></div>
+      <div class="field-row">
+        <div class="field"><input type="text" id="mes-referencia-global" placeholder="Ex: Junho/2026"/></div>
+        <div class="field"><label style="margin-bottom:6px;display:block;">MRR total do mês (R$) — usado em CS e P&amp;D</label><input type="text" id="mrr-total-global" placeholder="Ex: 619.036,50" oninput="recalcularCS(); recalcularPD();"/></div>
+      </div>
     </div>
 
     <div class="card">
@@ -297,7 +300,76 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
         <div class="status-msg" id="status-salvar-vendas"></div>
       </div>
     </div>
-    <div class="tab-panel" id="tab-cs" style="display:none;"><div class="card"><div class="placeholder-em-construcao">🚧 CS e Suporte ainda não foi construído.</div></div></div>
+    <div class="tab-panel" id="tab-cs" style="display:none;">
+      <div class="card">
+        <h2>Histórico de Fechamentos — CS e Suporte</h2>
+        <div class="loading-inline" id="historico-cs-loading">Carregando histórico...</div>
+        <div id="historico-cs-lista"></div>
+      </div>
+
+      <div class="card">
+        <h2>KPI 1 — UpSell: Equipe</h2>
+        <div class="field-row">
+          <div class="field"><label>% de crescimento (UpSell)</label><input type="text" id="input-upsellEquipe-crescimento" placeholder="Ex: 1,51" oninput="recalcularCS()"/></div>
+          <div class="field"><label>MRR adicionado com UpSell (R$)</label><input type="text" id="input-upsellEquipe-mrr" placeholder="Ex: 8.991,34" oninput="recalcularCS()"/></div>
+        </div>
+        <table class="niveis-table"><thead><tr><th>Nível</th><th>Meta (%)</th><th>Bônus</th></tr></thead><tbody id="tabela-upsellEquipe"></tbody></table>
+        <div class="resultado-kpi" id="resultado-upsellEquipe">Aguardando leitura do PDF (acima)...</div>
+        <div class="bonus-box" style="margin-bottom:16px;"><div class="label">Pool do bônus</div><div class="valor" id="pool-upsellEquipe">R$ 0,00</div></div>
+        <table class="produto-table"><thead><tr><th>Pessoa</th><th>%</th><th>Valor</th><th></th></tr></thead><tbody id="equipe-upsellEquipe"></tbody></table>
+        <button class="btn-add" onclick="adicionarPessoaMkt('upsellEquipe')">+ Adicionar pessoa</button>
+        <div class="total-linha"><span>Total: <strong id="total-upsellEquipe">0%</strong></span><span class="badge" id="badge-upsellEquipe">—</span></div>
+      </div>
+
+      <div class="card">
+        <h2>KPI 1b — UpSell: Individual</h2>
+        <div class="hint" style="margin-bottom:12px;">Digite, por pessoa, o valor já calculado na planilha (coluna "Valor" da tabela "Comissão individual em UpSell para Clientes").</div>
+        <table class="produto-table"><thead><tr><th>Pessoa</th><th>Valor (R$)</th><th></th></tr></thead><tbody id="tbody-upsellIndividual"></tbody></table>
+        <button class="btn-add" onclick="adicionarUpsellIndividual()">+ Adicionar pessoa</button>
+      </div>
+
+      <div class="card">
+        <h2>KPI 2 — Churn (cancelamentos)</h2>
+        <div class="field-row">
+          <div class="field"><label>% de Churn no mês</label><input type="text" id="input-churn-percentual" placeholder="Ex: 1,29" oninput="recalcularCS()"/></div>
+          <div class="field"><label>Churn em R$</label><input type="text" id="input-churn-valor" placeholder="Ex: 7.728,50" oninput="recalcularCS()"/></div>
+          <div class="field"><label>DownSell em R$</label><input type="text" id="input-churn-downsell" placeholder="Ex: 2.190,33" oninput="recalcularCS()"/></div>
+        </div>
+        <table class="niveis-table"><thead><tr><th>Nível</th><th>Meta (% Churn — quanto menor, melhor)</th><th>Bônus</th></tr></thead><tbody id="tabela-churn"></tbody></table>
+        <div class="resultado-kpi" id="resultado-churn">Aguardando leitura do PDF (acima)...</div>
+        <div class="bonus-box" style="margin-bottom:16px;"><div class="label">Pool do bônus (MRR total − Churn − DownSell) × %</div><div class="valor" id="pool-churn">R$ 0,00</div></div>
+        <table class="produto-table"><thead><tr><th>Pessoa</th><th>%</th><th>Valor</th><th></th></tr></thead><tbody id="equipe-churn"></tbody></table>
+        <button class="btn-add" onclick="adicionarPessoaMkt('churn')">+ Adicionar pessoa</button>
+        <div class="total-linha"><span>Total: <strong id="total-churn">0%</strong></span><span class="badge" id="badge-churn">—</span></div>
+      </div>
+
+      <div class="card">
+        <h2>KPI 3 — NPS (Net Promoter Score)</h2>
+        <div class="field"><label>Nota NPS do mês</label><input type="text" id="input-nps-nota" placeholder="Ex: 76" oninput="recalcularCS()"/></div>
+        <table class="niveis-table"><thead><tr><th>Nível</th><th>Meta (nota)</th><th>Bônus</th></tr></thead><tbody id="tabela-nps"></tbody></table>
+        <div class="resultado-kpi" id="resultado-nps">Aguardando leitura do PDF (acima)...</div>
+        <div class="bonus-box" style="margin-bottom:16px;"><div class="label">Pool do bônus (% × MRR total)</div><div class="valor" id="pool-nps">R$ 0,00</div></div>
+        <table class="produto-table"><thead><tr><th>Pessoa</th><th>%</th><th>Valor</th><th></th></tr></thead><tbody id="equipe-nps"></tbody></table>
+        <button class="btn-add" onclick="adicionarPessoaMkt('nps')">+ Adicionar pessoa</button>
+        <div class="total-linha"><span>Total: <strong id="total-nps">0%</strong></span><span class="badge" id="badge-nps">—</span></div>
+      </div>
+
+      <div class="card">
+        <h2>KPI 4 — Health Score (saúde do cliente)</h2>
+        <div class="field"><label>Nota Health Score do mês</label><input type="text" id="input-healthScore-nota" placeholder="Ex: 74" oninput="recalcularCS()"/></div>
+        <table class="niveis-table"><thead><tr><th>Nível</th><th>Meta (nota)</th><th>Bônus</th></tr></thead><tbody id="tabela-healthScore"></tbody></table>
+        <div class="resultado-kpi" id="resultado-healthScore">Aguardando leitura do PDF (acima)...</div>
+        <div class="bonus-box" style="margin-bottom:16px;"><div class="label">Pool do bônus (% × MRR total)</div><div class="valor" id="pool-healthScore">R$ 0,00</div></div>
+        <table class="produto-table"><thead><tr><th>Pessoa</th><th>%</th><th>Valor</th><th></th></tr></thead><tbody id="equipe-healthScore"></tbody></table>
+        <button class="btn-add" onclick="adicionarPessoaMkt('healthScore')">+ Adicionar pessoa</button>
+        <div class="total-linha"><span>Total: <strong id="total-healthScore">0%</strong></span><span class="badge" id="badge-healthScore">—</span></div>
+      </div>
+
+      <div class="card">
+        <button class="btn-primario" onclick="salvarCS()" id="btn-salvar-cs">Salvar fechamento de CS e Suporte</button>
+        <div class="status-msg" id="status-salvar-cs"></div>
+      </div>
+    </div>
     <div class="tab-panel" id="tab-pd" style="display:none;"><div class="card"><div class="placeholder-em-construcao">🚧 P&amp;D ainda não foi construído.</div></div></div>
   </div>
 </div>
@@ -316,7 +388,11 @@ let resultadosMktAtual = {};
 let equipesMkt = {
   cadastroTeste:     [{nome:'Juliana',percentual:50},{nome:'Carolina',percentual:30},{nome:'Emilly',percentual:20}],
   extensaoTeste:      [{nome:'Juliana',percentual:50},{nome:'Carolina',percentual:30},{nome:'Emilly',percentual:20}],
-  novosClientesMkt:   [{nome:'Juliana',percentual:56},{nome:'Carolina',percentual:28},{nome:'Emilly',percentual:16}]
+  novosClientesMkt:   [{nome:'Juliana',percentual:56},{nome:'Carolina',percentual:28},{nome:'Emilly',percentual:16}],
+  upsellEquipe: [{nome:'Taiz',percentual:28},{nome:'Viviane',percentual:24},{nome:'Ana Paula',percentual:9},{nome:'Laura',percentual:6},{nome:'Franciele',percentual:4},{nome:'Bernardo',percentual:7},{nome:'Marília',percentual:5},{nome:'Kéuri',percentual:4},{nome:'Milena',percentual:4},{nome:'José',percentual:3},{nome:'Heloísa',percentual:3},{nome:'Eduarda',percentual:1.5},{nome:'Lauren',percentual:1.5}],
+  churn: [{nome:'Taiz',percentual:25},{nome:'Viviane',percentual:18},{nome:'Ana Paula',percentual:11},{nome:'Laura',percentual:9},{nome:'Franciele',percentual:5},{nome:'Bernardo',percentual:8},{nome:'Marília',percentual:6},{nome:'Kéuri',percentual:4.5},{nome:'Milena',percentual:4.5},{nome:'José',percentual:3},{nome:'Heloísa',percentual:3},{nome:'Eduarda',percentual:1.5},{nome:'Lauren',percentual:1.5}],
+  nps: [{nome:'Taiz',percentual:25},{nome:'Viviane',percentual:18},{nome:'Ana Paula',percentual:11},{nome:'Laura',percentual:9},{nome:'Franciele',percentual:5},{nome:'Bernardo',percentual:8},{nome:'Marília',percentual:6},{nome:'Kéuri',percentual:4.5},{nome:'Milena',percentual:4.5},{nome:'José',percentual:3},{nome:'Heloísa',percentual:3},{nome:'Eduarda',percentual:1.5},{nome:'Lauren',percentual:1.5}],
+  healthScore: [{nome:'Taiz',percentual:25},{nome:'Viviane',percentual:18},{nome:'Ana Paula',percentual:11},{nome:'Laura',percentual:9},{nome:'Franciele',percentual:5},{nome:'Bernardo',percentual:8},{nome:'Marília',percentual:6},{nome:'Kéuri',percentual:4.5},{nome:'Milena',percentual:4.5},{nome:'José',percentual:3},{nome:'Heloísa',percentual:3},{nome:'Eduarda',percentual:1.5},{nome:'Lauren',percentual:1.5}]
 };
 let tiersMkt = { cadastroTeste: null, extensaoTeste: null, novosClientesMkt: null };
 
@@ -331,6 +407,14 @@ let vendedoresIndividuais = [
   { nome:'Luana', comissaoBase:0, mrrPrincipal:0, melhorMes:false, melhor2Meses:false, nivel:null, valorFinal:0 }
 ];
 let resultadosVendasAtual = {};
+
+let tiersCS = { upsellEquipe: null, churn: null, nps: null, healthScore: null };
+let upsellIndividual = [
+  {nome:'Ana Tobias', valor:0}, {nome:'Bernardo', valor:0}, {nome:'Camila', valor:0}, {nome:'Franciele', valor:0},
+  {nome:'Heloísa', valor:0}, {nome:'José V.', valor:0}, {nome:'Kéuri', valor:0}, {nome:'Laura', valor:0},
+  {nome:'Marília', valor:0}, {nome:'Milena', valor:0}, {nome:'Viviane', valor:0}
+];
+let resultadosCSAtual = {};
 
 // ── TABS ──────────────────────────────────────────────────
 function mostrarAba(aba) {
@@ -357,9 +441,11 @@ async function fazerLogin() {
       carregarHistorico();
       carregarHistoricoMarketing();
       carregarHistoricoVendas();
+      carregarHistoricoCS();
       Object.keys(equipesMkt).forEach(renderEquipeMkt);
       renderEquipeVendasEquipe();
       renderVendedores();
+      renderUpsellIndividual();
     } else {
       document.getElementById('login-erro').style.display = 'block';
     }
@@ -388,6 +474,7 @@ function atualizarBadgeTotal(chave, total) {
   if (Math.abs(total - 100) < 0.01) { elBadge.textContent = 'OK'; elBadge.className = 'badge ok'; }
   else { elBadge.textContent = 'Deveria somar 100%'; elBadge.className = 'badge erro'; }
 }
+function recalcularPD() { /* será implementado quando construirmos a aba P&D */ }
 
 // ══════════════════════ MRR ══════════════════════
 async function carregarHistorico() {
@@ -582,6 +669,26 @@ function extrairSecoesPDFAreas(texto) {
   });
   return secoes;
 }
+function extrairKpiGenerico(texto, tituloKpi) {
+  const idx0 = texto.indexOf(tituloKpi);
+  if (idx0 === -1) return null;
+  let trecho = texto.slice(idx0 + tituloKpi.length, idx0 + tituloKpi.length + 1200);
+  const mFim = trecho.match(/(?:Meta|Super)\s*Diamante/i);
+  if (!mFim) return null;
+  const trechoValores = trecho.slice(mFim.index + mFim[0].length);
+  const tiers = [...trechoValores.matchAll(/(\d+(?:[.,]\d+)?)\s*%?/g)].slice(0,4).map(m => parseFloat(m[1].replace(',', '.')));
+  const bonusList = [...trechoValores.matchAll(/Bônus:\s*(\d+(?:[.,]\d+)?)\s*%/gi)].slice(0,4).map(m => parseFloat(m[1].replace(',', '.')));
+  const mPadrao = trecho.match(/Bonifica[cç][aã]o padr[aã]o:\s*(\d+(?:[.,]\d+)?)\s*%/i);
+  const padrao = mPadrao ? parseFloat(mPadrao[1].replace(',', '.')) : 0;
+  if (tiers.length < 4 || bonusList.length < 4) return null;
+  return {
+    bronze:   { meta: tiers[0], bonus: bonusList[0] },
+    prata:    { meta: tiers[1], bonus: bonusList[1] },
+    ouro:     { meta: tiers[2], bonus: bonusList[2] },
+    diamante: { meta: tiers[3], bonus: bonusList[3] },
+    padrao
+  };
+}
 function extrairKpiTiers(texto, tituloKpi, unidade, temAdicional) {
   const idx = texto.indexOf(tituloKpi);
   if (idx === -1) return null;
@@ -650,6 +757,14 @@ async function processarPDFAreas(event) {
       }
     }
     recalcularVendas();
+
+    // ── CS e Suporte ──
+    const textoCS = secoesPDFAreas['CS e Suporte'] || '';
+    tiersCS.upsellEquipe = extrairKpiGenerico(textoCS, 'UpSell: Equipe');
+    tiersCS.churn        = extrairKpiGenerico(textoCS, 'Churn (cancelamentos)');
+    tiersCS.nps          = extrairKpiGenerico(textoCS, 'NPS (Net Promoter Score)');
+    tiersCS.healthScore  = extrairKpiGenerico(textoCS, 'Health Score (saúde do cliente)');
+    recalcularCS();
   } catch(e) { document.getElementById('pdf-areas-status').textContent = 'Erro ao ler PDF: ' + e.message; }
 }
 
@@ -905,6 +1020,180 @@ function renderHistoricoVendas(registros, detalhe) {
         <span id="arrow-vendas-${i}">→</span>
       </div>
       <div class="historico-detalhe" id="detalhe-vendas-${i}" style="display:none;">
+        <table class="produto-table"><thead><tr><th>Pessoa</th><th>%</th><th>Valor</th></tr></thead><tbody>${linhas}</tbody></table>
+        <div class="hint" style="margin-top:8px;">Registrado em ${f.dataRegistro}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════ CS E SUPORTE ══════════════════════
+function parseNumeroBR(str) {
+  if (!str) return 0;
+  return parseFloat(String(str).replace(',', '.')) || 0;
+}
+
+function calcularNivelAscendente(valor, tiers) {
+  let nivel = null;
+  ['diamante','ouro','prata','bronze'].forEach(k => { if (!nivel && valor >= tiers[k].meta) nivel = k; });
+  return nivel;
+}
+function calcularNivelDescendente(valor, tiers) {
+  // Quanto MENOR o valor, melhor o nível (usado no Churn)
+  let nivel = null;
+  ['diamante','ouro','prata','bronze'].forEach(k => { if (!nivel && valor <= tiers[k].meta) nivel = k; });
+  return nivel;
+}
+
+function calcularUpsellEquipe() {
+  const tiers = tiersCS.upsellEquipe;
+  const elResultado = document.getElementById('resultado-upsellEquipe');
+  if (!tiers) { elResultado.textContent = 'Aguardando leitura do PDF (acima)...'; return { nivel:'Nenhum', percTotal:0, pool:0 }; }
+  const crescimento = parseNumeroBR(document.getElementById('input-upsellEquipe-crescimento').value);
+  const mrrUpsell = parseValorBR(document.getElementById('input-upsellEquipe-mrr').value);
+  const nivel = calcularNivelAscendente(crescimento, tiers);
+  const percTotal = nivel ? tiers[nivel].bonus : tiers.padrao;
+  const pool = mrrUpsell * (percTotal/100);
+  elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Abaixo do Bronze — bonificação padrão: ${percTotal}%`;
+  document.getElementById('tabela-upsellEquipe').innerHTML = ['bronze','prata','ouro','diamante'].map(k => `<tr class="${k===nivel?'atingido':''}"><td>${k}</td><td>${tiers[k].meta}%</td><td>${tiers[k].bonus}%</td></tr>`).join('');
+  document.getElementById('pool-upsellEquipe').textContent = fmtBRL(pool);
+  let total = 0;
+  equipesMkt.upsellEquipe.forEach((p,i) => { const valor = pool*(p.percentual/100); total += p.percentual; const cel = document.getElementById('valor-upsellEquipe-'+i); if (cel) cel.textContent = fmtBRL(valor); });
+  atualizarBadgeTotal('upsellEquipe', total);
+  return { nivel: nivel || 'Nenhum', percTotal, pool };
+}
+
+function renderUpsellIndividual() {
+  const tbody = document.getElementById('tbody-upsellIndividual');
+  tbody.innerHTML = upsellIndividual.map((p,i) => `
+    <tr>
+      <td><input type="text" value="${p.nome}" onchange="atualizarUpsellIndividual(${i},'nome',this.value)"/></td>
+      <td><input type="text" value="${p.valor || ''}" placeholder="Ex: 826,88" onchange="atualizarUpsellIndividual(${i},'valor',this.value)"/></td>
+      <td><button class="btn-remover" onclick="removerUpsellIndividual(${i})">✕</button></td>
+    </tr>`).join('');
+}
+function atualizarUpsellIndividual(i, campo, valor) {
+  upsellIndividual[i][campo] = campo === 'valor' ? parseValorBR(valor) : valor;
+}
+function removerUpsellIndividual(i) { upsellIndividual.splice(i,1); renderUpsellIndividual(); }
+function adicionarUpsellIndividual() { upsellIndividual.push({nome:'Nova pessoa', valor:0}); renderUpsellIndividual(); }
+
+function calcularChurn() {
+  const tiers = tiersCS.churn;
+  const elResultado = document.getElementById('resultado-churn');
+  if (!tiers) { elResultado.textContent = 'Aguardando leitura do PDF (acima)...'; return { nivel:'Nenhum', percTotal:0, pool:0 }; }
+  const percChurn = parseNumeroBR(document.getElementById('input-churn-percentual').value);
+  const churnRS = parseValorBR(document.getElementById('input-churn-valor').value);
+  const downsellRS = parseValorBR(document.getElementById('input-churn-downsell').value);
+  const mrrTotal = parseValorBR(document.getElementById('mrr-total-global').value);
+  const nivel = calcularNivelDescendente(percChurn, tiers);
+  const percTotal = nivel ? tiers[nivel].bonus : tiers.padrao;
+  const base = Math.max(0, mrrTotal - churnRS - downsellRS);
+  const pool = base * (percTotal/100);
+  elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Nenhum nível atingido (Churn ${percChurn}%)`;
+  document.getElementById('tabela-churn').innerHTML = ['bronze','prata','ouro','diamante'].map(k => `<tr class="${k===nivel?'atingido':''}"><td>${k}</td><td>${tiers[k].meta}%</td><td>${tiers[k].bonus}%</td></tr>`).join('');
+  document.getElementById('pool-churn').textContent = fmtBRL(pool);
+  let total = 0;
+  equipesMkt.churn.forEach((p,i) => { const valor = pool*(p.percentual/100); total += p.percentual; const cel = document.getElementById('valor-churn-'+i); if (cel) cel.textContent = fmtBRL(valor); });
+  atualizarBadgeTotal('churn', total);
+  return { nivel: nivel || 'Nenhum', percTotal, pool };
+}
+
+function calcularNPS() {
+  const tiers = tiersCS.nps;
+  const elResultado = document.getElementById('resultado-nps');
+  if (!tiers) { elResultado.textContent = 'Aguardando leitura do PDF (acima)...'; return { nivel:'Nenhum', percTotal:0, pool:0 }; }
+  const nota = parseNumeroBR(document.getElementById('input-nps-nota').value);
+  const mrrTotal = parseValorBR(document.getElementById('mrr-total-global').value);
+  const nivel = calcularNivelAscendente(nota, tiers);
+  const percTotal = nivel ? tiers[nivel].bonus : tiers.padrao;
+  const pool = mrrTotal * (percTotal/100);
+  elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Nenhum nível atingido (NPS ${nota})`;
+  document.getElementById('tabela-nps').innerHTML = ['bronze','prata','ouro','diamante'].map(k => `<tr class="${k===nivel?'atingido':''}"><td>${k}</td><td>${tiers[k].meta}</td><td>${tiers[k].bonus}%</td></tr>`).join('');
+  document.getElementById('pool-nps').textContent = fmtBRL(pool);
+  let total = 0;
+  equipesMkt.nps.forEach((p,i) => { const valor = pool*(p.percentual/100); total += p.percentual; const cel = document.getElementById('valor-nps-'+i); if (cel) cel.textContent = fmtBRL(valor); });
+  atualizarBadgeTotal('nps', total);
+  return { nivel: nivel || 'Nenhum', percTotal, pool };
+}
+
+function calcularHealthScore() {
+  const tiers = tiersCS.healthScore;
+  const elResultado = document.getElementById('resultado-healthScore');
+  if (!tiers) { elResultado.textContent = 'Aguardando leitura do PDF (acima)...'; return { nivel:'Nenhum', percTotal:0, pool:0 }; }
+  const nota = parseNumeroBR(document.getElementById('input-healthScore-nota').value);
+  const mrrTotal = parseValorBR(document.getElementById('mrr-total-global').value);
+  const nivel = calcularNivelAscendente(nota, tiers);
+  const percTotal = nivel ? tiers[nivel].bonus : tiers.padrao;
+  const pool = mrrTotal * (percTotal/100);
+  elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Nenhum nível atingido (Health Score ${nota})`;
+  document.getElementById('tabela-healthScore').innerHTML = ['bronze','prata','ouro','diamante'].map(k => `<tr class="${k===nivel?'atingido':''}"><td>${k}</td><td>${tiers[k].meta}</td><td>${tiers[k].bonus}%</td></tr>`).join('');
+  document.getElementById('pool-healthScore').textContent = fmtBRL(pool);
+  let total = 0;
+  equipesMkt.healthScore.forEach((p,i) => { const valor = pool*(p.percentual/100); total += p.percentual; const cel = document.getElementById('valor-healthScore-'+i); if (cel) cel.textContent = fmtBRL(valor); });
+  atualizarBadgeTotal('healthScore', total);
+  return { nivel: nivel || 'Nenhum', percTotal, pool };
+}
+
+function recalcularCS() {
+  resultadosCSAtual.upsellEquipe = calcularUpsellEquipe();
+  resultadosCSAtual.churn = calcularChurn();
+  resultadosCSAtual.nps = calcularNPS();
+  resultadosCSAtual.healthScore = calcularHealthScore();
+}
+
+async function salvarCS() {
+  const mesReferencia = document.getElementById('mes-referencia-global').value.trim();
+  const statusDiv = document.getElementById('status-salvar-cs');
+  const btn = document.getElementById('btn-salvar-cs');
+  if (!mesReferencia) { statusDiv.className = 'status-msg erro'; statusDiv.textContent = 'Preencha o mês/ano de referência no topo da página.'; return; }
+
+  const nomesEquipe = { upsellEquipe: 'UpSell (Equipe)', churn: 'Churn', nps: 'NPS', healthScore: 'Health Score' };
+  const kpisPayload = ['upsellEquipe','churn','nps','healthScore'].map(chave => {
+    const r = resultadosCSAtual[chave] || { nivel:'Nenhum', percTotal:0, pool:0 };
+    return { nomeKpi: nomesEquipe[chave], nivel: r.nivel, percTotal: r.percTotal, pool: r.pool,
+      equipe: equipesMkt[chave].map(p => ({ nome: p.nome, percentual: p.percentual, valor: (r.pool||0) * (p.percentual/100) })) };
+  });
+  kpisPayload.push({
+    nomeKpi: 'UpSell (Individual)', nivel: 'N/A', percTotal: 0,
+    pool: upsellIndividual.reduce((s,p)=>s+p.valor,0),
+    equipe: upsellIndividual.map(p => ({ nome: p.nome, percentual: 0, valor: p.valor || 0 }))
+  });
+
+  btn.disabled = true; btn.textContent = 'Salvando...';
+  try {
+    const r = await fetch(SCRIPT_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({ acao:'salvarFechamentoCS', user:usuarioAtual, pass:senhaAtual, payload:{ mesReferencia, kpis: kpisPayload } }) });
+    const data = await r.json();
+    if (data.ok) { statusDiv.className='status-msg ok'; statusDiv.textContent='CS e Suporte salvo com sucesso!'; carregarHistoricoCS(); }
+    else { statusDiv.className='status-msg erro'; statusDiv.textContent='Erro: '+data.erro; }
+  } catch(e) { statusDiv.className='status-msg erro'; statusDiv.textContent='Erro: '+e.message; }
+  btn.disabled = false; btn.textContent = 'Salvar fechamento de CS e Suporte';
+}
+
+async function carregarHistoricoCS() {
+  document.getElementById('historico-cs-loading').style.display = 'block';
+  try {
+    const r = await fetch(`${SCRIPT_URL}?acao=historicoCS&user=${encodeURIComponent(usuarioAtual)}&pass=${encodeURIComponent(senhaAtual)}`);
+    const data = await r.json();
+    document.getElementById('historico-cs-loading').style.display = 'none';
+    if (!data.ok) { document.getElementById('historico-cs-lista').innerHTML = `<div class="hint">Erro: ${data.erro}</div>`; return; }
+    renderHistoricoCS(data.registros, data.detalhe);
+  } catch(e) { document.getElementById('historico-cs-loading').textContent = 'Erro ao carregar histórico.'; }
+}
+function renderHistoricoCS(registros, detalhe) {
+  const container = document.getElementById('historico-cs-lista');
+  if (!registros || registros.length === 0) { container.innerHTML = '<div class="hint">Nenhum fechamento registrado ainda.</div>'; return; }
+  const ordenado = [...registros].reverse();
+  container.innerHTML = ordenado.map((f,i) => {
+    const chave = f.mesReferencia + '|' + f.nomeKpi;
+    const pessoas = detalhe[chave] || [];
+    const linhas = pessoas.map(p => `<tr><td>${p.nome}</td><td class="num">${p.percentual}%</td><td class="num">${fmtBRL(p.valor)}</td></tr>`).join('');
+    return `<div class="historico-item">
+      <div class="historico-header" onclick="toggleHistorico('cs',${i})">
+        <span class="mes">${f.mesReferencia} — ${f.nomeKpi}</span><span class="nivel">${f.nivel}</span><span>${fmtBRL(f.pool)}</span>
+        <span id="arrow-cs-${i}">→</span>
+      </div>
+      <div class="historico-detalhe" id="detalhe-cs-${i}" style="display:none;">
         <table class="produto-table"><thead><tr><th>Pessoa</th><th>%</th><th>Valor</th></tr></thead><tbody>${linhas}</tbody></table>
         <div class="hint" style="margin-top:8px;">Registrado em ${f.dataRegistro}</div>
       </div>

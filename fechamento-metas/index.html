@@ -558,6 +558,7 @@ async function processarPDFAreas(event) {
     const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
     let textoCompleto = '';
     for (let i = 1; i <= pdf.numPages; i++) { const page = await pdf.getPage(i); const content = await page.getTextContent(); textoCompleto += ' ' + content.items.map(it => it.str).join(' '); }
+    textoCompleto = textoCompleto.replace(/(\S)\s+fi\s+(\S)/g, '$1fi$2');
     secoesPDFAreas = extrairSecoesPDFAreas(textoCompleto);
     const textoMkt = secoesPDFAreas['Marketing'] || '';
     tiersMkt.cadastroTeste   = extrairKpiTiers(textoMkt, 'Novo cadastro para teste do ZenFisio', 'cadastros', false);

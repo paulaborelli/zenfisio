@@ -410,6 +410,17 @@ async function processarPDF(event) {
     renderTabelaNiveis(); recalcular();
   } catch(e) { document.getElementById('pdf-status').textContent = 'Erro ao ler o PDF: ' + e.message; }
 }
+async function processarPDF(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  document.getElementById('pdf-status').textContent = 'Lendo PDF...';
+  try {
+    const buffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+    let textoCompleto = '';
+    for (let i = 1; i <= pdf.numPages; i++) { const page = await pdf.getPage(i); const content = await page.getTextContent(); textoCompleto += ' ' + content.items.map(it => it.str).join(' '); }
+    textoCompleto = textoCompleto.replace(/(\S)\s+fi\s+(\S)/g, '$1fi$2');
+    niveisExtraidos = extrairNiveis(textoCompleto);
 function extrairNiveis(texto) {
   const regexBloco = /(Diamante|Ouro|Prata|Bronze)[^\d]{0,25}(\d+(?:[.,]\d+)?)\s*%\s*de\s*crescimento\s*-\s*R\$\s*([\d.,]+)/gi;
   const matches = [...texto.matchAll(regexBloco)].sort((a,b) => a.index - b.index);

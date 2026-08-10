@@ -137,6 +137,15 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
       <div class="field"><input type="text" id="mes-referencia-global" placeholder="Ex: Junho/2026"/></div>
     </div>
 
+    <div class="card">
+      <h2>PDF de KPIs por áreas do mês</h2>
+      <div class="field">
+        <label>Anexar PDF ("Metas e bonificação de KPIs por áreas")</label>
+        <input type="file" id="pdf-areas-input" accept="application/pdf" onchange="processarPDFAreas(event)"/>
+        <div class="hint" id="pdf-areas-status">Nenhum arquivo carregado ainda. Carregue uma vez aqui — vale para Marketing, Vendas, CS e Suporte e P&amp;D.</div>
+      </div>
+    </div>
+
     <!-- ===================== TAB MRR ===================== -->
     <div class="tab-panel" id="tab-mrr">
       <div class="card">
@@ -199,16 +208,6 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
         <div id="historico-mkt-lista"></div>
       </div>
 
-      <div class="card">
-        <h2>PDF de KPIs por áreas do mês</h2>
-        <div class="field">
-          <label>Anexar PDF ("Metas e bonificação de KPIs por áreas")</label>
-          <input type="file" id="pdf-areas-input" accept="application/pdf" onchange="processarPDFAreas(event)"/>
-          <div class="hint" id="pdf-areas-status">Nenhum arquivo carregado ainda. (Esse PDF também será usado depois por Vendas, CS e P&amp;D.)</div>
-        </div>
-      </div>
-
-      <!-- KPI 1: Cadastro para teste -->
       <div class="card">
         <h2>KPI 1 — Novo cadastro para teste do ZenFisio</h2>
         <div class="field-row">
@@ -274,7 +273,7 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
           <div class="field"><label>MRR Adicionado (R$)</label><input type="text" id="input-equipeComercial-mrr" placeholder="Ex: 13.096,00" oninput="recalcularVendas()"/></div>
         </div>
         <table class="niveis-table"><thead><tr><th>Nível</th><th>Meta (clientes)</th><th>Bônus base</th><th>Bônus adicional</th></tr></thead><tbody id="tabela-equipeComercial"></tbody></table>
-        <div class="resultado-kpi" id="resultado-equipeComercial">Aguardando leitura do PDF (aba Marketing)...</div>
+        <div class="resultado-kpi" id="resultado-equipeComercial">Aguardando leitura do PDF (acima)...</div>
         <div class="bonus-box" style="margin-bottom:16px;"><div class="label">Pool do bônus</div><div class="valor" id="pool-equipeComercial">R$ 0,00</div></div>
         <table class="produto-table"><thead><tr><th>Pessoa</th><th>%</th><th>Valor</th><th></th></tr></thead><tbody id="equipe-equipeComercial"></tbody></table>
         <button class="btn-add" onclick="adicionarPessoaVendasEquipe()">+ Adicionar pessoa</button>
@@ -786,7 +785,7 @@ function adicionarPessoaVendasEquipe() { equipesVendas.equipeComercial.push({nom
 function calcularKpiEquipeComercial() {
   const tiers = tiersVendas.equipeComercial;
   const elResultado = document.getElementById('resultado-equipeComercial');
-  if (!tiers) { elResultado.textContent = 'Aguardando leitura do PDF (aba Marketing)...'; return { nivel:null, percTotal:0, pool:0 }; }
+  if (!tiers) { elResultado.textContent = 'Aguardando leitura do PDF (acima)...'; return { nivel:null, percTotal:0, pool:0 }; }
   const clientes = parseInt(document.getElementById('input-equipeComercial-clientes').value) || 0;
   const mrrAdicionado = parseValorBR(document.getElementById('input-equipeComercial-mrr').value);
   const ticketMedio = clientes > 0 ? mrrAdicionado / clientes : 0;

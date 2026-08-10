@@ -306,7 +306,7 @@ async function processarPDF(event) {
 }
 
 function extrairNiveis(texto) {
-  const regexBloco = /(Diamante|Ouro|Prata|Bronze)[^\d]{0,25}(\d+[.,]\d+)\s*%\s*de\s*crescimento\s*-\s*R\$\s*([\d.,]+)/gi;
+  const regexBloco = /(Diamante|Ouro|Prata|Bronze)[^\d]{0,25}(\d+(?:[.,]\d+)?)\s*%\s*de\s*crescimento\s*-\s*R\$\s*([\d.,]+)/gi;
   const matches = [...texto.matchAll(regexBloco)].sort((a,b) => a.index - b.index);
   if (matches.length === 0) return null;
 
@@ -319,8 +319,8 @@ function extrairNiveis(texto) {
     const fim = idx + 1 < matches.length ? matches[idx+1].index : texto.length;
     const trecho = texto.slice(inicio, fim);
 
-    const mGeral = trecho.match(/Bônus de\s*(\d+)\s*%[^.]*?dividido entre os membros/is);
-    const mProduto = trecho.match(/Bônus de\s*(\d+)\s*%[^.]*?dividido de forma proporcional/is);
+    const mGeral = trecho.match(/Bônus de\s*(\d+)\s*%\s*do MRR líquido adicionado dividido entre os membros/i);
+    const mProduto = trecho.match(/Bônus de\s*(\d+)\s*%\s*do MRR líquido adicionado dividido de forma proporcional/i);
 
     niveis[nome] = {
       crescimento, valor,
@@ -330,7 +330,6 @@ function extrairNiveis(texto) {
   });
   return niveis;
 }
-
 function renderTabelaNiveis() {
   const ordem = ['diamante','ouro','prata','bronze'];
   const nomesExibicao = { diamante: '💎 Diamante', ouro: '🥇 Ouro', prata: '🥈 Prata', bronze: '🥉 Bronze' };

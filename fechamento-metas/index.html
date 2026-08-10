@@ -6,6 +6,7 @@
 <title>Fechamento de Metas — ZenFisio RH</title>
 <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
@@ -98,6 +99,24 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
 .placeholder-em-construcao { text-align: center; padding: 60px 20px; color: var(--text-hint); font-size: 14px; }
 .secao-area-header { font-family: 'Lora', serif; font-size: 20px; font-weight: 600; color: var(--text); margin: 36px 0 14px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); }
 .secao-area-header:first-of-type { margin-top: 4px; }
+
+.meses-nav { display: flex; gap: 8px; padding: 14px 28px; background: var(--surface); border-bottom: 1px solid var(--border); overflow-x: auto; align-items: center; }
+.mes-pill { padding: 8px 18px; border-radius: 20px; font-size: 13px; font-weight: 600; white-space: nowrap; cursor: pointer; border: 1px solid var(--border); background: var(--bg); color: var(--text-muted); transition: background .15s; }
+.mes-pill:hover { background: var(--accent-light); }
+.mes-pill.ativo { background: var(--accent); color: #fff; border-color: var(--accent); }
+.mes-pill.novo { border-style: dashed; color: var(--accent-text); }
+.mes-pill.novo.ativo { background: var(--accent-text); border-color: var(--accent-text); color: #fff; }
+
+.dash-hero { text-align: center; padding: 8px 0 20px; }
+.dash-hero .label { font-size: 12px; color: var(--text-hint); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px; }
+.dash-hero .valor { font-family: 'Lora', serif; font-size: 42px; font-weight: 600; color: var(--accent-text); }
+.dash-cards-area { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; }
+.dash-card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px; text-align: center; }
+.dash-card .dash-card-area { font-size: 12px; color: var(--text-hint); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; }
+.dash-card .dash-card-nivel { font-size: 13px; font-weight: 600; color: var(--accent-text); margin-bottom: 4px; }
+.dash-card .dash-card-valor { font-family: 'Lora', serif; font-size: 20px; font-weight: 600; }
+.chart-wrap { position: relative; height: 260px; }
+.chart-wrap.alto { height: 340px; }
 </style>
 </head>
 <body>
@@ -125,7 +144,28 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
     </div>
   </header>
 
-  <div class="container">
+  <div class="meses-nav" id="meses-nav"></div>
+
+  <div class="container" id="modo-dashboard" style="display:none;">
+    <div class="card">
+      <div class="dash-hero">
+        <div class="label" id="dashboard-titulo">Fechamento de —</div>
+        <div class="valor" id="dashboard-total-geral">R$ 0,00</div>
+      </div>
+      <div class="dash-cards-area" id="dashboard-cards-area"></div>
+    </div>
+    <div class="card">
+      <h2>Bônus por área</h2>
+      <div class="chart-wrap"><canvas id="chart-area"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>Top pessoas do mês</h2>
+      <div class="chart-wrap alto"><canvas id="chart-pessoas"></canvas></div>
+      <table class="produto-table" style="margin-top:20px;"><thead><tr><th>Pessoa</th><th>Total recebido no mês</th></tr></thead><tbody id="dashboard-tabela-pessoas"></tbody></table>
+    </div>
+  </div>
+
+  <div class="container" id="modo-edicao">
     <div class="card">
       <h2>Mês/Ano de referência (todas as áreas)</h2>
       <div class="field-row">
@@ -441,6 +481,10 @@ let upsellIndividual = [
 ];
 let resultadosCSAtual = {};
 
+let todosHistoricos = { mrr: null, marketing: null, vendas: null, cs: null };
+let mesAtivo = null;
+let chartArea = null, chartPessoas = null;
+
 // ── LOGIN ─────────────────────────────────────────────────
 async function fazerLogin() {
   const user = document.getElementById('login-user').value.trim();
@@ -459,10 +503,12 @@ async function fazerLogin() {
       carregarHistoricoMarketing();
       carregarHistoricoVendas();
       carregarHistoricoCS();
+      carregarTodosHistoricos();
       Object.keys(equipesMkt).forEach(renderEquipeMkt);
       renderEquipeVendasEquipe();
       renderVendedores();
       renderUpsellIndividual();
+      selecionarMes(null);
     } else {
       document.getElementById('login-erro').style.display = 'block';
     }
@@ -667,7 +713,7 @@ async function salvarFechamento() {
   try {
     const r = await fetch(SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ acao: 'salvarFechamentoMetas', user: usuarioAtual, pass: senhaAtual, payload }) });
     const data = await r.json();
-    if (data.ok) { statusDiv.className = 'status-msg ok'; statusDiv.textContent = 'Fechamento salvo com sucesso!'; carregarHistorico(); }
+    if (data.ok) { statusDiv.className = 'status-msg ok'; statusDiv.textContent = 'Fechamento salvo com sucesso!'; carregarHistorico(); carregarTodosHistoricos(); }
     else { statusDiv.className = 'status-msg erro'; statusDiv.textContent = 'Erro ao salvar: ' + data.erro; }
   } catch(e) { statusDiv.className = 'status-msg erro'; statusDiv.textContent = 'Erro ao salvar: ' + e.message; }
   btn.disabled = false; btn.textContent = 'Salvar fechamento do mês';
@@ -860,7 +906,7 @@ async function salvarMarketing() {
   try {
     const r = await fetch(SCRIPT_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({ acao:'salvarFechamentoMarketing', user:usuarioAtual, pass:senhaAtual, payload:{ mesReferencia, kpis: kpisPayload } }) });
     const data = await r.json();
-    if (data.ok) { statusDiv.className='status-msg ok'; statusDiv.textContent='Marketing salvo com sucesso!'; carregarHistoricoMarketing(); }
+    if (data.ok) { statusDiv.className='status-msg ok'; statusDiv.textContent='Marketing salvo com sucesso!'; carregarHistoricoMarketing(); carregarTodosHistoricos(); }
     else { statusDiv.className='status-msg erro'; statusDiv.textContent='Erro: '+data.erro; }
   } catch(e) { statusDiv.className='status-msg erro'; statusDiv.textContent='Erro: '+e.message; }
   btn.disabled = false; btn.textContent = 'Salvar fechamento de Marketing';
@@ -1104,7 +1150,7 @@ async function salvarVendas() {
   try {
     const r = await fetch(SCRIPT_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({ acao:'salvarFechamentoVendas', user:usuarioAtual, pass:senhaAtual, payload:{ mesReferencia, kpis: kpisPayload } }) });
     const data = await r.json();
-    if (data.ok) { statusDiv.className='status-msg ok'; statusDiv.textContent='Vendas salvo com sucesso!'; carregarHistoricoVendas(); }
+    if (data.ok) { statusDiv.className='status-msg ok'; statusDiv.textContent='Vendas salvo com sucesso!'; carregarHistoricoVendas(); carregarTodosHistoricos(); }
     else { statusDiv.className='status-msg erro'; statusDiv.textContent='Erro: '+data.erro; }
   } catch(e) { statusDiv.className='status-msg erro'; statusDiv.textContent='Erro: '+e.message; }
   btn.disabled = false; btn.textContent = 'Salvar fechamento de Vendas';
@@ -1278,7 +1324,7 @@ async function salvarCS() {
   try {
     const r = await fetch(SCRIPT_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({ acao:'salvarFechamentoCS', user:usuarioAtual, pass:senhaAtual, payload:{ mesReferencia, kpis: kpisPayload } }) });
     const data = await r.json();
-    if (data.ok) { statusDiv.className='status-msg ok'; statusDiv.textContent='CS e Suporte salvo com sucesso!'; carregarHistoricoCS(); }
+    if (data.ok) { statusDiv.className='status-msg ok'; statusDiv.textContent='CS e Suporte salvo com sucesso!'; carregarHistoricoCS(); carregarTodosHistoricos(); }
     else { statusDiv.className='status-msg erro'; statusDiv.textContent='Erro: '+data.erro; }
   } catch(e) { statusDiv.className='status-msg erro'; statusDiv.textContent='Erro: '+e.message; }
   btn.disabled = false; btn.textContent = 'Salvar fechamento de CS e Suporte';
@@ -1313,6 +1359,126 @@ function renderHistoricoCS(registros, detalhe) {
       </div>
     </div>`;
   }).join('');
+}
+
+// ══════════════════════ NAVEGAÇÃO POR MÊS + DASHBOARD ══════════════════════
+async function carregarTodosHistoricos() {
+  try {
+    const [mrr, mkt, vendas, cs] = await Promise.all([
+      fetch(`${SCRIPT_URL}?acao=historicoFechamentos&user=${encodeURIComponent(usuarioAtual)}&pass=${encodeURIComponent(senhaAtual)}`).then(r=>r.json()),
+      fetch(`${SCRIPT_URL}?acao=historicoMarketing&user=${encodeURIComponent(usuarioAtual)}&pass=${encodeURIComponent(senhaAtual)}`).then(r=>r.json()),
+      fetch(`${SCRIPT_URL}?acao=historicoVendas&user=${encodeURIComponent(usuarioAtual)}&pass=${encodeURIComponent(senhaAtual)}`).then(r=>r.json()),
+      fetch(`${SCRIPT_URL}?acao=historicoCS&user=${encodeURIComponent(usuarioAtual)}&pass=${encodeURIComponent(senhaAtual)}`).then(r=>r.json())
+    ]);
+    todosHistoricos.mrr = mrr.ok ? mrr : { fechamentos:[], detalhePorMes:{} };
+    todosHistoricos.marketing = mkt.ok ? mkt : { registros:[], detalhe:{} };
+    todosHistoricos.vendas = vendas.ok ? vendas : { registros:[], detalhe:{} };
+    todosHistoricos.cs = cs.ok ? cs : { registros:[], detalhe:{} };
+  } catch(e) {
+    todosHistoricos = { mrr:{fechamentos:[],detalhePorMes:{}}, marketing:{registros:[],detalhe:{}}, vendas:{registros:[],detalhe:{}}, cs:{registros:[],detalhe:{}} };
+  }
+  renderMesesNav();
+  if (mesAtivo) renderDashboardMes(mesAtivo);
+}
+
+function renderMesesNav() {
+  const meses = [];
+  (todosHistoricos.mrr?.fechamentos||[]).forEach(f => { if (!meses.includes(f.mesReferencia)) meses.push(f.mesReferencia); });
+  (todosHistoricos.marketing?.registros||[]).forEach(f => { if (!meses.includes(f.mesReferencia)) meses.push(f.mesReferencia); });
+  (todosHistoricos.vendas?.registros||[]).forEach(f => { if (!meses.includes(f.mesReferencia)) meses.push(f.mesReferencia); });
+  (todosHistoricos.cs?.registros||[]).forEach(f => { if (!meses.includes(f.mesReferencia)) meses.push(f.mesReferencia); });
+
+  const nav = document.getElementById('meses-nav');
+  const pillNovo = `<div class="mes-pill novo ${mesAtivo===null?'ativo':''}" onclick="selecionarMes(null)">+ Novo mês</div>`;
+  const pillsMeses = meses.map(m => `<div class="mes-pill ${mesAtivo===m?'ativo':''}" onclick="selecionarMes('${m.replace(/'/g,"\\'")}')">${m}</div>`).join('');
+  nav.innerHTML = pillNovo + pillsMeses;
+}
+
+function selecionarMes(mes) {
+  mesAtivo = mes;
+  renderMesesNav();
+  if (mes === null) {
+    document.getElementById('modo-dashboard').style.display = 'none';
+    document.getElementById('modo-edicao').style.display = 'block';
+  } else {
+    document.getElementById('modo-edicao').style.display = 'none';
+    document.getElementById('modo-dashboard').style.display = 'block';
+    renderDashboardMes(mes);
+  }
+}
+
+function totalAreaMes(mes, tipo) {
+  if (tipo === 'mrr') {
+    const linhas = (todosHistoricos.mrr?.fechamentos||[]).filter(x => x.mesReferencia === mes);
+    if (linhas.length === 0) return { nivel:'—', pool:0 };
+    const f = linhas[linhas.length-1];
+    const poolProduto = (todosHistoricos.mrr.detalhePorMes[mes]||[]).reduce((s,p)=>s+(Number(p.valor)||0),0);
+    const poolGeral = (Number(f.valorPorPessoa)||0) * (Number(f.numPessoas)||0);
+    return { nivel: f.nivel, pool: poolProduto + poolGeral };
+  }
+  const mapa = { marketing: todosHistoricos.marketing, vendas: todosHistoricos.vendas, cs: todosHistoricos.cs };
+  const dados = mapa[tipo];
+  const linhas = (dados?.registros||[]).filter(r => r.mesReferencia === mes);
+  const pool = linhas.reduce((s,r)=>s+(Number(r.pool)||0),0);
+  const niveisUnicos = [...new Set(linhas.map(r=>r.nivel).filter(n=>n && n!=='Nenhum' && n!=='N/A'))];
+  return { nivel: niveisUnicos.length ? niveisUnicos.join(' / ') : 'Nenhum', pool };
+}
+
+function agregarPorPessoaMes(mes) {
+  const totais = {};
+  function add(nome, valor) {
+    const chave = normalizarNomeMatch(nome);
+    if (!chave) return;
+    if (!totais[chave]) totais[chave] = { nome: String(nome).trim(), valor: 0 };
+    totais[chave].valor += (Number(valor)||0);
+  }
+  (todosHistoricos.mrr?.detalhePorMes?.[mes]||[]).forEach(p => add(p.nome, p.valor));
+  ['marketing','vendas','cs'].forEach(area => {
+    const detalhe = todosHistoricos[area]?.detalhe || {};
+    Object.keys(detalhe).forEach(chave => {
+      if (chave.indexOf(mes + '|') === 0) (detalhe[chave]||[]).forEach(p => add(p.nome, p.valor));
+    });
+  });
+  return Object.values(totais).sort((a,b) => b.valor - a.valor);
+}
+
+function renderDashboardMes(mes) {
+  const areas = ['mrr','marketing','vendas','cs'];
+  const nomesArea = { mrr:'🎯 MRR', marketing:'📣 Marketing', vendas:'💼 Vendas', cs:'🤝 CS e Suporte' };
+  const totais = areas.map(a => ({ area: nomesArea[a], ...totalAreaMes(mes, a) }));
+  const totalGeral = totais.reduce((s,t)=>s+t.pool, 0);
+
+  document.getElementById('dashboard-titulo').textContent = 'Fechamento de ' + mes;
+  document.getElementById('dashboard-total-geral').textContent = fmtBRL(totalGeral);
+  document.getElementById('dashboard-cards-area').innerHTML = totais.map(t => `
+    <div class="dash-card">
+      <div class="dash-card-area">${t.area}</div>
+      <div class="dash-card-nivel">${t.nivel}</div>
+      <div class="dash-card-valor">${fmtBRL(t.pool)}</div>
+    </div>`).join('');
+
+  if (typeof Chart !== 'undefined') {
+    const ctxArea = document.getElementById('chart-area').getContext('2d');
+    if (chartArea) chartArea.destroy();
+    chartArea = new Chart(ctxArea, {
+      type: 'bar',
+      data: { labels: totais.map(t=>t.area), datasets: [{ data: totais.map(t=>t.pool), backgroundColor: '#4A7C59', borderRadius: 6, maxBarThickness: 60 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { callback: v => 'R$ ' + v.toLocaleString('pt-BR') } } } }
+    });
+
+    const pessoas = agregarPorPessoaMes(mes).slice(0, 10);
+    const ctxPessoas = document.getElementById('chart-pessoas').getContext('2d');
+    if (chartPessoas) chartPessoas.destroy();
+    chartPessoas = new Chart(ctxPessoas, {
+      type: 'bar',
+      data: { labels: pessoas.map(p=>p.nome), datasets: [{ data: pessoas.map(p=>p.valor), backgroundColor: '#2D5438', borderRadius: 6 }] },
+      options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true, ticks: { callback: v => 'R$ ' + v.toLocaleString('pt-BR') } } } }
+    });
+
+    document.getElementById('dashboard-tabela-pessoas').innerHTML = pessoas.map(p => `<tr><td>${p.nome}</td><td class="num">${fmtBRL(p.valor)}</td></tr>`).join('');
+  }
 }
 </script>
 </body>

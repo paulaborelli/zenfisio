@@ -96,6 +96,8 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
 .historico-header .nivel { color: var(--accent-text); font-weight: 600; }
 .historico-detalhe { padding: 16px; border-top: 1px solid var(--border); background: var(--surface); }
 .placeholder-em-construcao { text-align: center; padding: 60px 20px; color: var(--text-hint); font-size: 14px; }
+.secao-area-header { font-family: 'Lora', serif; font-size: 20px; font-weight: 600; color: var(--text); margin: 36px 0 14px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); }
+.secao-area-header:first-of-type { margin-top: 4px; }
 </style>
 </head>
 <body>
@@ -123,14 +125,6 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
     </div>
   </header>
 
-  <nav class="tabs-nav">
-    <button class="tab-btn active" id="btn-tab-mrr" onclick="mostrarAba('mrr')">MRR</button>
-    <button class="tab-btn" id="btn-tab-marketing" onclick="mostrarAba('marketing')">Marketing</button>
-    <button class="tab-btn" id="btn-tab-vendas" onclick="mostrarAba('vendas')">Vendas</button>
-    <button class="tab-btn" id="btn-tab-cs" onclick="mostrarAba('cs')">CS e Suporte</button>
-    <button class="tab-btn" id="btn-tab-pd" onclick="mostrarAba('pd')">P&amp;D</button>
-  </nav>
-
   <div class="container">
     <div class="card">
       <h2>Mês/Ano de referência (todas as áreas)</h2>
@@ -149,7 +143,7 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
       </div>
     </div>
 
-    <!-- ===================== TAB MRR ===================== -->
+    <div class="secao-area-header">🎯 MRR</div>
     <div class="tab-panel" id="tab-mrr">
       <div class="card">
         <h2>Histórico de Fechamentos — MRR</h2>
@@ -203,8 +197,8 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
       </div>
     </div>
 
-    <!-- =================== TAB MARKETING =================== -->
-    <div class="tab-panel" id="tab-marketing" style="display:none;">
+    <div class="secao-area-header">📣 Marketing</div>
+    <div class="tab-panel" id="tab-marketing">
       <div class="card">
         <h2>Histórico de Fechamentos — Marketing</h2>
         <div class="loading-inline" id="historico-mkt-loading">Carregando histórico...</div>
@@ -262,7 +256,8 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
     </div>
 
     <!-- ============= TABS AINDA NÃO CONSTRUÍDAS ============= -->
-    <div class="tab-panel" id="tab-vendas" style="display:none;">
+    <div class="secao-area-header">💼 Vendas / Comercial</div>
+    <div class="tab-panel" id="tab-vendas">
       <div class="card">
         <h2>Histórico de Fechamentos — Vendas</h2>
         <div class="loading-inline" id="historico-vendas-loading">Carregando histórico...</div>
@@ -285,11 +280,23 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
 
       <div class="card">
         <h2>KPI 2 + 3 — Comissão Individual por Vendedor</h2>
-        <div class="hint" style="margin-bottom:12px;">
-          Digite, por vendedor(a), a <strong>comissão base</strong> já calculada na planilha (coluna "Total" da tabela "Comissão individual em vendas para Novos Clientes") e o <strong>MRR trazido como Principal</strong> (com e sem assistente somados). O sistema aplica automaticamente o bônus por meta individual e os acréscimos de melhor vendedor, conforme o PDF do mês.
+        <div class="hint" style="margin-bottom:16px;">
+          Anexe os 2 PDFs abaixo (exportados direto da planilha "Indicadores ZenFisio") pra preencher a comissão base e o nível de cada vendedor(a) automaticamente. Os campos continuam editáveis se precisar corrigir algo.
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>PDF "Comissão individual em vendas para Novos Clientes"</label>
+            <input type="file" accept="application/pdf" onchange="processarComissaoComercialPDF(event)"/>
+            <div class="hint" id="status-comissao-comercial">Nenhum arquivo carregado ainda.</div>
+          </div>
+          <div class="field">
+            <label>PDF "Meta individual de venda"</label>
+            <input type="file" accept="application/pdf" onchange="processarMetaComercialPDF(event)"/>
+            <div class="hint" id="status-meta-comercial">Nenhum arquivo carregado ainda.</div>
+          </div>
         </div>
         <table class="produto-table" id="tabela-vendedores">
-          <thead><tr><th>Vendedor(a)</th><th>Comissão base (R$)</th><th>MRR Principal (R$)</th><th>Melhor do mês</th><th>Melhor 2 meses</th><th>Nível</th><th>Valor final</th><th></th></tr></thead>
+          <thead><tr><th>Vendedor(a)</th><th>Comissão base (R$)</th><th>Melhor do mês</th><th>Melhor 2 meses</th><th>Nível</th><th>Valor final</th><th></th></tr></thead>
           <tbody id="tbody-vendedores"></tbody>
         </table>
         <button class="btn-add" onclick="adicionarVendedor()">+ Adicionar vendedor(a)</button>
@@ -300,7 +307,8 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
         <div class="status-msg" id="status-salvar-vendas"></div>
       </div>
     </div>
-    <div class="tab-panel" id="tab-cs" style="display:none;">
+    <div class="secao-area-header">🤝 CS e Suporte</div>
+    <div class="tab-panel" id="tab-cs">
       <div class="card">
         <h2>Histórico de Fechamentos — CS e Suporte</h2>
         <div class="loading-inline" id="historico-cs-loading">Carregando histórico...</div>
@@ -323,7 +331,11 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
 
       <div class="card">
         <h2>KPI 1b — UpSell: Individual</h2>
-        <div class="hint" style="margin-bottom:12px;">Digite, por pessoa, o valor já calculado na planilha (coluna "Valor" da tabela "Comissão individual em UpSell para Clientes").</div>
+        <div class="field">
+          <label>PDF "Comissão individual em UpSell para Clientes"</label>
+          <input type="file" accept="application/pdf" onchange="processarComissaoUpsellCSPDF(event)"/>
+          <div class="hint" id="status-comissao-upsell-cs">Nenhum arquivo carregado ainda.</div>
+        </div>
         <table class="produto-table"><thead><tr><th>Pessoa</th><th>Valor (R$)</th><th></th></tr></thead><tbody id="tbody-upsellIndividual"></tbody></table>
         <button class="btn-add" onclick="adicionarUpsellIndividual()">+ Adicionar pessoa</button>
       </div>
@@ -331,13 +343,25 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
       <div class="card">
         <h2>KPI 2 — Churn (cancelamentos)</h2>
         <div class="field-row">
+          <div class="field">
+            <label>PDF "Churn (cancelamentos)"</label>
+            <input type="file" accept="application/pdf" onchange="processarChurnPDF(event)"/>
+            <div class="hint" id="status-churn-pdf">Preenche o campo "Churn em R$" abaixo.</div>
+          </div>
+          <div class="field">
+            <label>PDF "CS: DownSell"</label>
+            <input type="file" accept="application/pdf" onchange="processarDownsellPDF(event)"/>
+            <div class="hint" id="status-downsell-pdf">Preenche o campo "DownSell em R$" abaixo.</div>
+          </div>
+        </div>
+        <div class="field-row">
           <div class="field"><label>% de Churn no mês</label><input type="text" id="input-churn-percentual" placeholder="Ex: 1,29" oninput="recalcularCS()"/></div>
           <div class="field"><label>Churn em R$</label><input type="text" id="input-churn-valor" placeholder="Ex: 7.728,50" oninput="recalcularCS()"/></div>
           <div class="field"><label>DownSell em R$</label><input type="text" id="input-churn-downsell" placeholder="Ex: 2.190,33" oninput="recalcularCS()"/></div>
         </div>
         <table class="niveis-table"><thead><tr><th>Nível</th><th>Meta (% Churn — quanto menor, melhor)</th><th>Bônus</th></tr></thead><tbody id="tabela-churn"></tbody></table>
         <div class="resultado-kpi" id="resultado-churn">Aguardando leitura do PDF (acima)...</div>
-        <div class="bonus-box" style="margin-bottom:16px;"><div class="label">Pool do bônus (MRR total − Churn − DownSell) × %</div><div class="valor" id="pool-churn">R$ 0,00</div></div>
+        <div class="bonus-box" style="margin-bottom:16px;"><div class="label">Pool do bônus (MRR total × %) − Churn − DownSell</div><div class="valor" id="pool-churn">R$ 0,00</div></div>
         <table class="produto-table"><thead><tr><th>Pessoa</th><th>%</th><th>Valor</th><th></th></tr></thead><tbody id="equipe-churn"></tbody></table>
         <button class="btn-add" onclick="adicionarPessoaMkt('churn')">+ Adicionar pessoa</button>
         <div class="total-linha"><span>Total: <strong id="total-churn">0%</strong></span><span class="badge" id="badge-churn">—</span></div>
@@ -370,7 +394,8 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
         <div class="status-msg" id="status-salvar-cs"></div>
       </div>
     </div>
-    <div class="tab-panel" id="tab-pd" style="display:none;"><div class="card"><div class="placeholder-em-construcao">🚧 P&amp;D ainda não foi construído.</div></div></div>
+    <div class="secao-area-header">🔧 P&amp;D</div>
+    <div class="tab-panel" id="tab-pd"><div class="card"><div class="placeholder-em-construcao">🚧 P&amp;D ainda não foi construído.</div></div></div>
   </div>
 </div>
 
@@ -402,9 +427,9 @@ let equipesVendas = {
 let tiersVendas = { equipeComercial: null, metaIndividual: null };
 let percIndividuais = { solo: 35, comAssist: 25, assistente: 10, melhorMes: 5, melhor2Meses: 10 };
 let vendedoresIndividuais = [
-  { nome:'Bianca', comissaoBase:0, mrrPrincipal:0, melhorMes:false, melhor2Meses:false, nivel:null, valorFinal:0 },
-  { nome:'Jéssica', comissaoBase:0, mrrPrincipal:0, melhorMes:false, melhor2Meses:false, nivel:null, valorFinal:0 },
-  { nome:'Luana', comissaoBase:0, mrrPrincipal:0, melhorMes:false, melhor2Meses:false, nivel:null, valorFinal:0 }
+  { nome:'Bianca', comissaoBase:0, tiersPercentuais:null, melhorMes:false, melhor2Meses:false, nivel:null, valorFinal:0 },
+  { nome:'Jéssica', comissaoBase:0, tiersPercentuais:null, melhorMes:false, melhor2Meses:false, nivel:null, valorFinal:0 },
+  { nome:'Luana', comissaoBase:0, tiersPercentuais:null, melhorMes:false, melhor2Meses:false, nivel:null, valorFinal:0 }
 ];
 let resultadosVendasAtual = {};
 
@@ -415,14 +440,6 @@ let upsellIndividual = [
   {nome:'Marília', valor:0}, {nome:'Milena', valor:0}, {nome:'Viviane', valor:0}
 ];
 let resultadosCSAtual = {};
-
-// ── TABS ──────────────────────────────────────────────────
-function mostrarAba(aba) {
-  document.querySelectorAll('.tab-panel').forEach(el => el.style.display = 'none');
-  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-  document.getElementById('tab-' + aba).style.display = 'block';
-  document.getElementById('btn-tab-' + aba).classList.add('active');
-}
 
 // ── LOGIN ─────────────────────────────────────────────────
 async function fazerLogin() {
@@ -919,13 +936,15 @@ function calcularKpiEquipeComercial() {
   return { nivel: nivel || 'Nenhum', percTotal, pool };
 }
 
+function normalizarNomeMatch(s) {
+  return String(s).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
 function renderVendedores() {
   const tbody = document.getElementById('tbody-vendedores');
   tbody.innerHTML = vendedoresIndividuais.map((v,i) => `
     <tr>
       <td><input type="text" value="${v.nome}" onchange="atualizarVendedor(${i},'nome',this.value)"/></td>
       <td><input type="text" value="${v.comissaoBase || ''}" placeholder="Ex: 2.310,04" onchange="atualizarVendedor(${i},'comissaoBase',this.value)"/></td>
-      <td><input type="text" value="${v.mrrPrincipal || ''}" placeholder="Ex: 6.600,12" onchange="atualizarVendedor(${i},'mrrPrincipal',this.value)"/></td>
       <td class="check"><input type="checkbox" ${v.melhorMes?'checked':''} onchange="atualizarVendedor(${i},'melhorMes',this.checked)"/></td>
       <td class="check"><input type="checkbox" ${v.melhor2Meses?'checked':''} onchange="atualizarVendedor(${i},'melhor2Meses',this.checked)"/></td>
       <td id="nivel-vend-${i}">—</td>
@@ -934,20 +953,21 @@ function renderVendedores() {
     </tr>`).join('');
 }
 function atualizarVendedor(i, campo, valor) {
-  if (campo === 'comissaoBase' || campo === 'mrrPrincipal') vendedoresIndividuais[i][campo] = parseValorBR(valor);
+  if (campo === 'comissaoBase') vendedoresIndividuais[i][campo] = parseValorBR(valor);
   else vendedoresIndividuais[i][campo] = valor;
   recalcularVendas();
 }
 function removerVendedor(i) { vendedoresIndividuais.splice(i,1); renderVendedores(); recalcularVendas(); }
-function adicionarVendedor() { vendedoresIndividuais.push({nome:'Novo(a) vendedor(a)', comissaoBase:0, mrrPrincipal:0, melhorMes:false, melhor2Meses:false, nivel:null, valorFinal:0}); renderVendedores(); recalcularVendas(); }
+function adicionarVendedor() { vendedoresIndividuais.push({nome:'Novo(a) vendedor(a)', comissaoBase:0, tiersPercentuais:null, melhorMes:false, melhor2Meses:false, nivel:null, valorFinal:0}); renderVendedores(); recalcularVendas(); }
 
 function calcularComissaoIndividual() {
   vendedoresIndividuais.forEach((v, i) => {
     let nivel = null;
     let percExtra = 0;
-    if (tiersVendas.metaIndividual) {
+    if (v.tiersPercentuais && tiersVendas.metaIndividual) {
+      const ordem = ['bronze','prata','ouro','diamante'];
       const t = tiersVendas.metaIndividual;
-      ['diamante','ouro','prata','bronze'].forEach(k => { if (!nivel && v.mrrPrincipal >= t[k].meta) nivel = k; });
+      ordem.forEach((k, idx) => { if (v.tiersPercentuais[idx] >= 100) { nivel = k; } });
       if (nivel) percExtra += t[nivel].bonus;
     }
     if (v.melhorMes) percExtra += percIndividuais.melhorMes;
@@ -959,6 +979,100 @@ function calcularComissaoIndividual() {
     if (celNivel) celNivel.textContent = nivel ? (nivel + ' (+' + percExtra + '%)') : (percExtra > 0 ? ('—' + ' (+' + percExtra + '%)') : '—');
     if (celValor) celValor.textContent = fmtBRL(valorFinal);
   });
+}
+
+// ── LEITURA DE PDFs DE DETALHE (Vendas/CS) ────────────────
+async function lerPDFGenerico(file) {
+  const buffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+  let texto = '';
+  for (let i = 1; i <= pdf.numPages; i++) { const page = await pdf.getPage(i); const content = await page.getTextContent(); texto += ' ' + content.items.map(it => it.str).join(' '); }
+  return texto.replace(/(\S)\s+fi\s+(\S)/g, '$1fi$2');
+}
+function parsePessoaTotalValor(texto) {
+  const idxHeader = texto.search(/Total\s+Valor/);
+  const corpo = idxHeader === -1 ? texto : texto.slice(idxHeader + 'Total Valor'.length);
+  const regex = /([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ.'\s]*?)\s+(\d+)\s+R\$\s*([\d.,]+)\s+(\d+)\s+R\$\s*([\d.,]+)\s+(\d+)\s+R\$\s*([\d.,]+)\s+R\$\s*([\d.,]+)/g;
+  const resultado = {};
+  [...corpo.matchAll(regex)].forEach(m => {
+    const nome = m[1].trim();
+    if (nome === 'Total' || nome === 'Nulo' || nome.length < 2) return;
+    resultado[normalizarNomeMatch(nome)] = { nomeOriginal: nome, valor: parseValorBR(m[8]) };
+  });
+  return resultado;
+}
+function parsePessoaTiers(texto) {
+  const idxHeader = texto.lastIndexOf('Percentual');
+  const corpo = idxHeader === -1 ? texto : texto.slice(idxHeader + 'Percentual'.length);
+  const regex = /([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ.'\s]*?)\s+-?R\$\s*[\d.,]+\s+([\d.,]+)%\s+-?R\$\s*[\d.,]+\s+([\d.,]+)%\s+-?R\$\s*[\d.,]+\s+([\d.,]+)%\s+-?R\$\s*[\d.,]+\s+([\d.,]+)%/g;
+  const resultado = {};
+  [...corpo.matchAll(regex)].forEach(m => {
+    const nome = m[1].trim();
+    if (nome === 'Total' || nome === 'Nulo') return;
+    resultado[normalizarNomeMatch(nome)] = [parseFloat(m[2].replace(',','.')), parseFloat(m[3].replace(',','.')), parseFloat(m[4].replace(',','.')), parseFloat(m[5].replace(',','.'))];
+  });
+  return resultado;
+}
+function parseTotalGeralPDF(texto) {
+  const m = texto.match(/Total\s+\d+\s+R\$\s*([\d.,]+)/);
+  return m ? parseValorBR(m[1]) : null;
+}
+
+async function processarComissaoComercialPDF(event) {
+  const file = event.target.files[0]; if (!file) return;
+  document.getElementById('status-comissao-comercial').textContent = 'Lendo PDF...';
+  try {
+    const texto = await lerPDFGenerico(file);
+    const dados = parsePessoaTotalValor(texto);
+    let count = 0;
+    vendedoresIndividuais.forEach(v => { const d = dados[normalizarNomeMatch(v.nome)]; if (d) { v.comissaoBase = d.valor; count++; } });
+    document.getElementById('status-comissao-comercial').textContent = `PDF lido — ${count} vendedor(a) preenchido(s) automaticamente.`;
+    renderVendedores(); recalcularVendas();
+  } catch(e) { document.getElementById('status-comissao-comercial').textContent = 'Erro ao ler PDF: ' + e.message; }
+}
+async function processarMetaComercialPDF(event) {
+  const file = event.target.files[0]; if (!file) return;
+  document.getElementById('status-meta-comercial').textContent = 'Lendo PDF...';
+  try {
+    const texto = await lerPDFGenerico(file);
+    const dados = parsePessoaTiers(texto);
+    let count = 0;
+    vendedoresIndividuais.forEach(v => { const d = dados[normalizarNomeMatch(v.nome)]; if (d) { v.tiersPercentuais = d; count++; } });
+    document.getElementById('status-meta-comercial').textContent = `PDF lido — ${count} vendedor(a) com meta individual identificada.`;
+    recalcularVendas();
+  } catch(e) { document.getElementById('status-meta-comercial').textContent = 'Erro ao ler PDF: ' + e.message; }
+}
+async function processarComissaoUpsellCSPDF(event) {
+  const file = event.target.files[0]; if (!file) return;
+  document.getElementById('status-comissao-upsell-cs').textContent = 'Lendo PDF...';
+  try {
+    const texto = await lerPDFGenerico(file);
+    const dados = parsePessoaTotalValor(texto);
+    let count = 0;
+    upsellIndividual.forEach(p => { const d = dados[normalizarNomeMatch(p.nome)]; if (d) { p.valor = d.valor; count++; } });
+    document.getElementById('status-comissao-upsell-cs').textContent = `PDF lido — ${count} pessoa(s) preenchida(s) automaticamente.`;
+    renderUpsellIndividual();
+  } catch(e) { document.getElementById('status-comissao-upsell-cs').textContent = 'Erro ao ler PDF: ' + e.message; }
+}
+async function processarChurnPDF(event) {
+  const file = event.target.files[0]; if (!file) return;
+  document.getElementById('status-churn-pdf').textContent = 'Lendo PDF...';
+  try {
+    const texto = await lerPDFGenerico(file);
+    const total = parseTotalGeralPDF(texto);
+    if (total !== null) { document.getElementById('input-churn-valor').value = total.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); document.getElementById('status-churn-pdf').textContent = `PDF lido — Total: ${fmtBRL(total)}`; recalcularCS(); }
+    else document.getElementById('status-churn-pdf').textContent = 'Não consegui encontrar o total no PDF.';
+  } catch(e) { document.getElementById('status-churn-pdf').textContent = 'Erro ao ler PDF: ' + e.message; }
+}
+async function processarDownsellPDF(event) {
+  const file = event.target.files[0]; if (!file) return;
+  document.getElementById('status-downsell-pdf').textContent = 'Lendo PDF...';
+  try {
+    const texto = await lerPDFGenerico(file);
+    const total = parseTotalGeralPDF(texto);
+    if (total !== null) { document.getElementById('input-churn-downsell').value = total.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); document.getElementById('status-downsell-pdf').textContent = `PDF lido — Total: ${fmtBRL(total)}`; recalcularCS(); }
+    else document.getElementById('status-downsell-pdf').textContent = 'Não consegui encontrar o total no PDF.';
+  } catch(e) { document.getElementById('status-downsell-pdf').textContent = 'Erro ao ler PDF: ' + e.message; }
 }
 
 function recalcularVendas() {
@@ -1088,8 +1202,8 @@ function calcularChurn() {
   const mrrTotal = parseValorBR(document.getElementById('mrr-total-global').value);
   const nivel = calcularNivelDescendente(percChurn, tiers);
   const percTotal = nivel ? tiers[nivel].bonus : tiers.padrao;
-  const base = Math.max(0, mrrTotal - churnRS - downsellRS);
-  const pool = base * (percTotal/100);
+  const base = mrrTotal * (percTotal/100);
+  const pool = Math.max(0, base - churnRS - downsellRS);
   elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Nenhum nível atingido (Churn ${percChurn}%)`;
   document.getElementById('tabela-churn').innerHTML = ['bronze','prata','ouro','diamante'].map(k => `<tr class="${k===nivel?'atingido':''}"><td>${k}</td><td>${tiers[k].meta}%</td><td>${tiers[k].bonus}%</td></tr>`).join('');
   document.getElementById('pool-churn').textContent = fmtBRL(pool);

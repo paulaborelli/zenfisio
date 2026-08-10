@@ -126,7 +126,7 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
     <button class="tab-btn" id="btn-tab-marketing" onclick="mostrarAba('marketing')">Marketing</button>
     <button class="tab-btn" id="btn-tab-vendas" onclick="mostrarAba('vendas')">Vendas</button>
     <button class="tab-btn" id="btn-tab-cs" onclick="mostrarAba('cs')">CS e Suporte</button>
-    <button class="tab-btn" id="btn-tab-pd" onclick="mostrarAba('pd')">P&D</button>
+    <button class="tab-btn" id="btn-tab-pd" onclick="mostrarAba('pd')">P&amp;D</button>
   </nav>
 
   <div class="container">
@@ -202,7 +202,7 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
         <div class="field">
           <label>Anexar PDF ("Metas e bonificação de KPIs por áreas")</label>
           <input type="file" id="pdf-areas-input" accept="application/pdf" onchange="processarPDFAreas(event)"/>
-          <div class="hint" id="pdf-areas-status">Nenhum arquivo carregado ainda. (Esse PDF também será usado depois por Vendas, CS e P&D.)</div>
+          <div class="hint" id="pdf-areas-status">Nenhum arquivo carregado ainda. (Esse PDF também será usado depois por Vendas, CS e P&amp;D.)</div>
         </div>
       </div>
 
@@ -258,7 +258,7 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
     <!-- ============= TABS AINDA NÃO CONSTRUÍDAS ============= -->
     <div class="tab-panel" id="tab-vendas" style="display:none;"><div class="card"><div class="placeholder-em-construcao">🚧 Vendas/Comercial ainda não foi construído.</div></div></div>
     <div class="tab-panel" id="tab-cs" style="display:none;"><div class="card"><div class="placeholder-em-construcao">🚧 CS e Suporte ainda não foi construído.</div></div></div>
-    <div class="tab-panel" id="tab-pd" style="display:none;"><div class="card"><div class="placeholder-em-construcao">🚧 P&D ainda não foi construído.</div></div></div>
+    <div class="tab-panel" id="tab-pd" style="display:none;"><div class="card"><div class="placeholder-em-construcao">🚧 P&amp;D ainda não foi construído.</div></div></div>
   </div>
 </div>
 
@@ -334,7 +334,7 @@ function atualizarBadgeTotal(chave, total) {
   else { elBadge.textContent = 'Deveria somar 100%'; elBadge.className = 'badge erro'; }
 }
 
-// ══════════════════════ MRR (igual antes) ══════════════════════
+// ══════════════════════ MRR ══════════════════════
 async function carregarHistorico() {
   document.getElementById('historico-loading').style.display = 'block';
   try {
@@ -395,21 +395,7 @@ function renderTabelaProduto() {
   recalcular();
 }
 function atualizarPercentual(i, valor) { colaboradoresProduto[i].percentual = parseFloat(valor) || 0; recalcular(); }
-async function processarPDF(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  document.getElementById('pdf-status').textContent = 'Lendo PDF...';
-  try {
-    const buffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
-    let textoCompleto = '';
-    for (let i = 1; i <= pdf.numPages; i++) { const page = await pdf.getPage(i); const content = await page.getTextContent(); textoCompleto += ' ' + content.items.map(it => it.str).join(' '); }
-    niveisExtraidos = extrairNiveis(textoCompleto);
-    if (!niveisExtraidos || Object.keys(niveisExtraidos).length === 0) { document.getElementById('pdf-status').textContent = 'Não consegui identificar os níveis no PDF.'; return; }
-    document.getElementById('pdf-status').textContent = `PDF lido — ${Object.keys(niveisExtraidos).length} nível(is) identificado(s).`;
-    renderTabelaNiveis(); recalcular();
-  } catch(e) { document.getElementById('pdf-status').textContent = 'Erro ao ler o PDF: ' + e.message; }
-}
+
 async function processarPDF(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -421,6 +407,11 @@ async function processarPDF(event) {
     for (let i = 1; i <= pdf.numPages; i++) { const page = await pdf.getPage(i); const content = await page.getTextContent(); textoCompleto += ' ' + content.items.map(it => it.str).join(' '); }
     textoCompleto = textoCompleto.replace(/(\S)\s+fi\s+(\S)/g, '$1fi$2');
     niveisExtraidos = extrairNiveis(textoCompleto);
+    if (!niveisExtraidos || Object.keys(niveisExtraidos).length === 0) { document.getElementById('pdf-status').textContent = 'Não consegui identificar os níveis no PDF.'; return; }
+    document.getElementById('pdf-status').textContent = `PDF lido — ${Object.keys(niveisExtraidos).length} nível(is) identificado(s).`;
+    renderTabelaNiveis(); recalcular();
+  } catch(e) { document.getElementById('pdf-status').textContent = 'Erro ao ler o PDF: ' + e.message; }
+}
 function extrairNiveis(texto) {
   const regexBloco = /(Diamante|Ouro|Prata|Bronze)[^\d]{0,25}(\d+(?:[.,]\d+)?)\s*%\s*de\s*crescimento\s*-\s*R\$\s*([\d.,]+)/gi;
   const matches = [...texto.matchAll(regexBloco)].sort((a,b) => a.index - b.index);

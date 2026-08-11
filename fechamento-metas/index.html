@@ -229,11 +229,15 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
 
       <div class="card" id="card-bonus" style="display:none;">
         <h2>Bônus — Marketing, Comercial, Administrativo e CS</h2>
-        <div class="field" style="max-width:220px;"><label>Nº de pessoas nesses setores</label><input type="number" id="num-pessoas-geral" min="1" value="1" oninput="recalcular()"/></div>
         <div class="bonus-resumo">
           <div class="bonus-box"><div class="label">Valor total do bônus (pool)</div><div class="valor" id="pool-geral">R$ 0,00</div></div>
-          <div class="bonus-box"><div class="label">Valor por pessoa</div><div class="valor" id="valor-por-pessoa-geral">R$ 0,00</div></div>
+          <div class="bonus-box"><div class="label">Valor por pessoa (dividido igualmente)</div><div class="valor" id="valor-por-pessoa-geral">R$ 0,00</div></div>
         </div>
+        <table class="produto-table" style="margin-top:16px;">
+          <thead><tr><th>Pessoa</th><th>Valor</th><th></th></tr></thead>
+          <tbody id="tbody-bonus-geral"></tbody>
+        </table>
+        <button type="button" class="btn-secundario" style="margin-top:10px;" onclick="adicionarBonusGeral()">+ Adicionar pessoa</button>
       </div>
 
       <div class="card" id="card-produto" style="display:none;">
@@ -494,6 +498,18 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
 let usuarioAtual = null, senhaAtual = null;
 let niveisExtraidos = null;
 let colaboradoresProduto = [];
+// Pessoas de Marketing/Comercial/Administrativo/CS que dividem igualmente o "Bônus geral" de MRR.
+// Pré-populado com quem a Paula listou nesses 4 departamentos — ajuste com os botões +/✕ antes de salvar.
+let equipeBonusGeral = [
+  {nome:'Carolina Bigolin Pizzutti'}, {nome:'Emilly Pletsch'}, {nome:'Juliana Da Silva Do Nascimento'},
+  {nome:'Bianca da Silva de Araujo'}, {nome:'Jessica Cristina De Aguiar Wottrich'}, {nome:'Luana Leonarczyk'},
+  {nome:'Cledison Eduardo Fritzen'}, {nome:'Laura Cristina Grohs Agertte'}, {nome:'Paula Chaiane Martins Borelli'},
+  {nome:'Ana Paula Tobias'}, {nome:'Andressa Freitas Lopes'}, {nome:'Bernardo da Silva Nascimento'},
+  {nome:'Camila De Oliveira'}, {nome:'Eduarda Santos Reimann'}, {nome:'Franciele Schefer'},
+  {nome:'Heloísa dos Santos Albrecht'}, {nome:'José Michael De Vasconcellos Sarmento'}, {nome:'Kéuri De Souza Kazienko'},
+  {nome:'Lauren Camily Pereira'}, {nome:'Marília Rodrigues Pereira'}, {nome:'Milena Casarin Barasuol'},
+  {nome:'Taiz Gizele Richter'}, {nome:'Viviane Da Cunha Dos Santos'}
+];
 let secoesPDFAreas = {};
 let dadosIndicadores = null;
 let resultadosMktAtual = {};
@@ -562,6 +578,7 @@ async function fazerLogin() {
       document.getElementById('header-user').textContent = user;
       carregarColaboradoresProduto();
       carregarTodosHistoricos();
+      renderEquipeBonusGeral();
       Object.keys(equipesMkt).forEach(renderEquipeMkt);
       renderEquipeVendasEquipe();
       renderVendedores();
@@ -697,6 +714,21 @@ function renderTabelaProduto() {
 }
 function atualizarPercentual(i, valor) { colaboradoresProduto[i].percentual = parseFloat(valor) || 0; recalcular(); }
 
+function renderEquipeBonusGeral() {
+  const tbody = document.getElementById('tbody-bonus-geral');
+  if (!tbody) return;
+  tbody.innerHTML = equipeBonusGeral.map((p, i) => `
+    <tr>
+      <td><input type="text" value="${p.nome}" onchange="atualizarBonusGeral(${i}, this.value)"/></td>
+      <td class="num" id="valor-bonus-geral-${i}">R$ 0,00</td>
+      <td><button class="btn-remover" onclick="removerBonusGeral(${i})">✕</button></td>
+    </tr>`).join('');
+  recalcular();
+}
+function atualizarBonusGeral(i, valor) { equipeBonusGeral[i].nome = valor; recalcular(); }
+function removerBonusGeral(i) { equipeBonusGeral.splice(i, 1); renderEquipeBonusGeral(); }
+function adicionarBonusGeral() { equipeBonusGeral.push({ nome: 'Nova pessoa' }); renderEquipeBonusGeral(); }
+
 async function processarPDF(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -772,9 +804,14 @@ function recalcular() {
   document.getElementById('card-produto').style.display = 'block';
   document.getElementById('card-salvar').style.display = 'block';
   const poolGeral = mrrValor * (nivel.bonusGeral / 100);
-  const numPessoas = parseInt(document.getElementById('num-pessoas-geral').value) || 1;
+  const numPessoas = equipeBonusGeral.length || 1;
+  const valorPorPessoaGeral = poolGeral / numPessoas;
   document.getElementById('pool-geral').textContent = fmtBRL(poolGeral);
-  document.getElementById('valor-por-pessoa-geral').textContent = fmtBRL(poolGeral / numPessoas);
+  document.getElementById('valor-por-pessoa-geral').textContent = fmtBRL(valorPorPessoaGeral);
+  equipeBonusGeral.forEach((p, i) => {
+    const celula = document.getElementById('valor-bonus-geral-' + i);
+    if (celula) celula.textContent = fmtBRL(valorPorPessoaGeral);
+  });
   const poolProduto = mrrValor * (nivel.bonusProduto / 100);
   document.getElementById('pool-produto').textContent = fmtBRL(poolProduto);
   let totalPercentual = 0;
@@ -797,13 +834,15 @@ async function salvarFechamento() {
   const btn = document.getElementById('btn-salvar');
   if (!mesReferencia) { statusDiv.className = 'status-msg erro'; statusDiv.textContent = 'Preencha o mês/ano de referência no topo da página.'; return; }
   const nivel = nivelChave ? niveisExtraidos[nivelChave] : null;
-  const numPessoas = parseInt(document.getElementById('num-pessoas-geral').value) || 1;
+  const numPessoas = equipeBonusGeral.length || 1;
   const poolGeral = nivel ? mrrValor * (nivel.bonusGeral / 100) : 0;
   const poolProduto = nivel ? mrrValor * (nivel.bonusProduto / 100) : 0;
+  const valorPorPessoaGeral = numPessoas ? poolGeral / numPessoas : 0;
   const payload = {
     mesReferencia, mrrValor, nivel: nivelChave ? nivelChave.charAt(0).toUpperCase() + nivelChave.slice(1) : 'Nenhum',
     percBonusGeral: nivel ? nivel.bonusGeral : 0, percBonusProduto: nivel ? nivel.bonusProduto : 0,
-    numPessoasGeral: numPessoas, valorPorPessoaGeral: numPessoas ? poolGeral / numPessoas : 0,
+    numPessoasGeral: numPessoas, valorPorPessoaGeral: valorPorPessoaGeral,
+    bonusGeralPessoas: equipeBonusGeral.map(p => ({ nome: p.nome, valor: valorPorPessoaGeral })),
     produtoDev: colaboradoresProduto.map(c => ({ nome: c.nome, percentual: c.percentual, valor: poolProduto * (c.percentual / 100) }))
   };
   btn.disabled = true; btn.textContent = 'Salvando...';
@@ -1056,8 +1095,57 @@ function calcularKpiEquipeComercial() {
   return { nivel: nivel || 'Nenhum', percTotal, pool };
 }
 
-function normalizarNomeMatch(s) {
+// Tabela de reconcilia\u00e7\u00e3o de nomes: v\u00e1rias listas do sistema (equipesMkt, equipesVendas,
+// upsellIndividual etc.) usam apenas o primeiro nome ou uma varia\u00e7\u00e3o, enquanto outras (ex.:
+// colaboradoresProduto, vindo do back-end) usam o nome completo do RH. Sem essa tabela, a
+// mesma pessoa vira duas linhas diferentes no Dashboard (ex.: "Ana Paula" e "Ana Tobias").
+// Chaves j\u00e1 em min\u00fasculo e sem acento (mesmo formato que _baseNome produz).
+var MAPA_NOMES_CANONICOS = {
+  'juliana': 'Juliana Da Silva Do Nascimento',
+  'carolina': 'Carolina Bigolin Pizzutti',
+  'emilly': 'Emilly Pletsch',
+  'taiz': 'Taiz Gizele Richter',
+  'viviane': 'Viviane Da Cunha Dos Santos',
+  'ana paula': 'Ana Paula Tobias',
+  'ana tobias': 'Ana Paula Tobias',
+  'laura': 'Laura Cristina Grohs Agertte',
+  'franciele': 'Franciele Schefer',
+  'bernardo': 'Bernardo da Silva Nascimento',
+  'marilia': 'Mar\u00edlia Rodrigues Pereira',
+  'keuri': 'K\u00e9uri De Souza Kazienko',
+  'milena': 'Milena Casarin Barasuol',
+  'jose': 'Jos\u00e9 Michael De Vasconcellos Sarmento',
+  'jose v.': 'Jos\u00e9 Michael De Vasconcellos Sarmento',
+  'heloisa': 'Helo\u00edsa dos Santos Albrecht',
+  'eduarda': 'Eduarda Santos Reimann',
+  'lauren': 'Lauren Camily Pereira',
+  'anderson': 'Anderson Felipe Ribeiro Rosa',
+  'gustavo machado': 'Gustavo Machado',
+  'guilherme': 'Guilherme Avila',
+  'lucas': 'Lucas Gerhardt',
+  'jean': 'Jean Paulo da Silva Bitencourt',
+  'thainan': 'Thainan Feistel',
+  'romulo': 'R\u00f4mulo Provenci Gon\u00e7alves',
+  'bruno': 'Bruno Gabriel Seifert Do Amaral',
+  'luan': 'Luan Henrique Neumann',
+  'maria augusta': 'Maria Augusta Santos Sakis',
+  'gustavo campos': 'Gustavo Henrique Pereira De Campos',
+  'aldrei': 'Aldrei Casalini Rigoli',
+  'eduardo': 'Eduardo Voigt Kroth',
+  'luana': 'Luana Leonarczyk',
+  'jessica': 'Jessica Cristina De Aguiar Wottrich',
+  'bianca': 'Bianca da Silva de Araujo',
+  'camila': 'Camila De Oliveira'
+};
+function _baseNome(s) {
   return String(s).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
+function nomeCanonico(s) {
+  const base = _baseNome(s);
+  return MAPA_NOMES_CANONICOS[base] || String(s).trim();
+}
+function normalizarNomeMatch(s) {
+  return _baseNome(nomeCanonico(s));
 }
 function renderVendedores() {
   const tbody = document.getElementById('tbody-vendedores');
@@ -1619,10 +1707,11 @@ function agregarPorPessoaMes(mes) {
   function add(nome, valor) {
     const chave = normalizarNomeMatch(nome);
     if (!chave) return;
-    if (!totais[chave]) totais[chave] = { nome: String(nome).trim(), valor: 0 };
+    if (!totais[chave]) totais[chave] = { nome: nomeCanonico(nome), valor: 0 };
     totais[chave].valor += (Number(valor)||0);
   }
   (todosHistoricos.mrr?.detalhePorMes?.[mes]||[]).forEach(p => add(p.nome, p.valor));
+  (todosHistoricos.mrr?.bonusGeralPorMes?.[mes]||[]).forEach(p => add(p.nome, p.valor));
   ['marketing','vendas','cs','pd'].forEach(area => {
     const detalhe = todosHistoricos[area]?.detalhe || {};
     Object.keys(detalhe).forEach(chave => {
@@ -1635,6 +1724,7 @@ function agregarPorPessoaMes(mes) {
 function agregarPorPessoaPorDepartamento(mes) {
   const departamentos = {
     mrr: { titulo: '🎯 Produto & Desenvolvimento (bônus de MRR)', pessoas: {} },
+    bonusGeral: { titulo: '🎯 Bônus geral de MRR (Marketing/Comercial/Administrativo/CS)', pessoas: {} },
     marketing: { titulo: '📣 Marketing', pessoas: {} },
     vendas: { titulo: '💼 Vendas / Comercial', pessoas: {} },
     cs: { titulo: '🤝 CS e Suporte', pessoas: {} },
@@ -1644,10 +1734,11 @@ function agregarPorPessoaPorDepartamento(mes) {
     const chave = normalizarNomeMatch(nome);
     if (!chave) return;
     const dep = departamentos[areaKey].pessoas;
-    if (!dep[chave]) dep[chave] = { nome: String(nome).trim(), valor: 0 };
+    if (!dep[chave]) dep[chave] = { nome: nomeCanonico(nome), valor: 0 };
     dep[chave].valor += (Number(valor)||0);
   }
   (todosHistoricos.mrr?.detalhePorMes?.[mes]||[]).forEach(p => add('mrr', p.nome, p.valor));
+  (todosHistoricos.mrr?.bonusGeralPorMes?.[mes]||[]).forEach(p => add('bonusGeral', p.nome, p.valor));
   ['marketing','vendas','cs','pd'].forEach(area => {
     const detalhe = todosHistoricos[area]?.detalhe || {};
     Object.keys(detalhe).forEach(chave => {

@@ -626,7 +626,7 @@ function calcularNPS_PD() {
   document.getElementById('tabela-npsPD').innerHTML = ['bronze','prata','ouro','diamante'].map(k => `<tr class="${k===nivel?'atingido':''}"><td>${k}</td><td>${tiers[k].meta}</td><td>${tiers[k].bonus}%</td></tr>`).join('');
   document.getElementById('pool-npsPD').textContent = fmtBRL(pool);
   let total = 0;
-  equipesMkt.npsPD.forEach((p,i) => { const valor = pool*(p.percentual/100); total += p.percentual; const cel = document.getElementById('valor-npsPD-'+i); if (cel) cel.textContent = fmtBRL(valor); });
+  equipesMkt.npsPD.forEach((p,i) => { const valor = valorEfetivo(p, pool*(p.percentual/100)); total += p.percentual; const inp = document.getElementById('valor-npsPD-'+i); if (inp) inp.value = fmtBRL(valor); });
   atualizarBadgeTotal('npsPD', total);
   return { nivel: nivel || 'Nenhum', percTotal, pool };
 }
@@ -644,7 +644,7 @@ function calcularHealthScore_PD() {
   document.getElementById('tabela-healthScorePD').innerHTML = ['bronze','prata','ouro','diamante'].map(k => `<tr class="${k===nivel?'atingido':''}"><td>${k}</td><td>${tiers[k].meta}</td><td>${tiers[k].bonus}%</td></tr>`).join('');
   document.getElementById('pool-healthScorePD').textContent = fmtBRL(pool);
   let total = 0;
-  equipesMkt.healthScorePD.forEach((p,i) => { const valor = pool*(p.percentual/100); total += p.percentual; const cel = document.getElementById('valor-healthScorePD-'+i); if (cel) cel.textContent = fmtBRL(valor); });
+  equipesMkt.healthScorePD.forEach((p,i) => { const valor = valorEfetivo(p, pool*(p.percentual/100)); total += p.percentual; const inp = document.getElementById('valor-healthScorePD-'+i); if (inp) inp.value = fmtBRL(valor); });
   atualizarBadgeTotal('healthScorePD', total);
   return { nivel: nivel || 'Nenhum', percTotal, pool };
 }
@@ -662,7 +662,7 @@ function calcularInfraestrutura() {
   document.getElementById('tabela-infraestrutura').innerHTML = ['bronze','prata','ouro','diamante'].map(k => `<tr class="${k===nivel?'atingido':''}"><td>${k}</td><td>${tiers[k].meta}%</td><td>${tiers[k].bonus}%</td></tr>`).join('');
   document.getElementById('pool-infraestrutura').textContent = fmtBRL(pool);
   let total = 0;
-  equipesMkt.infraestrutura.forEach((p,i) => { const valor = pool*(p.percentual/100); total += p.percentual; const cel = document.getElementById('valor-infraestrutura-'+i); if (cel) cel.textContent = fmtBRL(valor); });
+  equipesMkt.infraestrutura.forEach((p,i) => { const valor = valorEfetivo(p, pool*(p.percentual/100)); total += p.percentual; const inp = document.getElementById('valor-infraestrutura-'+i); if (inp) inp.value = fmtBRL(valor); });
   atualizarBadgeTotal('infraestrutura', total);
   return { nivel: nivel || 'Nenhum', percTotal, pool };
 }
@@ -681,7 +681,7 @@ async function salvarPD(recarregarHistorico) {
   const kpisPayload = ['npsPD','healthScorePD','infraestrutura'].map(chave => {
     const r = resultadosPDAtual[chave] || { nivel:'Nenhum', percTotal:0, pool:0 };
     return { nomeKpi: nomesEquipe[chave], nivel: r.nivel, percTotal: r.percTotal, pool: r.pool,
-      equipe: equipesMkt[chave].map(p => ({ nome: p.nome, percentual: p.percentual, valor: (r.pool||0) * (p.percentual/100) })) };
+      equipe: equipesMkt[chave].map(p => ({ nome: p.nome, percentual: p.percentual, valor: valorEfetivo(p, (r.pool||0) * (p.percentual/100)) })) };
   });
   btn.disabled = true; btn.textContent = 'Salvando...';
   try {
@@ -977,22 +977,43 @@ async function processarPDFAreas(event) {
   } catch(e) { document.getElementById('pdf-areas-status').textContent = 'Erro ao ler PDF: ' + e.message; }
 }
 
+// Se a pessoa tem um valor manual definido (override), usa ele; senão usa o calculado
+// automaticamente por %. Usado tanto pra exibir na tela quanto pra montar o payload de salvar.
+function valorEfetivo(p, calculado) {
+  return (p.valorManual !== undefined && p.valorManual !== null) ? p.valorManual : calculado;
+}
+// Qual função recalcular depois de editar nome/%/valor de uma pessoa nessas listas —
+// cada chave pertence a uma área diferente (Marketing, CS ou P&D), mesmo estando todas
+// dentro do mesmo objeto `equipesMkt`.
+function recalcularAreaDaChaveEquipe(chave) {
+  const areaPorChave = {
+    cadastroTeste: recalcularMarketing, extensaoTeste: recalcularMarketing, novosClientesMkt: recalcularMarketing,
+    upsellEquipe: recalcularCS, churn: recalcularCS, nps: recalcularCS, healthScore: recalcularCS,
+    npsPD: recalcularPD, healthScorePD: recalcularPD, infraestrutura: recalcularPD
+  };
+  (areaPorChave[chave] || recalcularMarketing)();
+}
 function renderEquipeMkt(chave) {
   const el = document.getElementById('equipe-' + chave);
   el.innerHTML = equipesMkt[chave].map((p,i) => `
     <tr>
       <td><input type="text" value="${p.nome}" onchange="atualizarEquipeMkt('${chave}',${i},'nome',this.value)"/></td>
       <td><input type="number" step="0.01" value="${p.percentual}" onchange="atualizarEquipeMkt('${chave}',${i},'percentual',this.value)"/></td>
-      <td class="num" id="valor-${chave}-${i}">R$ 0,00</td>
+      <td><input type="text" class="num" id="valor-${chave}-${i}" value="${p.valorManual !== undefined && p.valorManual !== null ? fmtBRL(p.valorManual) : 'R$ 0,00'}" title="Editável — deixe em branco pra voltar ao cálculo automático" onchange="atualizarValorManualEquipeMkt('${chave}',${i},this.value)"/></td>
       <td><button class="btn-remover" onclick="removerPessoaMkt('${chave}',${i})">✕</button></td>
     </tr>`).join('');
 }
 function atualizarEquipeMkt(chave, i, campo, valor) {
   equipesMkt[chave][i][campo] = campo === 'percentual' ? (parseFloat(valor)||0) : valor;
-  recalcularMarketing();
+  recalcularAreaDaChaveEquipe(chave);
 }
-function removerPessoaMkt(chave, i) { equipesMkt[chave].splice(i,1); renderEquipeMkt(chave); recalcularMarketing(); }
-function adicionarPessoaMkt(chave) { equipesMkt[chave].push({nome:'Nova pessoa', percentual:0}); renderEquipeMkt(chave); recalcularMarketing(); }
+function atualizarValorManualEquipeMkt(chave, i, valorTexto) {
+  const texto = String(valorTexto).trim();
+  if (texto === '') delete equipesMkt[chave][i].valorManual;
+  else equipesMkt[chave][i].valorManual = parseValorBR(texto);
+}
+function removerPessoaMkt(chave, i) { equipesMkt[chave].splice(i,1); renderEquipeMkt(chave); recalcularAreaDaChaveEquipe(chave); }
+function adicionarPessoaMkt(chave) { equipesMkt[chave].push({nome:'Nova pessoa', percentual:0}); renderEquipeMkt(chave); recalcularAreaDaChaveEquipe(chave); }
 
 function calcularKpiCadastro(chave) {
   const tiers = tiersMkt[chave];
@@ -1008,7 +1029,7 @@ function calcularKpiCadastro(chave) {
   document.getElementById('tabela-' + chave).innerHTML = ['bronze','prata','ouro','diamante'].map(k => `<tr class="${k===nivel?'atingido':''}"><td>${k}</td><td>${tiers[k].meta}</td><td>${tiers[k].bonus}%</td></tr>`).join('');
   document.getElementById('pool-' + chave).textContent = fmtBRL(pool);
   let total = 0;
-  equipesMkt[chave].forEach((p,i) => { const valor = pool * (p.percentual/100); total += p.percentual; const cel = document.getElementById('valor-'+chave+'-'+i); if (cel) cel.textContent = fmtBRL(valor); });
+  equipesMkt[chave].forEach((p,i) => { const valor = valorEfetivo(p, pool * (p.percentual/100)); total += p.percentual; const inp = document.getElementById('valor-'+chave+'-'+i); if (inp) inp.value = fmtBRL(valor); });
   atualizarBadgeTotal(chave, total);
   return { nivel, percTotal, pool };
 }
@@ -1028,7 +1049,7 @@ function calcularKpiNovosClientesMkt() {
   document.getElementById('tabela-novosClientesMkt').innerHTML = ['bronze','prata','ouro','diamante'].map(k => `<tr class="${k===nivel?'atingido':''}"><td>${k}</td><td>${tiers[k].meta}</td><td>${tiers[k].bonus}%</td><td>${tiers[k].adicional}%</td></tr>`).join('');
   document.getElementById('pool-novosClientesMkt').textContent = fmtBRL(pool);
   let total = 0;
-  equipesMkt.novosClientesMkt.forEach((p,i) => { const valor = pool * (p.percentual/100); total += p.percentual; const cel = document.getElementById('valor-novosClientesMkt-'+i); if (cel) cel.textContent = fmtBRL(valor); });
+  equipesMkt.novosClientesMkt.forEach((p,i) => { const valor = valorEfetivo(p, pool * (p.percentual/100)); total += p.percentual; const inp = document.getElementById('valor-novosClientesMkt-'+i); if (inp) inp.value = fmtBRL(valor); });
   atualizarBadgeTotal('novosClientesMkt', total);
   return { nivel, percTotal, pool, clientes, ticketMedio };
 }
@@ -1047,7 +1068,7 @@ async function salvarMarketing(recarregarHistorico) {
   const kpisPayload = ['cadastroTeste','extensaoTeste','novosClientesMkt'].map(chave => {
     const r = resultadosMktAtual[chave] || { nivel:null, percTotal:0, pool:0 };
     return { nomeKpi: nomesExibicao[chave], nivel: r.nivel || 'Nenhum', percTotal: r.percTotal || 0, pool: r.pool || 0,
-      equipe: equipesMkt[chave].map(p => ({ nome: p.nome, percentual: p.percentual, valor: (r.pool||0) * (p.percentual/100) })) };
+      equipe: equipesMkt[chave].map(p => ({ nome: p.nome, percentual: p.percentual, valor: valorEfetivo(p, (r.pool||0) * (p.percentual/100)) })) };
   });
   btn.disabled = true; btn.textContent = 'Salvando...';
   try {
@@ -1065,9 +1086,14 @@ function renderEquipeVendasEquipe() {
     <tr>
       <td><input type="text" value="${p.nome}" onchange="atualizarEquipeVendas(${i},'nome',this.value)"/></td>
       <td><input type="number" step="0.01" value="${p.percentual}" onchange="atualizarEquipeVendas(${i},'percentual',this.value)"/></td>
-      <td class="num" id="valor-equipeComercial-${i}">R$ 0,00</td>
+      <td><input type="text" class="num" id="valor-equipeComercial-${i}" value="${p.valorManual !== undefined && p.valorManual !== null ? fmtBRL(p.valorManual) : 'R$ 0,00'}" title="Editável — deixe em branco pra voltar ao cálculo automático" onchange="atualizarValorManualVendasEquipe(${i},this.value)"/></td>
       <td><button class="btn-remover" onclick="removerPessoaVendasEquipe(${i})">✕</button></td>
     </tr>`).join('');
+}
+function atualizarValorManualVendasEquipe(i, valorTexto) {
+  const texto = String(valorTexto).trim();
+  if (texto === '') delete equipesVendas.equipeComercial[i].valorManual;
+  else equipesVendas.equipeComercial[i].valorManual = parseValorBR(texto);
 }
 function atualizarEquipeVendas(i, campo, valor) {
   equipesVendas.equipeComercial[i][campo] = campo === 'percentual' ? (parseFloat(valor)||0) : valor;
@@ -1093,7 +1119,7 @@ function calcularKpiEquipeComercial() {
   document.getElementById('tabela-equipeComercial').innerHTML = ['bronze','prata','ouro','diamante'].map(k => `<tr class="${k===nivel?'atingido':''}"><td>${k}</td><td>${tiers[k].meta}</td><td>${tiers[k].bonus}%</td><td>${tiers[k].adicional}%</td></tr>`).join('');
   document.getElementById('pool-equipeComercial').textContent = fmtBRL(pool);
   let total = 0;
-  equipesVendas.equipeComercial.forEach((p,i) => { const valor = pool * (p.percentual/100); total += p.percentual; const cel = document.getElementById('valor-equipeComercial-'+i); if (cel) cel.textContent = fmtBRL(valor); });
+  equipesVendas.equipeComercial.forEach((p,i) => { const valor = valorEfetivo(p, pool * (p.percentual/100)); total += p.percentual; const inp = document.getElementById('valor-equipeComercial-'+i); if (inp) inp.value = fmtBRL(valor); });
   atualizarBadgeTotal('equipeComercial', total);
   return { nivel: nivel || 'Nenhum', percTotal, pool };
 }
@@ -1445,7 +1471,7 @@ async function salvarVendas(recarregarHistorico) {
     {
       nomeKpi: 'Novos clientes (Equipe Comercial)',
       nivel: rEquipe.nivel, percTotal: rEquipe.percTotal, pool: rEquipe.pool,
-      equipe: equipesVendas.equipeComercial.map(p => ({ nome: p.nome, percentual: p.percentual, valor: (rEquipe.pool||0) * (p.percentual/100) }))
+      equipe: equipesVendas.equipeComercial.map(p => ({ nome: p.nome, percentual: p.percentual, valor: valorEfetivo(p, (rEquipe.pool||0) * (p.percentual/100)) }))
     },
     {
       nomeKpi: 'Comissão Individual por Vendedor',
@@ -1495,7 +1521,7 @@ function calcularUpsellEquipe() {
   document.getElementById('tabela-upsellEquipe').innerHTML = ['bronze','prata','ouro','diamante'].map(k => `<tr class="${k===nivel?'atingido':''}"><td>${k}</td><td>${tiers[k].meta}%</td><td>${tiers[k].bonus}%</td></tr>`).join('');
   document.getElementById('pool-upsellEquipe').textContent = fmtBRL(pool);
   let total = 0;
-  equipesMkt.upsellEquipe.forEach((p,i) => { const valor = pool*(p.percentual/100); total += p.percentual; const cel = document.getElementById('valor-upsellEquipe-'+i); if (cel) cel.textContent = fmtBRL(valor); });
+  equipesMkt.upsellEquipe.forEach((p,i) => { const valor = valorEfetivo(p, pool*(p.percentual/100)); total += p.percentual; const inp = document.getElementById('valor-upsellEquipe-'+i); if (inp) inp.value = fmtBRL(valor); });
   atualizarBadgeTotal('upsellEquipe', total);
   return { nivel: nivel || 'Nenhum', percTotal, pool };
 }
@@ -1531,7 +1557,7 @@ function calcularChurn() {
   document.getElementById('tabela-churn').innerHTML = ['bronze','prata','ouro','diamante'].map(k => `<tr class="${k===nivel?'atingido':''}"><td>${k}</td><td>${tiers[k].meta}%</td><td>${tiers[k].bonus}%</td></tr>`).join('');
   document.getElementById('pool-churn').textContent = fmtBRL(pool);
   let total = 0;
-  equipesMkt.churn.forEach((p,i) => { const valor = pool*(p.percentual/100); total += p.percentual; const cel = document.getElementById('valor-churn-'+i); if (cel) cel.textContent = fmtBRL(valor); });
+  equipesMkt.churn.forEach((p,i) => { const valor = valorEfetivo(p, pool*(p.percentual/100)); total += p.percentual; const inp = document.getElementById('valor-churn-'+i); if (inp) inp.value = fmtBRL(valor); });
   atualizarBadgeTotal('churn', total);
   return { nivel: nivel || 'Nenhum', percTotal, pool };
 }
@@ -1549,7 +1575,7 @@ function calcularNPS() {
   document.getElementById('tabela-nps').innerHTML = ['bronze','prata','ouro','diamante'].map(k => `<tr class="${k===nivel?'atingido':''}"><td>${k}</td><td>${tiers[k].meta}</td><td>${tiers[k].bonus}%</td></tr>`).join('');
   document.getElementById('pool-nps').textContent = fmtBRL(pool);
   let total = 0;
-  equipesMkt.nps.forEach((p,i) => { const valor = pool*(p.percentual/100); total += p.percentual; const cel = document.getElementById('valor-nps-'+i); if (cel) cel.textContent = fmtBRL(valor); });
+  equipesMkt.nps.forEach((p,i) => { const valor = valorEfetivo(p, pool*(p.percentual/100)); total += p.percentual; const inp = document.getElementById('valor-nps-'+i); if (inp) inp.value = fmtBRL(valor); });
   atualizarBadgeTotal('nps', total);
   return { nivel: nivel || 'Nenhum', percTotal, pool };
 }
@@ -1567,7 +1593,7 @@ function calcularHealthScore() {
   document.getElementById('tabela-healthScore').innerHTML = ['bronze','prata','ouro','diamante'].map(k => `<tr class="${k===nivel?'atingido':''}"><td>${k}</td><td>${tiers[k].meta}</td><td>${tiers[k].bonus}%</td></tr>`).join('');
   document.getElementById('pool-healthScore').textContent = fmtBRL(pool);
   let total = 0;
-  equipesMkt.healthScore.forEach((p,i) => { const valor = pool*(p.percentual/100); total += p.percentual; const cel = document.getElementById('valor-healthScore-'+i); if (cel) cel.textContent = fmtBRL(valor); });
+  equipesMkt.healthScore.forEach((p,i) => { const valor = valorEfetivo(p, pool*(p.percentual/100)); total += p.percentual; const inp = document.getElementById('valor-healthScore-'+i); if (inp) inp.value = fmtBRL(valor); });
   atualizarBadgeTotal('healthScore', total);
   return { nivel: nivel || 'Nenhum', percTotal, pool };
 }
@@ -1590,7 +1616,7 @@ async function salvarCS(recarregarHistorico) {
   const kpisPayload = ['upsellEquipe','churn','nps','healthScore'].map(chave => {
     const r = resultadosCSAtual[chave] || { nivel:'Nenhum', percTotal:0, pool:0 };
     return { nomeKpi: nomesEquipe[chave], nivel: r.nivel, percTotal: r.percTotal, pool: r.pool,
-      equipe: equipesMkt[chave].map(p => ({ nome: p.nome, percentual: p.percentual, valor: (r.pool||0) * (p.percentual/100) })) };
+      equipe: equipesMkt[chave].map(p => ({ nome: p.nome, percentual: p.percentual, valor: valorEfetivo(p, (r.pool||0) * (p.percentual/100)) })) };
   });
   kpisPayload.push({
     nomeKpi: 'UpSell (Individual)', nivel: 'N/A', percTotal: 0,

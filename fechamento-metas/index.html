@@ -671,7 +671,8 @@ function recalcularPD() {
   resultadosPDAtual.healthScorePD = calcularHealthScore_PD();
   resultadosPDAtual.infraestrutura = calcularInfraestrutura();
 }
-async function salvarPD() {
+async function salvarPD(recarregarHistorico) {
+  if (recarregarHistorico === undefined) recarregarHistorico = true;
   const mesReferencia = document.getElementById('mes-referencia-global').value.trim();
   const statusDiv = document.getElementById('status-salvar-pd');
   const btn = document.getElementById('btn-salvar-pd');
@@ -686,7 +687,7 @@ async function salvarPD() {
   try {
     const r = await fetch(SCRIPT_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({ acao:'salvarFechamentoPD', user:usuarioAtual, pass:senhaAtual, payload:{ mesReferencia, kpis: kpisPayload } }) });
     const data = await r.json();
-    if (data.ok) { statusDiv.className='status-msg ok'; statusDiv.textContent='P&D salvo com sucesso!'; carregarTodosHistoricos(); }
+    if (data.ok) { statusDiv.className='status-msg ok'; statusDiv.textContent='P&D salvo com sucesso!'; if (recarregarHistorico) carregarTodosHistoricos(); }
     else { statusDiv.className='status-msg erro'; statusDiv.textContent='Erro: '+data.erro; }
   } catch(e) { statusDiv.className='status-msg erro'; statusDiv.textContent='Erro: '+e.message; }
   btn.disabled = false; btn.textContent = 'Salvar fechamento de P&D';
@@ -826,7 +827,8 @@ function recalcular() {
   if (Math.abs(totalPercentual - 100) < 0.01) { badge.textContent = 'OK'; badge.className = 'badge ok'; }
   else { badge.textContent = 'Deveria somar 100%'; badge.className = 'badge erro'; }
 }
-async function salvarFechamento() {
+async function salvarFechamento(recarregarHistorico) {
+  if (recarregarHistorico === undefined) recarregarHistorico = true;
   const mesReferencia = document.getElementById('mes-referencia-global').value.trim();
   const mrrValor = parseValorBR(document.getElementById('mrr-input').value);
   const nivelChave = determinarNivel(mrrValor);
@@ -849,7 +851,7 @@ async function salvarFechamento() {
   try {
     const r = await fetch(SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ acao: 'salvarFechamentoMetas', user: usuarioAtual, pass: senhaAtual, payload }) });
     const data = await r.json();
-    if (data.ok) { statusDiv.className = 'status-msg ok'; statusDiv.textContent = 'Fechamento salvo com sucesso!'; carregarTodosHistoricos(); }
+    if (data.ok) { statusDiv.className = 'status-msg ok'; statusDiv.textContent = 'Fechamento salvo com sucesso!'; if (recarregarHistorico) carregarTodosHistoricos(); }
     else { statusDiv.className = 'status-msg erro'; statusDiv.textContent = 'Erro ao salvar: ' + data.erro; }
   } catch(e) { statusDiv.className = 'status-msg erro'; statusDiv.textContent = 'Erro ao salvar: ' + e.message; }
   btn.disabled = false; btn.textContent = 'Salvar fechamento do mês';
@@ -1035,7 +1037,8 @@ function recalcularMarketing() {
   resultadosMktAtual.extensaoTeste     = calcularKpiCadastro('extensaoTeste');
   resultadosMktAtual.novosClientesMkt  = calcularKpiNovosClientesMkt();
 }
-async function salvarMarketing() {
+async function salvarMarketing(recarregarHistorico) {
+  if (recarregarHistorico === undefined) recarregarHistorico = true;
   const mesReferencia = document.getElementById('mes-referencia-global').value.trim();
   const statusDiv = document.getElementById('status-salvar-mkt');
   const btn = document.getElementById('btn-salvar-mkt');
@@ -1050,7 +1053,7 @@ async function salvarMarketing() {
   try {
     const r = await fetch(SCRIPT_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({ acao:'salvarFechamentoMarketing', user:usuarioAtual, pass:senhaAtual, payload:{ mesReferencia, kpis: kpisPayload } }) });
     const data = await r.json();
-    if (data.ok) { statusDiv.className='status-msg ok'; statusDiv.textContent='Marketing salvo com sucesso!'; carregarTodosHistoricos(); }
+    if (data.ok) { statusDiv.className='status-msg ok'; statusDiv.textContent='Marketing salvo com sucesso!'; if (recarregarHistorico) carregarTodosHistoricos(); }
     else { statusDiv.className='status-msg erro'; statusDiv.textContent='Erro: '+data.erro; }
   } catch(e) { statusDiv.className='status-msg erro'; statusDiv.textContent='Erro: '+e.message; }
   btn.disabled = false; btn.textContent = 'Salvar fechamento de Marketing';
@@ -1279,6 +1282,15 @@ function fecharTodosAcordeoesDaArea(tabId) {
       if (seta) seta.textContent = '▾';
     }
   });
+  // O MRR tem duas seções sempre visíveis (não são acordeões: "Bônus geral" e
+  // "Bônus Produto & Desenvolvimento") que também precisam recolher aqui. Elas voltam a
+  // aparecer sozinhas na próxima vez que o valor de MRR for recalculado.
+  if (tabId === 'tab-mrr') {
+    const bonus = document.getElementById('card-bonus');
+    const produto = document.getElementById('card-produto');
+    if (bonus) bonus.style.display = 'none';
+    if (produto) produto.style.display = 'none';
+  }
 }
 async function processarResultadosRealizadosPDF(event) {
   const files = event.target.files;
@@ -1421,7 +1433,8 @@ function recalcularVendas() {
   calcularComissaoIndividual();
 }
 
-async function salvarVendas() {
+async function salvarVendas(recarregarHistorico) {
+  if (recarregarHistorico === undefined) recarregarHistorico = true;
   const mesReferencia = document.getElementById('mes-referencia-global').value.trim();
   const statusDiv = document.getElementById('status-salvar-vendas');
   const btn = document.getElementById('btn-salvar-vendas');
@@ -1445,7 +1458,7 @@ async function salvarVendas() {
   try {
     const r = await fetch(SCRIPT_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({ acao:'salvarFechamentoVendas', user:usuarioAtual, pass:senhaAtual, payload:{ mesReferencia, kpis: kpisPayload } }) });
     const data = await r.json();
-    if (data.ok) { statusDiv.className='status-msg ok'; statusDiv.textContent='Vendas salvo com sucesso!'; carregarTodosHistoricos(); }
+    if (data.ok) { statusDiv.className='status-msg ok'; statusDiv.textContent='Vendas salvo com sucesso!'; if (recarregarHistorico) carregarTodosHistoricos(); }
     else { statusDiv.className='status-msg erro'; statusDiv.textContent='Erro: '+data.erro; }
   } catch(e) { statusDiv.className='status-msg erro'; statusDiv.textContent='Erro: '+e.message; }
   btn.disabled = false; btn.textContent = 'Salvar fechamento de Vendas';
@@ -1566,7 +1579,8 @@ function recalcularCS() {
   resultadosCSAtual.healthScore = calcularHealthScore();
 }
 
-async function salvarCS() {
+async function salvarCS(recarregarHistorico) {
+  if (recarregarHistorico === undefined) recarregarHistorico = true;
   const mesReferencia = document.getElementById('mes-referencia-global').value.trim();
   const statusDiv = document.getElementById('status-salvar-cs');
   const btn = document.getElementById('btn-salvar-cs');
@@ -1588,7 +1602,7 @@ async function salvarCS() {
   try {
     const r = await fetch(SCRIPT_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({ acao:'salvarFechamentoCS', user:usuarioAtual, pass:senhaAtual, payload:{ mesReferencia, kpis: kpisPayload } }) });
     const data = await r.json();
-    if (data.ok) { statusDiv.className='status-msg ok'; statusDiv.textContent='CS e Suporte salvo com sucesso!'; carregarTodosHistoricos(); }
+    if (data.ok) { statusDiv.className='status-msg ok'; statusDiv.textContent='CS e Suporte salvo com sucesso!'; if (recarregarHistorico) carregarTodosHistoricos(); }
     else { statusDiv.className='status-msg erro'; statusDiv.textContent='Erro: '+data.erro; }
   } catch(e) { statusDiv.className='status-msg erro'; statusDiv.textContent='Erro: '+e.message; }
   btn.disabled = false; btn.textContent = 'Salvar fechamento de CS e Suporte';
@@ -1653,14 +1667,16 @@ async function salvarMesInteiro() {
   statusEl.style.display = 'block';
   statusEl.textContent = 'Salvando todas as áreas...';
   try {
-    await salvarFechamento();
-    await salvarMarketing();
-    await salvarVendas();
-    await salvarCS();
-    await salvarPD();
+    // false = não recarrega o histórico inteiro depois de cada área (seria 5 recargas
+    // completas à toa); recarregamos só UMA vez no final, junto com a ida pro Dashboard.
+    await salvarFechamento(false);
+    await salvarMarketing(false);
+    await salvarVendas(false);
+    await salvarCS(false);
+    await salvarPD(false);
     statusEl.className = 'status-msg ok';
-    statusEl.textContent = '✅ Mês inteiro salvo (MRR, Marketing, Vendas, CS e P&D)!';
-    carregarTodosHistoricos();
+    statusEl.textContent = '✅ Mês inteiro salvo (MRR, Marketing, Vendas, CS e P&D)! Abrindo o Dashboard...';
+    irParaDashboardDoMes();
   } catch(e) {
     statusEl.className = 'status-msg erro';
     statusEl.textContent = 'Erro ao salvar alguma área: ' + e.message;
@@ -1722,13 +1738,15 @@ function agregarPorPessoaMes(mes) {
 }
 
 function agregarPorPessoaPorDepartamento(mes) {
+  // "pd" (NPS/Health Score/Infraestrutura) e o bônus de MRR por produto são o MESMO
+  // departamento na vida real (Produto & Desenvolvimento) — só vinham de dois mecanismos
+  // de cálculo diferentes. Por isso caem na mesma seção/total por pessoa aqui.
   const departamentos = {
-    mrr: { titulo: '🎯 Produto & Desenvolvimento (bônus de MRR)', pessoas: {} },
+    pd: { titulo: '🔧 Produto & Desenvolvimento (bônus de MRR + NPS/Health Score/Infraestrutura)', pessoas: {} },
     bonusGeral: { titulo: '🎯 Bônus geral de MRR (Marketing/Comercial/Administrativo/CS)', pessoas: {} },
     marketing: { titulo: '📣 Marketing', pessoas: {} },
     vendas: { titulo: '💼 Vendas / Comercial', pessoas: {} },
-    cs: { titulo: '🤝 CS e Suporte', pessoas: {} },
-    pd: { titulo: '🔧 P&D (NPS / Health Score / Infraestrutura)', pessoas: {} }
+    cs: { titulo: '🤝 CS e Suporte', pessoas: {} }
   };
   function add(areaKey, nome, valor) {
     const chave = normalizarNomeMatch(nome);
@@ -1737,7 +1755,7 @@ function agregarPorPessoaPorDepartamento(mes) {
     if (!dep[chave]) dep[chave] = { nome: nomeCanonico(nome), valor: 0 };
     dep[chave].valor += (Number(valor)||0);
   }
-  (todosHistoricos.mrr?.detalhePorMes?.[mes]||[]).forEach(p => add('mrr', p.nome, p.valor));
+  (todosHistoricos.mrr?.detalhePorMes?.[mes]||[]).forEach(p => add('pd', p.nome, p.valor));
   (todosHistoricos.mrr?.bonusGeralPorMes?.[mes]||[]).forEach(p => add('bonusGeral', p.nome, p.valor));
   ['marketing','vendas','cs','pd'].forEach(area => {
     const detalhe = todosHistoricos[area]?.detalhe || {};

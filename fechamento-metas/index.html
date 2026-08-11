@@ -1002,7 +1002,7 @@ async function salvarMarketing() {
   const btn = document.getElementById('btn-salvar-mkt');
   if (!mesReferencia) { statusDiv.className = 'status-msg erro'; statusDiv.textContent = 'Preencha o mês/ano de referência no topo da página.'; return; }
   const nomesExibicao = { cadastroTeste: 'Cadastro para teste', extensaoTeste: 'Extensão de teste +7 dias', novosClientesMkt: 'Novos clientes (Marketing)' };
-  const kpisPayload = Object.keys(equipesMkt).map(chave => {
+  const kpisPayload = ['cadastroTeste','extensaoTeste','novosClientesMkt'].map(chave => {
     const r = resultadosMktAtual[chave] || { nivel:null, percTotal:0, pool:0 };
     return { nomeKpi: nomesExibicao[chave], nivel: r.nivel || 'Nenhum', percTotal: r.percTotal || 0, pool: r.pool || 0,
       equipe: equipesMkt[chave].map(p => ({ nome: p.nome, percentual: p.percentual, valor: (r.pool||0) * (p.percentual/100) })) };

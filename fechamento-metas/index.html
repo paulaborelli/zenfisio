@@ -1737,38 +1737,86 @@ function agregarPorPessoaMes(mes) {
   return Object.values(totais).sort((a,b) => b.valor - a.valor);
 }
 
+// Departamento REAL de cada pessoa (onde ela trabalha), independente de qual mecanismo
+// de KPI está pagando o bônus. Baseado na lista de colaboradores/departamentos da Paula.
+const MAPA_DEPARTAMENTO_POR_PESSOA = {
+  'Aldrei Casalini Rigoli': '🔧 Produto & Desenvolvimento',
+  'Ana Paula Tobias': '🤝 CS e Suporte',
+  'Anderson Felipe Ribeiro Rosa': '🔧 Produto & Desenvolvimento',
+  'Andressa Freitas Lopes': '🤝 CS e Suporte',
+  'Bernardo da Silva Nascimento': '🤝 CS e Suporte',
+  'Bianca da Silva de Araujo': '💼 Vendas / Comercial',
+  'Bruno Gabriel Seifert Do Amaral': '🔧 Produto & Desenvolvimento',
+  'Camila De Oliveira': '🤝 CS e Suporte',
+  'Carolina Bigolin Pizzutti': '📣 Marketing',
+  'Cledison Eduardo Fritzen': '🏢 Administrativo',
+  'Eduardo Voigt Kroth': '🔧 Produto & Desenvolvimento',
+  'Eduarda Santos Reimann': '🤝 CS e Suporte',
+  'Emilly Pletsch': '📣 Marketing',
+  'Franciele Schefer': '🤝 CS e Suporte',
+  'Guilherme Avila': '🔧 Produto & Desenvolvimento',
+  'Gustavo Henrique Pereira De Campos': '🔧 Produto & Desenvolvimento',
+  'Gustavo Machado': '🔧 Produto & Desenvolvimento',
+  'Heloísa dos Santos Albrecht': '🤝 CS e Suporte',
+  'Jean Paulo da Silva Bitencourt': '🔧 Produto & Desenvolvimento',
+  'Jessica Cristina De Aguiar Wottrich': '💼 Vendas / Comercial',
+  'José Michael De Vasconcellos Sarmento': '🤝 CS e Suporte',
+  'Juliana Da Silva Do Nascimento': '📣 Marketing',
+  'Kéuri De Souza Kazienko': '🤝 CS e Suporte',
+  'Laura Cristina Grohs Agertte': '🏢 Administrativo',
+  'Lauren Camily Pereira': '🤝 CS e Suporte',
+  'Luan Henrique Neumann': '🔧 Produto & Desenvolvimento',
+  'Luana Leonarczyk': '💼 Vendas / Comercial',
+  'Lucas Gerhardt': '🔧 Produto & Desenvolvimento',
+  'Maria Augusta Santos Sakis': '🔧 Produto & Desenvolvimento',
+  'Marília Rodrigues Pereira': '🤝 CS e Suporte',
+  'Milena Casarin Barasuol': '🤝 CS e Suporte',
+  'Paula Chaiane Martins Borelli': '🏢 Administrativo',
+  'Rômulo Provenci Gonçalves': '🔧 Produto & Desenvolvimento',
+  'Taiz Gizele Richter': '🤝 CS e Suporte',
+  'Thainan Feistel': '🔧 Produto & Desenvolvimento',
+  'Viviane Da Cunha Dos Santos': '🤝 CS e Suporte'
+};
+const ORDEM_DEPARTAMENTOS_REAIS = ['📣 Marketing', '💼 Vendas / Comercial', '🤝 CS e Suporte', '🔧 Produto & Desenvolvimento', '🏢 Administrativo', '❓ Outros / não mapeado'];
+
+// Agrupa por departamento REAL da pessoa, com UMA linha por pessoa somando tudo que ela
+// recebe (não importa de qual KPI/mecanismo veio) — e guarda os itens que compõem esse
+// total pra exibir como detalhamento (clique) sem precisar separar por meta na tela.
 function agregarPorPessoaPorDepartamento(mes) {
-  // "pd" (NPS/Health Score/Infraestrutura) e o bônus de MRR por produto são o MESMO
-  // departamento na vida real (Produto & Desenvolvimento) — só vinham de dois mecanismos
-  // de cálculo diferentes. Por isso caem na mesma seção/total por pessoa aqui.
-  const departamentos = {
-    pd: { titulo: '🔧 Produto & Desenvolvimento (bônus de MRR + NPS/Health Score/Infraestrutura)', pessoas: {} },
-    bonusGeral: { titulo: '🎯 Bônus geral de MRR (Marketing/Comercial/Administrativo/CS)', pessoas: {} },
-    marketing: { titulo: '📣 Marketing', pessoas: {} },
-    vendas: { titulo: '💼 Vendas / Comercial', pessoas: {} },
-    cs: { titulo: '🤝 CS e Suporte', pessoas: {} }
-  };
-  function add(areaKey, nome, valor) {
+  const pessoas = {};
+  function add(nome, valor, label) {
     const chave = normalizarNomeMatch(nome);
     if (!chave) return;
-    const dep = departamentos[areaKey].pessoas;
-    if (!dep[chave]) dep[chave] = { nome: nomeCanonico(nome), valor: 0 };
-    dep[chave].valor += (Number(valor)||0);
+    if (!pessoas[chave]) pessoas[chave] = { nome: nomeCanonico(nome), valor: 0, itens: [] };
+    const v = Number(valor) || 0;
+    pessoas[chave].valor += v;
+    pessoas[chave].itens.push({ label, valor: v });
   }
-  (todosHistoricos.mrr?.detalhePorMes?.[mes]||[]).forEach(p => add('pd', p.nome, p.valor));
-  (todosHistoricos.mrr?.bonusGeralPorMes?.[mes]||[]).forEach(p => add('bonusGeral', p.nome, p.valor));
+  (todosHistoricos.mrr?.detalhePorMes?.[mes]||[]).forEach(p => add(p.nome, p.valor, 'MRR — Produto & Desenvolvimento'));
+  (todosHistoricos.mrr?.bonusGeralPorMes?.[mes]||[]).forEach(p => add(p.nome, p.valor, 'MRR — Bônus geral'));
   ['marketing','vendas','cs','pd'].forEach(area => {
     const detalhe = todosHistoricos[area]?.detalhe || {};
     Object.keys(detalhe).forEach(chave => {
-      if (chave.indexOf(mes + '|') === 0) (detalhe[chave]||[]).forEach(p => add(area, p.nome, p.valor));
+      if (chave.indexOf(mes + '|') === 0) {
+        const nomeKpi = chave.slice((mes + '|').length);
+        (detalhe[chave]||[]).forEach(p => add(p.nome, p.valor, nomeKpi));
+      }
     });
   });
-  const resultado = [];
-  Object.keys(departamentos).forEach(key => {
-    const lista = Object.values(departamentos[key].pessoas).sort((a,b) => b.valor - a.valor);
-    if (lista.length > 0) resultado.push({ titulo: departamentos[key].titulo, pessoas: lista, subtotal: lista.reduce((s,p)=>s+p.valor,0) });
+
+  const departamentos = {};
+  ORDEM_DEPARTAMENTOS_REAIS.forEach(d => { departamentos[d] = { titulo: d, pessoas: [] }; });
+  Object.values(pessoas).forEach(p => {
+    const dep = MAPA_DEPARTAMENTO_POR_PESSOA[p.nome] || '❓ Outros / não mapeado';
+    departamentos[dep].pessoas.push(p);
   });
-  return resultado;
+  return ORDEM_DEPARTAMENTOS_REAIS
+    .map(d => departamentos[d])
+    .filter(dep => dep.pessoas.length > 0)
+    .map(dep => {
+      const pessoasOrdenadas = dep.pessoas.sort((a,b) => b.valor - a.valor);
+      return { titulo: dep.titulo, pessoas: pessoasOrdenadas, subtotal: pessoasOrdenadas.reduce((s,p)=>s+p.valor,0) };
+    });
 }
 
 function renderDashboardMes(mes) {
@@ -1811,12 +1859,27 @@ function renderDashboardMes(mes) {
   }
 
   const porDepto = agregarPorPessoaPorDepartamento(mes);
+  let _idDetalhePessoaSeq = 0;
   document.getElementById('dashboard-pagamentos-por-depto').innerHTML = porDepto.map(dep => `
     <div style="margin-bottom:24px;">
       <h3 style="font-family:'Lora',serif;font-size:14px;font-weight:600;margin-bottom:10px;">${dep.titulo}</h3>
       <table class="produto-table">
         <thead><tr><th>Pessoa</th><th>Valor a receber</th></tr></thead>
-        <tbody>${dep.pessoas.map(p => `<tr><td>${p.nome}</td><td class="num">${fmtBRL(p.valor)}</td></tr>`).join('')}</tbody>
+        <tbody>${dep.pessoas.map(p => {
+          const idDet = 'detalhe-pessoa-' + (_idDetalhePessoaSeq++);
+          const itensHtml = p.itens.map(it => `
+            <div style="display:flex;justify-content:space-between;padding:3px 0;">
+              <span>${it.label}</span><span>${fmtBRL(it.valor)}</span>
+            </div>`).join('');
+          return `
+          <tr style="cursor:pointer;" onclick="const el=document.getElementById('${idDet}'); el.style.display = el.style.display==='block' ? 'none' : 'block';">
+            <td>${p.nome} <span class="hint" style="font-size:11px;">(clique para detalhar)</span></td>
+            <td class="num">${fmtBRL(p.valor)}</td>
+          </tr>
+          <tr><td colspan="2" style="padding:0;border:none;">
+            <div id="${idDet}" style="display:none;background:#F2F4F0;padding:8px 16px;font-size:13px;border-radius:6px;margin-bottom:4px;">${itensHtml}</div>
+          </td></tr>`;
+        }).join('')}</tbody>
       </table>
       <div style="text-align:right;font-size:13px;font-weight:600;margin-top:6px;color:var(--accent-text);">Subtotal: ${fmtBRL(dep.subtotal)}</div>
     </div>`).join('') || '<div class="hint">Nenhum pagamento registrado para este mês ainda.</div>';

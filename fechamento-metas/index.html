@@ -406,7 +406,51 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
       </div>
     </div>
     <div class="secao-area-header">🔧 P&amp;D</div>
-    <div class="tab-panel" id="tab-pd"><div class="card"><div class="placeholder-em-construcao">🚧 P&amp;D ainda não foi construído.</div></div></div>
+    <div class="tab-panel" id="tab-pd">
+      <div class="card">
+        <h2 class="acordeao-titulo" onclick="toggleAcordeao(this)">KPI 1 — NPS (Net Promoter Score) <span class="acordeao-seta">▾</span></h2>
+        <div class="acordeao-corpo" style="display:none;">
+          <div class="field"><label>Nota NPS do mês (mesma nota da empresa usada em CS)</label><input type="text" id="input-npsPD-nota" placeholder="Ex: 76" oninput="recalcularPD()"/></div>
+          <table class="niveis-table"><thead><tr><th>Nível</th><th>Meta (nota)</th><th>Bônus</th></tr></thead><tbody id="tabela-npsPD"></tbody></table>
+          <div class="resultado-kpi" id="resultado-npsPD">Aguardando leitura do PDF (acima)...</div>
+          <div class="bonus-box" style="margin-bottom:16px;"><div class="label">Pool do bônus (% × MRR total)</div><div class="valor" id="pool-npsPD">R$ 0,00</div></div>
+          <table class="produto-table"><thead><tr><th>Pessoa</th><th>%</th><th>Valor</th><th></th></tr></thead><tbody id="equipe-npsPD"></tbody></table>
+          <button class="btn-add" onclick="adicionarPessoaMkt('npsPD')">+ Adicionar pessoa</button>
+          <div class="total-linha"><span>Total: <strong id="total-npsPD">0%</strong></span><span class="badge" id="badge-npsPD">—</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="acordeao-titulo" onclick="toggleAcordeao(this)">KPI 2 — Health Score (saúde do cliente) <span class="acordeao-seta">▾</span></h2>
+        <div class="acordeao-corpo" style="display:none;">
+          <div class="field"><label>Nota Health Score do mês (mesma nota da empresa usada em CS)</label><input type="text" id="input-healthScorePD-nota" placeholder="Ex: 74" oninput="recalcularPD()"/></div>
+          <table class="niveis-table"><thead><tr><th>Nível</th><th>Meta (nota)</th><th>Bônus</th></tr></thead><tbody id="tabela-healthScorePD"></tbody></table>
+          <div class="resultado-kpi" id="resultado-healthScorePD">Aguardando leitura do PDF (acima)...</div>
+          <div class="bonus-box" style="margin-bottom:16px;"><div class="label">Pool do bônus (% × MRR total)</div><div class="valor" id="pool-healthScorePD">R$ 0,00</div></div>
+          <table class="produto-table"><thead><tr><th>Pessoa</th><th>%</th><th>Valor</th><th></th></tr></thead><tbody id="equipe-healthScorePD"></tbody></table>
+          <button class="btn-add" onclick="adicionarPessoaMkt('healthScorePD')">+ Adicionar pessoa</button>
+          <div class="total-linha"><span>Total: <strong id="total-healthScorePD">0%</strong></span><span class="badge" id="badge-healthScorePD">—</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="acordeao-titulo" onclick="toggleAcordeao(this)">KPI 3 — Índice de Eficiência de Infraestrutura <span class="acordeao-seta">▾</span></h2>
+        <div class="acordeao-corpo" style="display:none;">
+          <div class="field"><label>% de eficiência do mês</label><input type="text" id="input-infraestrutura-percentual" placeholder="Ex: 4,5" oninput="recalcularPD()"/></div>
+          <table class="niveis-table"><thead><tr><th>Nível</th><th>Meta (%)</th><th>Bônus</th></tr></thead><tbody id="tabela-infraestrutura"></tbody></table>
+          <div class="resultado-kpi" id="resultado-infraestrutura">Aguardando leitura do PDF (acima)...</div>
+          <div class="bonus-box" style="margin-bottom:16px;"><div class="label">Pool do bônus (% × MRR total)</div><div class="valor" id="pool-infraestrutura">R$ 0,00</div></div>
+          <table class="produto-table"><thead><tr><th>Pessoa</th><th>%</th><th>Valor</th><th></th></tr></thead><tbody id="equipe-infraestrutura"></tbody></table>
+          <button class="btn-add" onclick="adicionarPessoaMkt('infraestrutura')">+ Adicionar pessoa</button>
+          <div class="total-linha"><span>Total: <strong id="total-infraestrutura">0%</strong></span><span class="badge" id="badge-infraestrutura">—</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <button class="btn-primario" onclick="salvarPD()" id="btn-salvar-pd">Salvar fechamento de P&amp;D</button>
+        <div class="status-msg" id="status-salvar-pd"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -428,8 +472,13 @@ let equipesMkt = {
   upsellEquipe: [{nome:'Taiz',percentual:28},{nome:'Viviane',percentual:24},{nome:'Ana Paula',percentual:9},{nome:'Laura',percentual:6},{nome:'Franciele',percentual:4},{nome:'Bernardo',percentual:7},{nome:'Marília',percentual:5},{nome:'Kéuri',percentual:4},{nome:'Milena',percentual:4},{nome:'José',percentual:3},{nome:'Heloísa',percentual:3},{nome:'Eduarda',percentual:1.5},{nome:'Lauren',percentual:1.5}],
   churn: [{nome:'Taiz',percentual:25},{nome:'Viviane',percentual:18},{nome:'Ana Paula',percentual:11},{nome:'Laura',percentual:9},{nome:'Franciele',percentual:5},{nome:'Bernardo',percentual:8},{nome:'Marília',percentual:6},{nome:'Kéuri',percentual:4.5},{nome:'Milena',percentual:4.5},{nome:'José',percentual:3},{nome:'Heloísa',percentual:3},{nome:'Eduarda',percentual:1.5},{nome:'Lauren',percentual:1.5}],
   nps: [{nome:'Taiz',percentual:25},{nome:'Viviane',percentual:18},{nome:'Ana Paula',percentual:11},{nome:'Laura',percentual:9},{nome:'Franciele',percentual:5},{nome:'Bernardo',percentual:8},{nome:'Marília',percentual:6},{nome:'Kéuri',percentual:4.5},{nome:'Milena',percentual:4.5},{nome:'José',percentual:3},{nome:'Heloísa',percentual:3},{nome:'Eduarda',percentual:1.5},{nome:'Lauren',percentual:1.5}],
-  healthScore: [{nome:'Taiz',percentual:25},{nome:'Viviane',percentual:18},{nome:'Ana Paula',percentual:11},{nome:'Laura',percentual:9},{nome:'Franciele',percentual:5},{nome:'Bernardo',percentual:8},{nome:'Marília',percentual:6},{nome:'Kéuri',percentual:4.5},{nome:'Milena',percentual:4.5},{nome:'José',percentual:3},{nome:'Heloísa',percentual:3},{nome:'Eduarda',percentual:1.5},{nome:'Lauren',percentual:1.5}]
+  healthScore: [{nome:'Taiz',percentual:25},{nome:'Viviane',percentual:18},{nome:'Ana Paula',percentual:11},{nome:'Laura',percentual:9},{nome:'Franciele',percentual:5},{nome:'Bernardo',percentual:8},{nome:'Marília',percentual:6},{nome:'Kéuri',percentual:4.5},{nome:'Milena',percentual:4.5},{nome:'José',percentual:3},{nome:'Heloísa',percentual:3},{nome:'Eduarda',percentual:1.5},{nome:'Lauren',percentual:1.5}],
+  npsPD: [{nome:'Anderson',percentual:20},{nome:'Gustavo Machado',percentual:20},{nome:'Guilherme',percentual:4},{nome:'Lucas',percentual:2},{nome:'Jean',percentual:1},{nome:'Thainan',percentual:14},{nome:'Rômulo',percentual:8},{nome:'Bruno',percentual:8},{nome:'Luan',percentual:8},{nome:'Maria Augusta',percentual:5},{nome:'Gustavo Campos',percentual:5},{nome:'Aldrei',percentual:4},{nome:'Eduardo',percentual:1}],
+  healthScorePD: [{nome:'Anderson',percentual:20},{nome:'Gustavo Machado',percentual:20},{nome:'Guilherme',percentual:4},{nome:'Lucas',percentual:2},{nome:'Jean',percentual:1},{nome:'Thainan',percentual:14},{nome:'Rômulo',percentual:8},{nome:'Bruno',percentual:8},{nome:'Luan',percentual:8},{nome:'Maria Augusta',percentual:5},{nome:'Gustavo Campos',percentual:5},{nome:'Aldrei',percentual:4},{nome:'Eduardo',percentual:1}],
+  infraestrutura: [{nome:'Anderson',percentual:20},{nome:'Gustavo Machado',percentual:20},{nome:'Guilherme',percentual:4},{nome:'Lucas',percentual:2},{nome:'Jean',percentual:1},{nome:'Thainan',percentual:14},{nome:'Rômulo',percentual:8},{nome:'Bruno',percentual:8},{nome:'Luan',percentual:8},{nome:'Maria Augusta',percentual:5},{nome:'Gustavo Campos',percentual:5},{nome:'Aldrei',percentual:4},{nome:'Eduardo',percentual:1}]
 };
+let tiersPD = { nps: null, healthScore: null, infraestrutura: null };
+let resultadosPDAtual = {};
 let tiersMkt = { cadastroTeste: null, extensaoTeste: null, novosClientesMkt: null };
 
 let equipesVendas = {
@@ -513,7 +562,85 @@ function atualizarBadgeTotal(chave, total) {
   if (Math.abs(total - 100) < 0.01) { elBadge.textContent = 'OK'; elBadge.className = 'badge ok'; }
   else { elBadge.textContent = 'Deveria somar 100%'; elBadge.className = 'badge erro'; }
 }
-function recalcularPD() { /* será implementado quando construirmos a aba P&D */ }
+function calcularNPS_PD() {
+  const tiers = tiersPD.nps;
+  const elResultado = document.getElementById('resultado-npsPD');
+  if (!elResultado) return { nivel:'Nenhum', percTotal:0, pool:0 };
+  if (!tiers) { elResultado.textContent = 'Aguardando leitura do PDF (acima)...'; return { nivel:'Nenhum', percTotal:0, pool:0 }; }
+  const nota = parseNumeroBR(document.getElementById('input-npsPD-nota').value);
+  const mrrTotal = parseValorBR(document.getElementById('mrr-total-global').value);
+  const nivel = calcularNivelAscendente(nota, tiers);
+  const percTotal = nivel ? tiers[nivel].bonus : tiers.padrao;
+  const pool = mrrTotal * (percTotal/100);
+  elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Nenhum nível atingido (NPS ${nota})`;
+  document.getElementById('tabela-npsPD').innerHTML = ['bronze','prata','ouro','diamante'].map(k => `<tr class="${k===nivel?'atingido':''}"><td>${k}</td><td>${tiers[k].meta}</td><td>${tiers[k].bonus}%</td></tr>`).join('');
+  document.getElementById('pool-npsPD').textContent = fmtBRL(pool);
+  let total = 0;
+  equipesMkt.npsPD.forEach((p,i) => { const valor = pool*(p.percentual/100); total += p.percentual; const cel = document.getElementById('valor-npsPD-'+i); if (cel) cel.textContent = fmtBRL(valor); });
+  atualizarBadgeTotal('npsPD', total);
+  return { nivel: nivel || 'Nenhum', percTotal, pool };
+}
+function calcularHealthScore_PD() {
+  const tiers = tiersPD.healthScore;
+  const elResultado = document.getElementById('resultado-healthScorePD');
+  if (!elResultado) return { nivel:'Nenhum', percTotal:0, pool:0 };
+  if (!tiers) { elResultado.textContent = 'Aguardando leitura do PDF (acima)...'; return { nivel:'Nenhum', percTotal:0, pool:0 }; }
+  const nota = parseNumeroBR(document.getElementById('input-healthScorePD-nota').value);
+  const mrrTotal = parseValorBR(document.getElementById('mrr-total-global').value);
+  const nivel = calcularNivelAscendente(nota, tiers);
+  const percTotal = nivel ? tiers[nivel].bonus : tiers.padrao;
+  const pool = mrrTotal * (percTotal/100);
+  elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Nenhum nível atingido (Health Score ${nota})`;
+  document.getElementById('tabela-healthScorePD').innerHTML = ['bronze','prata','ouro','diamante'].map(k => `<tr class="${k===nivel?'atingido':''}"><td>${k}</td><td>${tiers[k].meta}</td><td>${tiers[k].bonus}%</td></tr>`).join('');
+  document.getElementById('pool-healthScorePD').textContent = fmtBRL(pool);
+  let total = 0;
+  equipesMkt.healthScorePD.forEach((p,i) => { const valor = pool*(p.percentual/100); total += p.percentual; const cel = document.getElementById('valor-healthScorePD-'+i); if (cel) cel.textContent = fmtBRL(valor); });
+  atualizarBadgeTotal('healthScorePD', total);
+  return { nivel: nivel || 'Nenhum', percTotal, pool };
+}
+function calcularInfraestrutura() {
+  const tiers = tiersPD.infraestrutura;
+  const elResultado = document.getElementById('resultado-infraestrutura');
+  if (!elResultado) return { nivel:'Nenhum', percTotal:0, pool:0 };
+  if (!tiers) { elResultado.textContent = 'Aguardando leitura do PDF (acima)...'; return { nivel:'Nenhum', percTotal:0, pool:0 }; }
+  const percEficiencia = parseNumeroBR(document.getElementById('input-infraestrutura-percentual').value);
+  const mrrTotal = parseValorBR(document.getElementById('mrr-total-global').value);
+  const nivel = calcularNivelAscendente(percEficiencia, tiers);
+  const percTotal = nivel ? tiers[nivel].bonus : tiers.padrao;
+  const pool = mrrTotal * (percTotal/100);
+  elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Nenhum nível atingido (${percEficiencia}%)`;
+  document.getElementById('tabela-infraestrutura').innerHTML = ['bronze','prata','ouro','diamante'].map(k => `<tr class="${k===nivel?'atingido':''}"><td>${k}</td><td>${tiers[k].meta}%</td><td>${tiers[k].bonus}%</td></tr>`).join('');
+  document.getElementById('pool-infraestrutura').textContent = fmtBRL(pool);
+  let total = 0;
+  equipesMkt.infraestrutura.forEach((p,i) => { const valor = pool*(p.percentual/100); total += p.percentual; const cel = document.getElementById('valor-infraestrutura-'+i); if (cel) cel.textContent = fmtBRL(valor); });
+  atualizarBadgeTotal('infraestrutura', total);
+  return { nivel: nivel || 'Nenhum', percTotal, pool };
+}
+function recalcularPD() {
+  resultadosPDAtual.npsPD = calcularNPS_PD();
+  resultadosPDAtual.healthScorePD = calcularHealthScore_PD();
+  resultadosPDAtual.infraestrutura = calcularInfraestrutura();
+}
+async function salvarPD() {
+  const mesReferencia = document.getElementById('mes-referencia-global').value.trim();
+  const statusDiv = document.getElementById('status-salvar-pd');
+  const btn = document.getElementById('btn-salvar-pd');
+  if (!mesReferencia) { statusDiv.className = 'status-msg erro'; statusDiv.textContent = 'Preencha o mês/ano de referência no topo da página.'; return; }
+  const nomesEquipe = { npsPD: 'NPS (P&D)', healthScorePD: 'Health Score (P&D)', infraestrutura: 'Índice de Eficiência de Infraestrutura' };
+  const kpisPayload = ['npsPD','healthScorePD','infraestrutura'].map(chave => {
+    const r = resultadosPDAtual[chave] || { nivel:'Nenhum', percTotal:0, pool:0 };
+    return { nomeKpi: nomesEquipe[chave], nivel: r.nivel, percTotal: r.percTotal, pool: r.pool,
+      equipe: equipesMkt[chave].map(p => ({ nome: p.nome, percentual: p.percentual, valor: (r.pool||0) * (p.percentual/100) })) };
+  });
+  btn.disabled = true; btn.textContent = 'Salvando...';
+  try {
+    const r = await fetch(SCRIPT_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({ acao:'salvarFechamentoPD', user:usuarioAtual, pass:senhaAtual, payload:{ mesReferencia, kpis: kpisPayload } }) });
+    const data = await r.json();
+    if (data.ok) { statusDiv.className='status-msg ok'; statusDiv.textContent='P&D salvo com sucesso!'; carregarTodosHistoricos(); }
+    else { statusDiv.className='status-msg erro'; statusDiv.textContent='Erro: '+data.erro; }
+  } catch(e) { statusDiv.className='status-msg erro'; statusDiv.textContent='Erro: '+e.message; }
+  btn.disabled = false; btn.textContent = 'Salvar fechamento de P&D';
+}
 
 // ══════════════════════ MRR ══════════════════════
 async function carregarColaboradoresProduto() {
@@ -547,6 +674,7 @@ async function processarPDF(event) {
     let textoCompleto = '';
     for (let i = 1; i <= pdf.numPages; i++) { const page = await pdf.getPage(i); const content = await page.getTextContent(); textoCompleto += ' ' + content.items.map(it => it.str).join(' '); }
     textoCompleto = textoCompleto.replace(/(\S)\s+fi\s+(\S)/g, '$1fi$2');
+    textoCompleto = textoCompleto.replace(/\s+/g, ' ');
     niveisExtraidos = extrairNiveis(textoCompleto);
     if (!niveisExtraidos || Object.keys(niveisExtraidos).length === 0) { document.getElementById('pdf-status').textContent = 'Não consegui identificar os níveis no PDF.'; return; }
     document.getElementById('pdf-status').textContent = `PDF lido — ${Object.keys(niveisExtraidos).length} nível(is) identificado(s).`;
@@ -722,6 +850,7 @@ async function processarPDFAreas(event) {
     let textoCompleto = '';
     for (let i = 1; i <= pdf.numPages; i++) { const page = await pdf.getPage(i); const content = await page.getTextContent(); textoCompleto += ' ' + content.items.map(it => it.str).join(' '); }
     textoCompleto = textoCompleto.replace(/(\S)\s+fi\s+(\S)/g, '$1fi$2');
+    textoCompleto = textoCompleto.replace(/\s+/g, ' ');
     secoesPDFAreas = extrairSecoesPDFAreas(textoCompleto);
     const textoMkt = secoesPDFAreas['Marketing'] || '';
     tiersMkt.cadastroTeste   = extrairKpiTiers(textoMkt, 'Novo cadastro para teste do ZenFisio', 'cadastros', false);
@@ -764,6 +893,13 @@ async function processarPDFAreas(event) {
     tiersCS.nps          = extrairKpiGenerico(textoCS, 'NPS (Net Promoter Score)');
     tiersCS.healthScore  = extrairKpiGenerico(textoCS, 'Health Score (saúde do cliente)');
     recalcularCS();
+
+    // ── P&D ──
+    const textoPD = secoesPDFAreas['P&D'] || '';
+    tiersPD.nps            = extrairKpiGenerico(textoPD, 'NPS (Net Promoter Score)');
+    tiersPD.healthScore    = extrairKpiGenerico(textoPD, 'Health Score (saúde do cliente)');
+    tiersPD.infraestrutura = extrairKpiGenerico(textoPD, 'Índice de Eficiência de Infraestrutura');
+    recalcularPD();
   } catch(e) { document.getElementById('pdf-areas-status').textContent = 'Erro ao ler PDF: ' + e.message; }
 }
 
@@ -1207,18 +1343,20 @@ async function salvarCS() {
 // ══════════════════════ NAVEGAÇÃO POR MÊS + DASHBOARD ══════════════════════
 async function carregarTodosHistoricos() {
   try {
-    const [mrr, mkt, vendas, cs] = await Promise.all([
+    const [mrr, mkt, vendas, cs, pd] = await Promise.all([
       fetch(`${SCRIPT_URL}?acao=historicoFechamentos&user=${encodeURIComponent(usuarioAtual)}&pass=${encodeURIComponent(senhaAtual)}`).then(r=>r.json()),
       fetch(`${SCRIPT_URL}?acao=historicoMarketing&user=${encodeURIComponent(usuarioAtual)}&pass=${encodeURIComponent(senhaAtual)}`).then(r=>r.json()),
       fetch(`${SCRIPT_URL}?acao=historicoVendas&user=${encodeURIComponent(usuarioAtual)}&pass=${encodeURIComponent(senhaAtual)}`).then(r=>r.json()),
-      fetch(`${SCRIPT_URL}?acao=historicoCS&user=${encodeURIComponent(usuarioAtual)}&pass=${encodeURIComponent(senhaAtual)}`).then(r=>r.json())
+      fetch(`${SCRIPT_URL}?acao=historicoCS&user=${encodeURIComponent(usuarioAtual)}&pass=${encodeURIComponent(senhaAtual)}`).then(r=>r.json()),
+      fetch(`${SCRIPT_URL}?acao=historicoPD&user=${encodeURIComponent(usuarioAtual)}&pass=${encodeURIComponent(senhaAtual)}`).then(r=>r.json())
     ]);
     todosHistoricos.mrr = mrr.ok ? mrr : { fechamentos:[], detalhePorMes:{} };
     todosHistoricos.marketing = mkt.ok ? mkt : { registros:[], detalhe:{} };
     todosHistoricos.vendas = vendas.ok ? vendas : { registros:[], detalhe:{} };
     todosHistoricos.cs = cs.ok ? cs : { registros:[], detalhe:{} };
+    todosHistoricos.pd = pd.ok ? pd : { registros:[], detalhe:{} };
   } catch(e) {
-    todosHistoricos = { mrr:{fechamentos:[],detalhePorMes:{}}, marketing:{registros:[],detalhe:{}}, vendas:{registros:[],detalhe:{}}, cs:{registros:[],detalhe:{}} };
+    todosHistoricos = { mrr:{fechamentos:[],detalhePorMes:{}}, marketing:{registros:[],detalhe:{}}, vendas:{registros:[],detalhe:{}}, cs:{registros:[],detalhe:{}}, pd:{registros:[],detalhe:{}} };
   }
   renderMesesNav();
   if (mesAtivo) renderDashboardMes(mesAtivo);
@@ -1230,6 +1368,7 @@ function renderMesesNav() {
   (todosHistoricos.marketing?.registros||[]).forEach(f => { if (!meses.includes(f.mesReferencia)) meses.push(f.mesReferencia); });
   (todosHistoricos.vendas?.registros||[]).forEach(f => { if (!meses.includes(f.mesReferencia)) meses.push(f.mesReferencia); });
   (todosHistoricos.cs?.registros||[]).forEach(f => { if (!meses.includes(f.mesReferencia)) meses.push(f.mesReferencia); });
+  (todosHistoricos.pd?.registros||[]).forEach(f => { if (!meses.includes(f.mesReferencia)) meses.push(f.mesReferencia); });
 
   const nav = document.getElementById('meses-nav');
   const pillNovo = `<div class="mes-pill novo ${mesAtivo===null?'ativo':''}" onclick="selecionarMes(null)">+ Novo mês</div>`;
@@ -1264,7 +1403,7 @@ function totalAreaMes(mes, tipo) {
     const poolGeral = (Number(f.valorPorPessoa)||0) * (Number(f.numPessoas)||0);
     return { nivel: f.nivel, pool: poolProduto + poolGeral, mrrValor: Number(f.mrrValor)||0 };
   }
-  const mapa = { marketing: todosHistoricos.marketing, vendas: todosHistoricos.vendas, cs: todosHistoricos.cs };
+  const mapa = { marketing: todosHistoricos.marketing, vendas: todosHistoricos.vendas, cs: todosHistoricos.cs, pd: todosHistoricos.pd };
   const dados = mapa[tipo];
   const linhas = (dados?.registros||[]).filter(r => r.mesReferencia === mes);
   const pool = linhas.reduce((s,r)=>s+(Number(r.pool)||0),0);
@@ -1281,7 +1420,7 @@ function agregarPorPessoaMes(mes) {
     totais[chave].valor += (Number(valor)||0);
   }
   (todosHistoricos.mrr?.detalhePorMes?.[mes]||[]).forEach(p => add(p.nome, p.valor));
-  ['marketing','vendas','cs'].forEach(area => {
+  ['marketing','vendas','cs','pd'].forEach(area => {
     const detalhe = todosHistoricos[area]?.detalhe || {};
     Object.keys(detalhe).forEach(chave => {
       if (chave.indexOf(mes + '|') === 0) (detalhe[chave]||[]).forEach(p => add(p.nome, p.valor));
@@ -1291,8 +1430,8 @@ function agregarPorPessoaMes(mes) {
 }
 
 function renderDashboardMes(mes) {
-  const areas = ['mrr','marketing','vendas','cs'];
-  const nomesArea = { mrr:'🎯 MRR', marketing:'📣 Marketing', vendas:'💼 Vendas', cs:'🤝 CS e Suporte' };
+  const areas = ['mrr','marketing','vendas','cs','pd'];
+  const nomesArea = { mrr:'🎯 MRR', marketing:'📣 Marketing', vendas:'💼 Vendas', cs:'🤝 CS e Suporte', pd:'🔧 P&D' };
   const totais = areas.map(a => ({ area: nomesArea[a], ...totalAreaMes(mes, a) }));
   const totalGeral = totais.reduce((s,t)=>s+t.pool, 0);
 

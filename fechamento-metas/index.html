@@ -121,6 +121,8 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
 .acordeao-titulo:hover { color: var(--accent-text); }
 .acordeao-seta { font-size: 12px; color: var(--text-hint); transition: transform .15s; }
 .acordeao-corpo { padding-top: 16px; }
+.btn-remover-arquivo { background: none; border: 1px solid var(--border); color: #A32D2D; padding: 5px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; margin-left: 8px; }
+.btn-remover-arquivo:hover { background: #FCEBEB; }
 </style>
 </head>
 <body>
@@ -185,7 +187,7 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
       <h2>PDF de KPIs por áreas do mês</h2>
       <div class="field">
         <label>Anexar PDF ("Metas e bonificação de KPIs por áreas")</label>
-        <input type="file" id="pdf-areas-input" accept="application/pdf" onchange="processarPDFAreas(event)"/>
+        <input type="file" id="pdf-areas-input" accept="application/pdf" onchange="processarPDFAreas(event)"/><button type="button" class="btn-remover-arquivo" onclick="limparCampoArquivo(this, 'pdf-areas-status', 'Nenhum arquivo carregado ainda. Carregue uma vez aqui — vale para Marketing, Vendas, CS e Suporte e P&amp;D.')" title="Remover arquivo">🗑️ Remover</button>
         <div class="hint" id="pdf-areas-status">Nenhum arquivo carregado ainda. Carregue uma vez aqui — vale para Marketing, Vendas, CS e Suporte e P&amp;D.</div>
       </div>
     </div>
@@ -194,7 +196,7 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
       <h2>Resultados realizados do mês (upload múltiplo)</h2>
       <div class="field">
         <label>Anexe de uma vez: MRR - %, MRR - R$, Vendas Novos Clientes, Vendas MRR Adicionado, Churn e UpSell</label>
-        <input type="file" id="pdf-resultados-input" accept="application/pdf" multiple onchange="processarResultadosRealizadosPDF(event)"/>
+        <input type="file" id="pdf-resultados-input" accept="application/pdf" multiple onchange="processarResultadosRealizadosPDF(event)"/><button type="button" class="btn-remover-arquivo" onclick="limparCampoArquivo(this, 'status-resultados-realizados', 'Nenhum arquivo carregado ainda. Identifica sozinho qual arquivo é qual e preenche os campos certos.')" title="Remover arquivo">🗑️ Remover</button>
         <div class="hint" id="status-resultados-realizados">Nenhum arquivo carregado ainda. Identifica sozinho qual arquivo é qual e preenche os campos certos.</div>
       </div>
     </div>
@@ -204,7 +206,7 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
       <div class="card"><h2 class="acordeao-titulo" onclick="toggleAcordeao(this)">PDF de metas do mês (MRR) <span class="acordeao-seta">▾</span></h2><div class="acordeao-corpo" style="display:none;">
         <div class="field">
           <label>Anexar PDF ("Metas e bonificação por MRR")</label>
-          <input type="file" id="pdf-input" accept="application/pdf" onchange="processarPDF(event)"/>
+          <input type="file" id="pdf-input" accept="application/pdf" onchange="processarPDF(event)"/><button type="button" class="btn-remover-arquivo" onclick="limparCampoArquivo(this, 'pdf-status', 'Nenhum arquivo carregado ainda.')" title="Remover arquivo">🗑️ Remover</button>
           <div class="hint" id="pdf-status">Nenhum arquivo carregado ainda.</div>
         </div>
         <table class="niveis-table" id="tabela-niveis" style="display:none;">
@@ -317,12 +319,12 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
         <div class="field-row">
           <div class="field">
             <label>PDF "Comissão individual em vendas para Novos Clientes"</label>
-            <input type="file" accept="application/pdf" onchange="processarComissaoComercialPDF(event)"/>
+            <input type="file" accept="application/pdf" onchange="processarComissaoComercialPDF(event)"/><button type="button" class="btn-remover-arquivo" onclick="limparCampoArquivo(this, 'status-comissao-comercial', 'Nenhum arquivo carregado ainda.')" title="Remover arquivo">🗑️ Remover</button>
             <div class="hint" id="status-comissao-comercial">Nenhum arquivo carregado ainda.</div>
           </div>
           <div class="field">
             <label>PDF "Meta individual de venda"</label>
-            <input type="file" accept="application/pdf" onchange="processarMetaComercialPDF(event)"/>
+            <input type="file" accept="application/pdf" onchange="processarMetaComercialPDF(event)"/><button type="button" class="btn-remover-arquivo" onclick="limparCampoArquivo(this, 'status-meta-comercial', 'Nenhum arquivo carregado ainda.')" title="Remover arquivo">🗑️ Remover</button>
             <div class="hint" id="status-meta-comercial">Nenhum arquivo carregado ainda.</div>
           </div>
         </div>
@@ -343,7 +345,7 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
       <div class="card"><h2 class="acordeao-titulo" onclick="toggleAcordeao(this)">KPI 1 — UpSell: Equipe <span class="acordeao-seta">▾</span></h2><div class="acordeao-corpo" style="display:none;">
         <div class="field">
           <label>PDF "CS: UpSell"</label>
-          <input type="file" accept="application/pdf" onchange="processarUpsellEquipePDF(event)"/>
+          <input type="file" accept="application/pdf" onchange="processarUpsellEquipePDF(event)"/><button type="button" class="btn-remover-arquivo" onclick="limparCampoArquivo(this, 'status-upsell-equipe-pdf', 'Preenche o campo "MRR adicionado com UpSell" abaixo.')" title="Remover arquivo">🗑️ Remover</button>
           <div class="hint" id="status-upsell-equipe-pdf">Preenche o campo "MRR adicionado com UpSell" abaixo.</div>
         </div>
         <div class="field-row">
@@ -361,7 +363,7 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
       <div class="card"><h2 class="acordeao-titulo" onclick="toggleAcordeao(this)">KPI 1b — UpSell: Individual <span class="acordeao-seta">▾</span></h2><div class="acordeao-corpo" style="display:none;">
         <div class="field">
           <label>PDF "Comissão individual em UpSell para Clientes"</label>
-          <input type="file" accept="application/pdf" onchange="processarComissaoUpsellCSPDF(event)"/>
+          <input type="file" accept="application/pdf" onchange="processarComissaoUpsellCSPDF(event)"/><button type="button" class="btn-remover-arquivo" onclick="limparCampoArquivo(this, 'status-comissao-upsell-cs', 'Nenhum arquivo carregado ainda.')" title="Remover arquivo">🗑️ Remover</button>
           <div class="hint" id="status-comissao-upsell-cs">Nenhum arquivo carregado ainda.</div>
         </div>
         <table class="produto-table"><thead><tr><th>Pessoa</th><th>Valor (R$)</th><th></th></tr></thead><tbody id="tbody-upsellIndividual"></tbody></table>
@@ -372,12 +374,12 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
         <div class="field-row">
           <div class="field">
             <label>PDF "Churn (cancelamentos)"</label>
-            <input type="file" accept="application/pdf" onchange="processarChurnPDF(event)"/>
+            <input type="file" accept="application/pdf" onchange="processarChurnPDF(event)"/><button type="button" class="btn-remover-arquivo" onclick="limparCampoArquivo(this, 'status-churn-pdf', 'Preenche o campo "Churn em R$" abaixo.')" title="Remover arquivo">🗑️ Remover</button>
             <div class="hint" id="status-churn-pdf">Preenche o campo "Churn em R$" abaixo.</div>
           </div>
           <div class="field">
             <label>PDF "CS: DownSell"</label>
-            <input type="file" accept="application/pdf" onchange="processarDownsellPDF(event)"/>
+            <input type="file" accept="application/pdf" onchange="processarDownsellPDF(event)"/><button type="button" class="btn-remover-arquivo" onclick="limparCampoArquivo(this, 'status-downsell-pdf', 'Preenche o campo "DownSell em R$" abaixo.')" title="Remover arquivo">🗑️ Remover</button>
             <div class="hint" id="status-downsell-pdf">Preenche o campo "DownSell em R$" abaixo.</div>
           </div>
         </div>
@@ -463,6 +465,11 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
       <div class="card">
         <button class="btn-primario" onclick="salvarPD()" id="btn-salvar-pd">Salvar fechamento de P&amp;D</button>
         <div class="status-msg" id="status-salvar-pd"></div>
+      </div>
+
+      <div class="card" style="text-align:center; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+        <button class="btn-secundario" onclick="window.scrollTo({top:0, behavior:'smooth'})">⬆ Voltar ao topo</button>
+        <button class="btn-secundario" onclick="irParaDashboardDoMes()">📊 Ver Dashboard deste mês</button>
       </div>
     </div>
   </div>
@@ -1143,6 +1150,12 @@ function extrairRealizadoTabelaTopo(texto, tipo) {
   if (!m) return null;
   return parseFloat(m[1].replace(/\./g,'').replace(',', '.'));
 }
+function limparCampoArquivo(btn, hintId, textoPadrao) {
+  const input = btn.previousElementSibling;
+  if (input && input.tagName === 'INPUT') input.value = '';
+  const hint = document.getElementById(hintId);
+  if (hint) hint.textContent = textoPadrao;
+}
 function fecharAcordeaoDoElemento(elId) {
   const el = document.getElementById(elId);
   if (!el) return;
@@ -1191,12 +1204,16 @@ async function processarResultadosRealizadosPDF(event) {
         const v = extrairRealizadoTabelaTopo(texto, 'moeda');
         if (v !== null) {
           const vFmt = v.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+          document.getElementById('input-cadastroTeste-mrr').value = vFmt;
+          document.getElementById('input-extensaoTeste-mrr').value = vFmt;
           document.getElementById('input-novosClientesMkt-mrr').value = vFmt;
           document.getElementById('input-equipeComercial-mrr').value = vFmt;
           recalcularMarketing(); recalcularVendas();
+          fecharAcordeaoDoElemento('input-cadastroTeste-mrr');
+          fecharAcordeaoDoElemento('input-extensaoTeste-mrr');
           fecharAcordeaoDoElemento('input-novosClientesMkt-mrr');
           fecharAcordeaoDoElemento('input-equipeComercial-mrr');
-          encontrados.push(`Vendas MRR Adicionado: ${fmtBRL(v)}`);
+          encontrados.push(`MRR Adicionado (Marketing×3 + Vendas): ${fmtBRL(v)}`);
         }
       } else if (tipo === 'churnResumo') {
         const v = extrairRealizadoTabelaTopo(texto, 'percentual');
@@ -1517,6 +1534,14 @@ function editarMes() {
   if (!mesAtivo) return;
   document.getElementById('mes-referencia-global').value = mesAtivo;
   selecionarMes(null);
+}
+function irParaDashboardDoMes() {
+  const mes = document.getElementById('mes-referencia-global').value.trim();
+  if (!mes) { alert('Preencha o Mês/Ano de referência no topo da página primeiro.'); return; }
+  carregarTodosHistoricos().then(() => {
+    selecionarMes(mes);
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
 }
 
 function totalAreaMes(mes, tipo) {

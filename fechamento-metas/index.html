@@ -190,6 +190,15 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
       </div>
     </div>
 
+    <div class="card">
+      <h2>Resultados realizados do mês (upload múltiplo)</h2>
+      <div class="field">
+        <label>Anexe de uma vez: MRR - %, MRR - R$, Vendas Novos Clientes, Vendas MRR Adicionado, Churn e UpSell</label>
+        <input type="file" id="pdf-resultados-input" accept="application/pdf" multiple onchange="processarResultadosRealizadosPDF(event)"/>
+        <div class="hint" id="status-resultados-realizados">Nenhum arquivo carregado ainda. Identifica sozinho qual arquivo é qual e preenche os campos certos.</div>
+      </div>
+    </div>
+
     <div class="secao-area-header">🎯 MRR</div>
     <div class="tab-panel" id="tab-mrr">
       <div class="card"><h2 class="acordeao-titulo" onclick="toggleAcordeao(this)">PDF de metas do mês (MRR) <span class="acordeao-seta">▾</span></h2><div class="acordeao-corpo" style="display:none;">
@@ -248,7 +257,7 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
         <div class="bonus-box" style="margin-bottom:16px;"><div class="label">Pool do bônus</div><div class="valor" id="pool-cadastroTeste">R$ 0,00</div></div>
         <table class="produto-table"><thead><tr><th>Pessoa</th><th>%</th><th>Valor</th><th></th></tr></thead><tbody id="equipe-cadastroTeste"></tbody></table>
         <button class="btn-add" onclick="adicionarPessoaMkt('cadastroTeste')">+ Adicionar pessoa</button>
-        <div class="total-linha"><span>Total: <strong id="total-cadastroTeste">0%</strong></span><span class="badge" id="badge-cadastroTeste">—</span></div>
+        <div class="total-linha"><span>Total: <strong id="total-cadastroTeste">0%</strong></span><span class="badge" id="badge-cadastroTeste">—</span><button class="btn-secundario" style="padding:4px 12px;font-size:11px;margin:0 0 0 10px;" onclick="fecharAcordeaoDoElemento('badge-cadastroTeste')">OK ✓</button></div>
       </div></div>
 
       <!-- KPI 2: Extensão de teste -->
@@ -262,7 +271,7 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
         <div class="bonus-box" style="margin-bottom:16px;"><div class="label">Pool do bônus</div><div class="valor" id="pool-extensaoTeste">R$ 0,00</div></div>
         <table class="produto-table"><thead><tr><th>Pessoa</th><th>%</th><th>Valor</th><th></th></tr></thead><tbody id="equipe-extensaoTeste"></tbody></table>
         <button class="btn-add" onclick="adicionarPessoaMkt('extensaoTeste')">+ Adicionar pessoa</button>
-        <div class="total-linha"><span>Total: <strong id="total-extensaoTeste">0%</strong></span><span class="badge" id="badge-extensaoTeste">—</span></div>
+        <div class="total-linha"><span>Total: <strong id="total-extensaoTeste">0%</strong></span><span class="badge" id="badge-extensaoTeste">—</span><button class="btn-secundario" style="padding:4px 12px;font-size:11px;margin:0 0 0 10px;" onclick="fecharAcordeaoDoElemento('badge-extensaoTeste')">OK ✓</button></div>
       </div></div>
 
       <!-- KPI 3: Novos clientes Marketing -->
@@ -276,7 +285,7 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
         <div class="bonus-box" style="margin-bottom:16px;"><div class="label">Pool do bônus</div><div class="valor" id="pool-novosClientesMkt">R$ 0,00</div></div>
         <table class="produto-table"><thead><tr><th>Pessoa</th><th>%</th><th>Valor</th><th></th></tr></thead><tbody id="equipe-novosClientesMkt"></tbody></table>
         <button class="btn-add" onclick="adicionarPessoaMkt('novosClientesMkt')">+ Adicionar pessoa</button>
-        <div class="total-linha"><span>Total: <strong id="total-novosClientesMkt">0%</strong></span><span class="badge" id="badge-novosClientesMkt">—</span></div>
+        <div class="total-linha"><span>Total: <strong id="total-novosClientesMkt">0%</strong></span><span class="badge" id="badge-novosClientesMkt">—</span><button class="btn-secundario" style="padding:4px 12px;font-size:11px;margin:0 0 0 10px;" onclick="fecharAcordeaoDoElemento('badge-novosClientesMkt')">OK ✓</button></div>
       </div></div>
 
       <div class="card">
@@ -298,7 +307,7 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
         <div class="bonus-box" style="margin-bottom:16px;"><div class="label">Pool do bônus</div><div class="valor" id="pool-equipeComercial">R$ 0,00</div></div>
         <table class="produto-table"><thead><tr><th>Pessoa</th><th>%</th><th>Valor</th><th></th></tr></thead><tbody id="equipe-equipeComercial"></tbody></table>
         <button class="btn-add" onclick="adicionarPessoaVendasEquipe()">+ Adicionar pessoa</button>
-        <div class="total-linha"><span>Total: <strong id="total-equipeComercial">0%</strong></span><span class="badge" id="badge-equipeComercial">—</span></div>
+        <div class="total-linha"><span>Total: <strong id="total-equipeComercial">0%</strong></span><span class="badge" id="badge-equipeComercial">—</span><button class="btn-secundario" style="padding:4px 12px;font-size:11px;margin:0 0 0 10px;" onclick="fecharAcordeaoDoElemento('badge-equipeComercial')">OK ✓</button></div>
       </div></div>
 
       <div class="card"><h2 class="acordeao-titulo" onclick="toggleAcordeao(this)">KPI 2 + 3 — Comissão Individual por Vendedor <span class="acordeao-seta">▾</span></h2><div class="acordeao-corpo" style="display:none;">
@@ -332,6 +341,11 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
     <div class="secao-area-header">🤝 CS e Suporte</div>
     <div class="tab-panel" id="tab-cs">
       <div class="card"><h2 class="acordeao-titulo" onclick="toggleAcordeao(this)">KPI 1 — UpSell: Equipe <span class="acordeao-seta">▾</span></h2><div class="acordeao-corpo" style="display:none;">
+        <div class="field">
+          <label>PDF "CS: UpSell"</label>
+          <input type="file" accept="application/pdf" onchange="processarUpsellEquipePDF(event)"/>
+          <div class="hint" id="status-upsell-equipe-pdf">Preenche o campo "MRR adicionado com UpSell" abaixo.</div>
+        </div>
         <div class="field-row">
           <div class="field"><label>% de crescimento (UpSell)</label><input type="text" id="input-upsellEquipe-crescimento" placeholder="Ex: 1,51" oninput="recalcularCS()"/></div>
           <div class="field"><label>MRR adicionado com UpSell (R$)</label><input type="text" id="input-upsellEquipe-mrr" placeholder="Ex: 8.991,34" oninput="recalcularCS()"/></div>
@@ -341,7 +355,7 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
         <div class="bonus-box" style="margin-bottom:16px;"><div class="label">Pool do bônus</div><div class="valor" id="pool-upsellEquipe">R$ 0,00</div></div>
         <table class="produto-table"><thead><tr><th>Pessoa</th><th>%</th><th>Valor</th><th></th></tr></thead><tbody id="equipe-upsellEquipe"></tbody></table>
         <button class="btn-add" onclick="adicionarPessoaMkt('upsellEquipe')">+ Adicionar pessoa</button>
-        <div class="total-linha"><span>Total: <strong id="total-upsellEquipe">0%</strong></span><span class="badge" id="badge-upsellEquipe">—</span></div>
+        <div class="total-linha"><span>Total: <strong id="total-upsellEquipe">0%</strong></span><span class="badge" id="badge-upsellEquipe">—</span><button class="btn-secundario" style="padding:4px 12px;font-size:11px;margin:0 0 0 10px;" onclick="fecharAcordeaoDoElemento('badge-upsellEquipe')">OK ✓</button></div>
       </div></div>
 
       <div class="card"><h2 class="acordeao-titulo" onclick="toggleAcordeao(this)">KPI 1b — UpSell: Individual <span class="acordeao-seta">▾</span></h2><div class="acordeao-corpo" style="display:none;">
@@ -377,7 +391,7 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
         <div class="bonus-box" style="margin-bottom:16px;"><div class="label">Pool do bônus (MRR total × %) − Churn − DownSell</div><div class="valor" id="pool-churn">R$ 0,00</div></div>
         <table class="produto-table"><thead><tr><th>Pessoa</th><th>%</th><th>Valor</th><th></th></tr></thead><tbody id="equipe-churn"></tbody></table>
         <button class="btn-add" onclick="adicionarPessoaMkt('churn')">+ Adicionar pessoa</button>
-        <div class="total-linha"><span>Total: <strong id="total-churn">0%</strong></span><span class="badge" id="badge-churn">—</span></div>
+        <div class="total-linha"><span>Total: <strong id="total-churn">0%</strong></span><span class="badge" id="badge-churn">—</span><button class="btn-secundario" style="padding:4px 12px;font-size:11px;margin:0 0 0 10px;" onclick="fecharAcordeaoDoElemento('badge-churn')">OK ✓</button></div>
       </div></div>
 
       <div class="card"><h2 class="acordeao-titulo" onclick="toggleAcordeao(this)">KPI 3 — NPS (Net Promoter Score) <span class="acordeao-seta">▾</span></h2><div class="acordeao-corpo" style="display:none;">
@@ -387,7 +401,7 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
         <div class="bonus-box" style="margin-bottom:16px;"><div class="label">Pool do bônus (% × MRR total)</div><div class="valor" id="pool-nps">R$ 0,00</div></div>
         <table class="produto-table"><thead><tr><th>Pessoa</th><th>%</th><th>Valor</th><th></th></tr></thead><tbody id="equipe-nps"></tbody></table>
         <button class="btn-add" onclick="adicionarPessoaMkt('nps')">+ Adicionar pessoa</button>
-        <div class="total-linha"><span>Total: <strong id="total-nps">0%</strong></span><span class="badge" id="badge-nps">—</span></div>
+        <div class="total-linha"><span>Total: <strong id="total-nps">0%</strong></span><span class="badge" id="badge-nps">—</span><button class="btn-secundario" style="padding:4px 12px;font-size:11px;margin:0 0 0 10px;" onclick="fecharAcordeaoDoElemento('badge-nps')">OK ✓</button></div>
       </div></div>
 
       <div class="card"><h2 class="acordeao-titulo" onclick="toggleAcordeao(this)">KPI 4 — Health Score (saúde do cliente) <span class="acordeao-seta">▾</span></h2><div class="acordeao-corpo" style="display:none;">
@@ -397,7 +411,7 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
         <div class="bonus-box" style="margin-bottom:16px;"><div class="label">Pool do bônus (% × MRR total)</div><div class="valor" id="pool-healthScore">R$ 0,00</div></div>
         <table class="produto-table"><thead><tr><th>Pessoa</th><th>%</th><th>Valor</th><th></th></tr></thead><tbody id="equipe-healthScore"></tbody></table>
         <button class="btn-add" onclick="adicionarPessoaMkt('healthScore')">+ Adicionar pessoa</button>
-        <div class="total-linha"><span>Total: <strong id="total-healthScore">0%</strong></span><span class="badge" id="badge-healthScore">—</span></div>
+        <div class="total-linha"><span>Total: <strong id="total-healthScore">0%</strong></span><span class="badge" id="badge-healthScore">—</span><button class="btn-secundario" style="padding:4px 12px;font-size:11px;margin:0 0 0 10px;" onclick="fecharAcordeaoDoElemento('badge-healthScore')">OK ✓</button></div>
       </div></div>
 
       <div class="card">
@@ -416,7 +430,7 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
           <div class="bonus-box" style="margin-bottom:16px;"><div class="label">Pool do bônus (% × MRR total)</div><div class="valor" id="pool-npsPD">R$ 0,00</div></div>
           <table class="produto-table"><thead><tr><th>Pessoa</th><th>%</th><th>Valor</th><th></th></tr></thead><tbody id="equipe-npsPD"></tbody></table>
           <button class="btn-add" onclick="adicionarPessoaMkt('npsPD')">+ Adicionar pessoa</button>
-          <div class="total-linha"><span>Total: <strong id="total-npsPD">0%</strong></span><span class="badge" id="badge-npsPD">—</span></div>
+          <div class="total-linha"><span>Total: <strong id="total-npsPD">0%</strong></span><span class="badge" id="badge-npsPD">—</span><button class="btn-secundario" style="padding:4px 12px;font-size:11px;margin:0 0 0 10px;" onclick="fecharAcordeaoDoElemento('badge-npsPD')">OK ✓</button></div>
         </div>
       </div>
 
@@ -429,7 +443,7 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
           <div class="bonus-box" style="margin-bottom:16px;"><div class="label">Pool do bônus (% × MRR total)</div><div class="valor" id="pool-healthScorePD">R$ 0,00</div></div>
           <table class="produto-table"><thead><tr><th>Pessoa</th><th>%</th><th>Valor</th><th></th></tr></thead><tbody id="equipe-healthScorePD"></tbody></table>
           <button class="btn-add" onclick="adicionarPessoaMkt('healthScorePD')">+ Adicionar pessoa</button>
-          <div class="total-linha"><span>Total: <strong id="total-healthScorePD">0%</strong></span><span class="badge" id="badge-healthScorePD">—</span></div>
+          <div class="total-linha"><span>Total: <strong id="total-healthScorePD">0%</strong></span><span class="badge" id="badge-healthScorePD">—</span><button class="btn-secundario" style="padding:4px 12px;font-size:11px;margin:0 0 0 10px;" onclick="fecharAcordeaoDoElemento('badge-healthScorePD')">OK ✓</button></div>
         </div>
       </div>
 
@@ -442,7 +456,7 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
           <div class="bonus-box" style="margin-bottom:16px;"><div class="label">Pool do bônus (% × MRR total)</div><div class="valor" id="pool-infraestrutura">R$ 0,00</div></div>
           <table class="produto-table"><thead><tr><th>Pessoa</th><th>%</th><th>Valor</th><th></th></tr></thead><tbody id="equipe-infraestrutura"></tbody></table>
           <button class="btn-add" onclick="adicionarPessoaMkt('infraestrutura')">+ Adicionar pessoa</button>
-          <div class="total-linha"><span>Total: <strong id="total-infraestrutura">0%</strong></span><span class="badge" id="badge-infraestrutura">—</span></div>
+          <div class="total-linha"><span>Total: <strong id="total-infraestrutura">0%</strong></span><span class="badge" id="badge-infraestrutura">—</span><button class="btn-secundario" style="padding:4px 12px;font-size:11px;margin:0 0 0 10px;" onclick="fecharAcordeaoDoElemento('badge-infraestrutura')">OK ✓</button></div>
         </div>
       </div>
 
@@ -1105,6 +1119,107 @@ function parseTotalGeralPDF(texto) {
   return m ? parseValorBR(m[1]) : null;
 }
 
+// ── RESULTADOS REALIZADOS (as 6 mini-tabelas do topo, com células mescladas) ──
+function detectarTipoArquivoResumo(texto) {
+  const temNovos = texto.includes('Novos');
+  const temClientesTop = texto.includes('Clientes') && !texto.includes('Principal');
+  const temAdicionado = texto.includes('Adicionado');
+  if (texto.includes('MRR - %')) return 'mrrPercentual';
+  if (texto.includes('MRR - R$')) return 'mrrReal';
+  if (temAdicionado && texto.includes('MRR')) return 'vendasMrrAdicionado';
+  if (temNovos && temClientesTop && !temAdicionado) return 'vendasClientes';
+  if (texto.includes('Churn') && texto.includes('Proporcional') && !texto.includes('cancelamentos') && !texto.includes('Principal')) return 'churnResumo';
+  if (texto.includes('Sell') && texto.includes('Proporcional') && !texto.includes('Clientes') && !texto.includes('Individual')) return 'upsellResumo';
+  return null;
+}
+function extrairRealizadoTabelaTopo(texto, tipo) {
+  const idxFalta = texto.search(/Falta/);
+  if (idxFalta === -1) return null;
+  const resto = texto.slice(idxFalta);
+  let m;
+  if (tipo === 'percentual') m = resto.match(/(\d+(?:[.,]\d+)?)\s*%/);
+  else if (tipo === 'moeda') m = resto.match(/R\$\s*([\d.,]+)/);
+  else if (tipo === 'inteiro') m = resto.match(/(\d+)/);
+  if (!m) return null;
+  return parseFloat(m[1].replace(/\./g,'').replace(',', '.'));
+}
+function fecharAcordeaoDoElemento(elId) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  const corpo = el.closest('.acordeao-corpo');
+  if (!corpo) return;
+  corpo.style.display = 'none';
+  const h2 = corpo.previousElementSibling;
+  if (h2 && h2.classList.contains('acordeao-titulo')) {
+    const seta = h2.querySelector('.acordeao-seta');
+    if (seta) seta.textContent = '▾';
+  }
+}
+async function processarResultadosRealizadosPDF(event) {
+  const files = event.target.files;
+  const statusEl = document.getElementById('status-resultados-realizados');
+  if (!files || files.length === 0) return;
+  statusEl.textContent = 'Lendo ' + files.length + ' arquivo(s)...';
+  const encontrados = [];
+  for (const file of files) {
+    try {
+      const texto = await lerPDFGenerico(file);
+      const tipo = detectarTipoArquivoResumo(texto);
+      if (!tipo) { encontrados.push(`${file.name}: não identificado`); continue; }
+
+      if (tipo === 'mrrReal') {
+        const v = extrairRealizadoTabelaTopo(texto, 'moeda');
+        if (v !== null) {
+          document.getElementById('mrr-input').value = v.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+          recalcular();
+          fecharAcordeaoDoElemento('mrr-input');
+          encontrados.push(`MRR R$: ${fmtBRL(v)}`);
+        }
+      } else if (tipo === 'mrrPercentual') {
+        encontrados.push(`MRR %: identificado (informativo, nenhum campo usa esse valor diretamente)`);
+      } else if (tipo === 'vendasClientes') {
+        const v = extrairRealizadoTabelaTopo(texto, 'inteiro');
+        if (v !== null) {
+          document.getElementById('input-novosClientesMkt-clientes').value = v;
+          document.getElementById('input-equipeComercial-clientes').value = v;
+          recalcularMarketing(); recalcularVendas();
+          fecharAcordeaoDoElemento('input-novosClientesMkt-clientes');
+          fecharAcordeaoDoElemento('input-equipeComercial-clientes');
+          encontrados.push(`Novos Clientes: ${v}`);
+        }
+      } else if (tipo === 'vendasMrrAdicionado') {
+        const v = extrairRealizadoTabelaTopo(texto, 'moeda');
+        if (v !== null) {
+          const vFmt = v.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+          document.getElementById('input-novosClientesMkt-mrr').value = vFmt;
+          document.getElementById('input-equipeComercial-mrr').value = vFmt;
+          recalcularMarketing(); recalcularVendas();
+          fecharAcordeaoDoElemento('input-novosClientesMkt-mrr');
+          fecharAcordeaoDoElemento('input-equipeComercial-mrr');
+          encontrados.push(`Vendas MRR Adicionado: ${fmtBRL(v)}`);
+        }
+      } else if (tipo === 'churnResumo') {
+        const v = extrairRealizadoTabelaTopo(texto, 'percentual');
+        if (v !== null) {
+          document.getElementById('input-churn-percentual').value = String(v).replace('.', ',');
+          recalcularCS();
+          fecharAcordeaoDoElemento('input-churn-percentual');
+          encontrados.push(`Churn: ${v}%`);
+        }
+      } else if (tipo === 'upsellResumo') {
+        const v = extrairRealizadoTabelaTopo(texto, 'percentual');
+        if (v !== null) {
+          document.getElementById('input-upsellEquipe-crescimento').value = String(v).replace('.', ',');
+          recalcularCS();
+          fecharAcordeaoDoElemento('input-upsellEquipe-crescimento');
+          encontrados.push(`UpSell: ${v}%`);
+        }
+      }
+    } catch(e) { encontrados.push(`${file.name}: erro ao ler (${e.message})`); }
+  }
+  statusEl.innerHTML = encontrados.length ? ('✅ ' + encontrados.join(' · ')) : 'Nenhum dado identificado nos arquivos.';
+}
+
 async function processarComissaoComercialPDF(event) {
   const file = event.target.files[0]; if (!file) return;
   document.getElementById('status-comissao-comercial').textContent = 'Lendo PDF...';
@@ -1160,6 +1275,16 @@ async function processarDownsellPDF(event) {
     if (total !== null) { document.getElementById('input-churn-downsell').value = total.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); document.getElementById('status-downsell-pdf').textContent = `PDF lido — Total: ${fmtBRL(total)}`; recalcularCS(); }
     else document.getElementById('status-downsell-pdf').textContent = 'Não consegui encontrar o total no PDF.';
   } catch(e) { document.getElementById('status-downsell-pdf').textContent = 'Erro ao ler PDF: ' + e.message; }
+}
+async function processarUpsellEquipePDF(event) {
+  const file = event.target.files[0]; if (!file) return;
+  document.getElementById('status-upsell-equipe-pdf').textContent = 'Lendo PDF...';
+  try {
+    const texto = await lerPDFGenerico(file);
+    const total = parseTotalGeralPDF(texto);
+    if (total !== null) { document.getElementById('input-upsellEquipe-mrr').value = total.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); document.getElementById('status-upsell-equipe-pdf').textContent = `PDF lido — Total: ${fmtBRL(total)}`; recalcularCS(); }
+    else document.getElementById('status-upsell-equipe-pdf').textContent = 'Não consegui encontrar o total no PDF.';
+  } catch(e) { document.getElementById('status-upsell-equipe-pdf').textContent = 'Erro ao ler PDF: ' + e.message; }
 }
 
 function recalcularVendas() {

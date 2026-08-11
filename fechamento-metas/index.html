@@ -186,6 +186,9 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
         <label>MRR total do mês (R$) — usado em CS e P&amp;D</label>
         <input type="text" id="mrr-total-global" placeholder="Ex: 619.036,50" oninput="recalcularCS(); recalcularPD();"/>
       </div>
+      <div id="aviso-edicao-mes" class="status-msg ok" style="display:none; margin-top:12px;">
+        📝 Editando um mês já salvo — os percentuais e valores de cada pessoa (em todas as áreas) foram recuperados automaticamente e ficam protegidos, mesmo sem reprocessar PDF nenhum. Se quiser mudar o nível/% de algum KPI específico (Marketing, Vendas, CS, P&amp;D ou MRR), reenvie o PDF daquela área — isso substitui o cálculo recuperado pelo novo. Depois é só salvar normalmente.
+      </div>
     </div>
 
     <div class="card">
@@ -604,6 +607,12 @@ function fmtBRL(v) {
   if (v === null || v === undefined || isNaN(v)) return 'R$ 0,00';
   return 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
+// Mesmo formato de fmtBRL, mas sem o prefixo "R$ " — usado pra preencher campos
+// tipo o "mrr-input" que já tem o "R$" fixo no rótulo do card.
+function fmtNumeroBR(v) {
+  if (v === null || v === undefined || isNaN(v)) return '';
+  return Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
 function atualizarBadgeTotal(chave, total) {
   const elTxt = document.getElementById('total-' + chave);
   const elBadge = document.getElementById('badge-' + chave);
@@ -708,12 +717,17 @@ async function carregarColaboradoresProduto() {
 }
 function renderTabelaProduto() {
   const tbody = document.getElementById('tbody-produto');
-  tbody.innerHTML = colaboradoresProduto.map((c, i) => `<tr><td>${c.nome}</td><td><input type="number" step="0.01" min="0" max="100" value="${c.percentual}" onchange="atualizarPercentual(${i}, this.value)"/></td><td class="num" id="valor-produto-${i}">R$ 0,00</td></tr>`).join('');
+  tbody.innerHTML = colaboradoresProduto.map((c, i) => `<tr><td>${c.nome}</td><td><input type="number" step="0.01" min="0" max="100" value="${c.percentual}" onchange="atualizarPercentual(${i}, this.value)"/></td><td><input type="text" class="num" id="valor-produto-${i}" value="${c.valorManual !== undefined && c.valorManual !== null ? fmtBRL(c.valorManual) : 'R$ 0,00'}" title="Editável — deixe em branco pra voltar ao cálculo automático" onchange="atualizarValorManualProduto(${i}, this.value)"/></td></tr>`).join('');
   document.getElementById('tabela-produto').style.display = 'table';
   document.getElementById('total-linha-produto').style.display = 'flex';
   recalcular();
 }
 function atualizarPercentual(i, valor) { colaboradoresProduto[i].percentual = parseFloat(valor) || 0; recalcular(); }
+function atualizarValorManualProduto(i, valorTexto) {
+  const texto = String(valorTexto).trim();
+  if (texto === '') delete colaboradoresProduto[i].valorManual;
+  else colaboradoresProduto[i].valorManual = parseValorBR(texto);
+}
 
 function renderEquipeBonusGeral() {
   const tbody = document.getElementById('tbody-bonus-geral');
@@ -780,31 +794,51 @@ function determinarNivel(mrrValor) {
   for (const chave of ordem) if (niveisExtraidos[chave] && mrrValor >= niveisExtraidos[chave].valor) return chave;
   return null;
 }
+// Quando um mês já salvo é reaberto pra edição sem reenviar o PDF de metas do MRR,
+// guardamos aqui os % de bônus que já tinham sido usados (vêm salvos como número puro,
+// sem precisar da tabela de faixas) — permite mostrar/recalcular pool e valores mesmo
+// sem o PDF. Assim que um PDF novo é lido, isso é descartado e o cálculo normal assume.
+let mrrRestaurado = null;
+
 function recalcular() {
-  if (!niveisExtraidos) return;
+  if (!niveisExtraidos && !mrrRestaurado) return;
   const mrrValor = parseValorBR(document.getElementById('mrr-input').value);
-  const nivelChave = determinarNivel(mrrValor);
   document.querySelectorAll('#tbody-niveis tr').forEach(tr => tr.classList.remove('atingido'));
   const resultadoDiv = document.getElementById('resultado-nivel');
   resultadoDiv.style.display = 'block';
-  const nomesExibicao = { diamante: '💎 Diamante', ouro: '🥇 Ouro', prata: '🥈 Prata', bronze: '🥉 Bronze' };
-  if (!nivelChave) {
-    resultadoDiv.className = 'resultado-nivel sem-nivel';
-    document.getElementById('nivel-atingido-texto').textContent = 'Nenhum nível atingido este mês';
-    document.getElementById('card-bonus').style.display = 'none';
-    document.getElementById('card-produto').style.display = 'none';
-    document.getElementById('card-salvar').style.display = 'none';
-    return;
+
+  let percBonusGeral, percBonusProduto, textoNivel;
+  if (niveisExtraidos) {
+    const nivelChave = determinarNivel(mrrValor);
+    const nomesExibicao = { diamante: '💎 Diamante', ouro: '🥇 Ouro', prata: '🥈 Prata', bronze: '🥉 Bronze' };
+    if (!nivelChave) {
+      resultadoDiv.className = 'resultado-nivel sem-nivel';
+      document.getElementById('nivel-atingido-texto').textContent = 'Nenhum nível atingido este mês';
+      document.getElementById('card-bonus').style.display = 'none';
+      document.getElementById('card-produto').style.display = 'none';
+      document.getElementById('card-salvar').style.display = 'none';
+      mrrRestaurado = null;
+      return;
+    }
+    resultadoDiv.className = 'resultado-nivel tem-nivel';
+    textoNivel = nomesExibicao[nivelChave];
+    const linha = document.getElementById('linha-nivel-' + nivelChave);
+    if (linha) linha.classList.add('atingido');
+    const nivel = niveisExtraidos[nivelChave];
+    percBonusGeral = nivel.bonusGeral;
+    percBonusProduto = nivel.bonusProduto;
+    mrrRestaurado = null; // um PDF novo tem prioridade sobre o que foi restaurado do mês salvo
+  } else {
+    resultadoDiv.className = 'resultado-nivel tem-nivel';
+    textoNivel = (mrrRestaurado.nivelTexto || 'Nenhum') + ' — recuperado do que já estava salvo (reenvie o PDF de metas do MRR se quiser reprocessar as faixas)';
+    percBonusGeral = mrrRestaurado.percBonusGeral;
+    percBonusProduto = mrrRestaurado.percBonusProduto;
   }
-  resultadoDiv.className = 'resultado-nivel tem-nivel';
-  document.getElementById('nivel-atingido-texto').textContent = nomesExibicao[nivelChave];
-  const linha = document.getElementById('linha-nivel-' + nivelChave);
-  if (linha) linha.classList.add('atingido');
-  const nivel = niveisExtraidos[nivelChave];
+  document.getElementById('nivel-atingido-texto').textContent = textoNivel;
   document.getElementById('card-bonus').style.display = 'block';
   document.getElementById('card-produto').style.display = 'block';
   document.getElementById('card-salvar').style.display = 'block';
-  const poolGeral = mrrValor * (nivel.bonusGeral / 100);
+  const poolGeral = mrrValor * (percBonusGeral / 100);
   const numPessoas = equipeBonusGeral.length || 1;
   const valorPorPessoaGeral = poolGeral / numPessoas;
   document.getElementById('pool-geral').textContent = fmtBRL(poolGeral);
@@ -813,14 +847,14 @@ function recalcular() {
     const celula = document.getElementById('valor-bonus-geral-' + i);
     if (celula) celula.textContent = fmtBRL(valorPorPessoaGeral);
   });
-  const poolProduto = mrrValor * (nivel.bonusProduto / 100);
+  const poolProduto = mrrValor * (percBonusProduto / 100);
   document.getElementById('pool-produto').textContent = fmtBRL(poolProduto);
   let totalPercentual = 0;
   colaboradoresProduto.forEach((c, i) => {
-    const valorPessoa = poolProduto * (c.percentual / 100);
+    const valorPessoa = valorEfetivo(c, poolProduto * (c.percentual / 100));
     totalPercentual += c.percentual;
-    const celula = document.getElementById('valor-produto-' + i);
-    if (celula) celula.textContent = fmtBRL(valorPessoa);
+    const inp = document.getElementById('valor-produto-' + i);
+    if (inp) inp.value = fmtBRL(valorPessoa);
   });
   document.getElementById('total-percentual-produto').textContent = totalPercentual.toFixed(2) + '%';
   const badge = document.getElementById('badge-total-produto');
@@ -1185,13 +1219,19 @@ function renderVendedores() {
       <td class="check"><input type="checkbox" ${v.melhorMes?'checked':''} onchange="atualizarVendedor(${i},'melhorMes',this.checked)"/></td>
       <td class="check"><input type="checkbox" ${v.melhor2Meses?'checked':''} onchange="atualizarVendedor(${i},'melhor2Meses',this.checked)"/></td>
       <td id="nivel-vend-${i}">—</td>
-      <td class="num" id="valor-vend-${i}">R$ 0,00</td>
+      <td><input type="text" class="num" id="valor-vend-${i}" value="${v.valorManual !== undefined && v.valorManual !== null ? fmtBRL(v.valorManual) : 'R$ 0,00'}" title="Editável — deixe em branco pra voltar ao cálculo automático" onchange="atualizarValorManualVendedor(${i}, this.value)"/></td>
       <td><button class="btn-remover" onclick="removerVendedor(${i})">✕</button></td>
     </tr>`).join('');
 }
 function atualizarVendedor(i, campo, valor) {
   if (campo === 'comissaoBase') vendedoresIndividuais[i][campo] = parseValorBR(valor);
   else vendedoresIndividuais[i][campo] = valor;
+  recalcularVendas();
+}
+function atualizarValorManualVendedor(i, valorTexto) {
+  const texto = String(valorTexto).trim();
+  if (texto === '') delete vendedoresIndividuais[i].valorManual;
+  else vendedoresIndividuais[i].valorManual = parseValorBR(texto);
   recalcularVendas();
 }
 function removerVendedor(i) { vendedoresIndividuais.splice(i,1); renderVendedores(); recalcularVendas(); }
@@ -1209,12 +1249,13 @@ function calcularComissaoIndividual() {
     }
     if (v.melhorMes) percExtra += percIndividuais.melhorMes;
     if (v.melhor2Meses) percExtra += percIndividuais.melhor2Meses;
-    const valorFinal = v.comissaoBase * (1 + percExtra/100);
+    const valorFinalCalculado = v.comissaoBase * (1 + percExtra/100);
+    const valorFinal = valorEfetivo(v, valorFinalCalculado);
     v.nivel = nivel; v.percExtra = percExtra; v.valorFinal = valorFinal;
     const celNivel = document.getElementById('nivel-vend-' + i);
-    const celValor = document.getElementById('valor-vend-' + i);
+    const inpValor = document.getElementById('valor-vend-' + i);
     if (celNivel) celNivel.textContent = nivel ? (nivel + ' (+' + percExtra + '%)') : (percExtra > 0 ? ('—' + ' (+' + percExtra + '%)') : '—');
-    if (celValor) celValor.textContent = fmtBRL(valorFinal);
+    if (inpValor) inpValor.value = fmtBRL(valorFinal);
   });
 }
 
@@ -1682,10 +1723,157 @@ function selecionarMes(mes) {
     renderDashboardMes(mes);
   }
 }
-function editarMes() {
+// Nome de exibição salvo no histórico (coluna "KPI") pra cada chave interna de equipesMkt/equipesVendas.
+const NOME_EXIBICAO_KPI = {
+  cadastroTeste: 'Cadastro para teste',
+  extensaoTeste: 'Extensão de teste +7 dias',
+  novosClientesMkt: 'Novos clientes (Marketing)',
+  upsellEquipe: 'UpSell (Equipe)',
+  churn: 'Churn',
+  nps: 'NPS',
+  healthScore: 'Health Score',
+  npsPD: 'NPS (P&D)',
+  healthScorePD: 'Health Score (P&D)',
+  infraestrutura: 'Índice de Eficiência de Infraestrutura'
+};
+
+// Restaura, a partir do histórico já salvo, uma ou mais chaves de KPI que moram dentro de
+// equipesMkt (usado por Marketing, CS e Suporte, e P&D — cada uma passando suas próprias
+// chaves e seu próprio objeto resultadosXAtual). Repõe a equipe inteira (nome/%/valor
+// travado em valorManual, protegido mesmo sem reprocessar PDF) e o nível/%/pool exibidos.
+function restaurarAreaMultiKpi(mes, chaves, resultadosAtual, areaHistorico) {
+  const historico = todosHistoricos[areaHistorico];
+  let algumEncontrado = false;
+  chaves.forEach(chave => {
+    const nomeKpi = NOME_EXIBICAO_KPI[chave];
+    const registro = (historico?.registros || []).find(r => r.mesReferencia === mes && r.nomeKpi === nomeKpi);
+    const detalhe = historico?.detalhe?.[mes + '|' + nomeKpi];
+    if (detalhe && detalhe.length) {
+      equipesMkt[chave] = detalhe.map(d => ({ nome: d.nome, percentual: Number(d.percentual) || 0, valorManual: Number(d.valor) || 0 }));
+      algumEncontrado = true;
+    }
+    if (registro) {
+      resultadosAtual[chave] = { nivel: registro.nivel, percTotal: Number(registro.percTotal) || 0, pool: Number(registro.pool) || 0 };
+      algumEncontrado = true;
+    }
+    renderEquipeMkt(chave);
+    const elResultado = document.getElementById('resultado-' + chave);
+    if (elResultado && registro) {
+      elResultado.innerHTML = `Nível: <strong>${registro.nivel}</strong> — Bônus: ${registro.percTotal}% — recuperado do que já estava salvo (reenvie o PDF da meta se quiser reprocessar)`;
+    }
+    const elPool = document.getElementById('pool-' + chave);
+    if (elPool && registro) elPool.textContent = fmtBRL(registro.pool);
+    let totalPerc = 0;
+    (equipesMkt[chave] || []).forEach(p => totalPerc += (p.percentual || 0));
+    atualizarBadgeTotal(chave, totalPerc);
+  });
+  return algumEncontrado;
+}
+
+// Restaura o MRR (nível/%/pool + equipe de Produto & Desenvolvimento + Bônus geral por nome)
+// a partir do que já foi salvo, sem precisar reenviar o PDF de metas do MRR.
+function restaurarMRR(mes) {
+  const historico = todosHistoricos.mrr;
+  const fechamento = (historico?.fechamentos || []).find(f => f.mesReferencia === mes);
+  if (!fechamento) { mrrRestaurado = null; return false; }
+  document.getElementById('mrr-input').value = fmtNumeroBR(fechamento.mrrValor);
+  const detalheProduto = historico.detalhePorMes?.[mes] || [];
+  if (detalheProduto.length) {
+    colaboradoresProduto = detalheProduto.map(d => ({ nome: d.nome, percentual: Number(d.percentual) || 0, valorManual: Number(d.valor) || 0 }));
+  }
+  const bonusGeral = historico.bonusGeralPorMes?.[mes] || [];
+  if (bonusGeral.length) {
+    equipeBonusGeral = bonusGeral.map(p => ({ nome: p.nome }));
+  }
+  niveisExtraidos = null;
+  mrrRestaurado = {
+    nivelTexto: fechamento.nivel,
+    percBonusGeral: Number(fechamento.percGeral) || 0,
+    percBonusProduto: Number(fechamento.percProduto) || 0
+  };
+  renderTabelaProduto();
+  renderEquipeBonusGeral();
+  recalcular();
+  return true;
+}
+
+// Restaura "Novos clientes (Equipe Comercial)" (Vendas) — mesmo padrão das áreas multi-KPI,
+// mas fora de equipesMkt porque essa equipe mora em equipesVendas.
+function restaurarEquipeComercialVendas(mes) {
+  const historico = todosHistoricos.vendas;
+  const nomeKpi = 'Novos clientes (Equipe Comercial)';
+  const registro = (historico?.registros || []).find(r => r.mesReferencia === mes && r.nomeKpi === nomeKpi);
+  const detalhe = historico?.detalhe?.[mes + '|' + nomeKpi];
+  if (detalhe && detalhe.length) {
+    equipesVendas.equipeComercial = detalhe.map(d => ({ nome: d.nome, percentual: Number(d.percentual) || 0, valorManual: Number(d.valor) || 0 }));
+  }
+  if (registro) {
+    resultadosVendasAtual.equipeComercial = { nivel: registro.nivel, percTotal: Number(registro.percTotal) || 0, pool: Number(registro.pool) || 0 };
+  }
+  renderEquipeVendasEquipe();
+  const elResultado = document.getElementById('resultado-equipeComercial');
+  if (elResultado && registro) {
+    elResultado.innerHTML = `Nível: <strong>${registro.nivel}</strong> — Bônus: ${registro.percTotal}% — recuperado do que já estava salvo (reenvie o PDF da meta se quiser reprocessar)`;
+  }
+  const elPool = document.getElementById('pool-equipeComercial');
+  if (elPool && registro) elPool.textContent = fmtBRL(registro.pool);
+  let totalPerc = 0;
+  equipesVendas.equipeComercial.forEach(p => totalPerc += (p.percentual || 0));
+  atualizarBadgeTotal('equipeComercial', totalPerc);
+  return !!(registro || (detalhe && detalhe.length));
+}
+
+// Restaura a "Comissão Individual por Vendedor" (Vendas) com o valor final travado em
+// valorManual — como esse valor não depende de % de equipe, basta protegê-lo diretamente.
+function restaurarComissaoIndividualVendedores(mes) {
+  const historico = todosHistoricos.vendas;
+  const detalhe = historico?.detalhe?.[mes + '|Comissão Individual por Vendedor'];
+  if (!detalhe || !detalhe.length) return false;
+  vendedoresIndividuais = detalhe.map(d => ({
+    nome: d.nome, comissaoBase: 0, tiersPercentuais: null, melhorMes: false, melhor2Meses: false,
+    nivel: null, percExtra: Number(d.percentual) || 0, valorFinal: Number(d.valor) || 0, valorManual: Number(d.valor) || 0
+  }));
+  renderVendedores();
+  return true;
+}
+
+// Restaura o "UpSell (Individual)" (CS e Suporte) — lista simples de nome+valor, sem %.
+function restaurarUpsellIndividualCS(mes) {
+  const historico = todosHistoricos.cs;
+  const detalhe = historico?.detalhe?.[mes + '|UpSell (Individual)'];
+  if (!detalhe || !detalhe.length) return false;
+  upsellIndividual = detalhe.map(d => ({ nome: d.nome, valor: Number(d.valor) || 0 }));
+  renderUpsellIndividual();
+  return true;
+}
+
+function mostrarAvisoEdicao(algumRestaurado) {
+  const aviso = document.getElementById('aviso-edicao-mes');
+  if (!aviso) return;
+  aviso.style.display = algumRestaurado ? 'block' : 'none';
+}
+
+// Orquestra a restauração de TODAS as áreas de um mês já salvo, pra "Editar mês" não
+// apagar nada — só deixar editável o que já existia.
+async function carregarMesParaEdicao(mes) {
+  await carregarTodosHistoricos();
+  const restauradoMRR = restaurarMRR(mes);
+  const restauradoMkt = restaurarAreaMultiKpi(mes, ['cadastroTeste','extensaoTeste','novosClientesMkt'], resultadosMktAtual, 'marketing');
+  const restauradoCS = restaurarAreaMultiKpi(mes, ['upsellEquipe','churn','nps','healthScore'], resultadosCSAtual, 'cs');
+  const restauradoPD = restaurarAreaMultiKpi(mes, ['npsPD','healthScorePD','infraestrutura'], resultadosPDAtual, 'pd');
+  const restauradoVendasEquipe = restaurarEquipeComercialVendas(mes);
+  const restauradoVendasIndiv = restaurarComissaoIndividualVendedores(mes);
+  const restauradoUpsellIndiv = restaurarUpsellIndividualCS(mes);
+  const algumRestaurado = restauradoMRR || restauradoMkt || restauradoCS || restauradoPD || restauradoVendasEquipe || restauradoVendasIndiv || restauradoUpsellIndiv;
+  mostrarAvisoEdicao(algumRestaurado);
+}
+
+async function editarMes() {
   if (!mesAtivo) return;
-  document.getElementById('mes-referencia-global').value = mesAtivo;
+  const mes = mesAtivo;
+  document.getElementById('mes-referencia-global').value = mes;
   selecionarMes(null);
+  await carregarMesParaEdicao(mes);
 }
 async function salvarMesInteiro() {
   const statusEl = document.getElementById('status-salvar-mes-inteiro');

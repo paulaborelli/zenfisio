@@ -117,6 +117,10 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
 .dash-card .dash-card-valor { font-family: 'Lora', serif; font-size: 20px; font-weight: 600; }
 .chart-wrap { position: relative; height: 260px; }
 .chart-wrap.alto { height: 340px; }
+.acordeao-titulo { cursor: pointer; display: flex; align-items: center; justify-content: space-between; user-select: none; }
+.acordeao-titulo:hover { color: var(--accent-text); }
+.acordeao-seta { font-size: 12px; color: var(--text-hint); transition: transform .15s; }
+.acordeao-corpo { padding-top: 16px; }
 </style>
 </head>
 <body>
@@ -151,15 +155,14 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
       <div class="dash-hero">
         <div class="label" id="dashboard-titulo">Fechamento de —</div>
         <div class="valor" id="dashboard-total-geral">R$ 0,00</div>
+        <button class="btn-secundario" id="btn-editar-mes" style="margin-top:14px;" onclick="editarMes()">✏️ Editar este mês</button>
       </div>
       <div class="dash-cards-area" id="dashboard-cards-area"></div>
     </div>
-    <div class="card">
-      <h2>Bônus por área</h2>
+    <div class="card"><h2>Bônus por área</h2>
       <div class="chart-wrap"><canvas id="chart-area"></canvas></div>
     </div>
-    <div class="card">
-      <h2>Top pessoas do mês</h2>
+    <div class="card"><h2>Top pessoas do mês</h2>
       <div class="chart-wrap alto"><canvas id="chart-pessoas"></canvas></div>
       <table class="produto-table" style="margin-top:20px;"><thead><tr><th>Pessoa</th><th>Total recebido no mês</th></tr></thead><tbody id="dashboard-tabela-pessoas"></tbody></table>
     </div>
@@ -168,9 +171,13 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
   <div class="container" id="modo-edicao">
     <div class="card">
       <h2>Mês/Ano de referência (todas as áreas)</h2>
-      <div class="field-row">
-        <div class="field"><input type="text" id="mes-referencia-global" placeholder="Ex: Junho/2026"/></div>
-        <div class="field"><label style="margin-bottom:6px;display:block;">MRR total do mês (R$) — usado em CS e P&amp;D</label><input type="text" id="mrr-total-global" placeholder="Ex: 619.036,50" oninput="recalcularCS(); recalcularPD();"/></div>
+      <div class="field">
+        <label>Mês/Ano</label>
+        <input type="text" id="mes-referencia-global" placeholder="Ex: Junho/2026"/>
+      </div>
+      <div class="field">
+        <label>MRR total do mês (R$) — usado em CS e P&amp;D</label>
+        <input type="text" id="mrr-total-global" placeholder="Ex: 619.036,50" oninput="recalcularCS(); recalcularPD();"/>
       </div>
     </div>
 
@@ -185,14 +192,7 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
 
     <div class="secao-area-header">🎯 MRR</div>
     <div class="tab-panel" id="tab-mrr">
-      <div class="card">
-        <h2>Histórico de Fechamentos — MRR</h2>
-        <div class="loading-inline" id="historico-loading">Carregando histórico...</div>
-        <div id="historico-lista"></div>
-      </div>
-
-      <div class="card">
-        <h2>PDF de metas do mês (MRR)</h2>
+      <div class="card"><h2 class="acordeao-titulo" onclick="toggleAcordeao(this)">PDF de metas do mês (MRR) <span class="acordeao-seta">▾</span></h2><div class="acordeao-corpo" style="display:none;">
         <div class="field">
           <label>Anexar PDF ("Metas e bonificação por MRR")</label>
           <input type="file" id="pdf-input" accept="application/pdf" onchange="processarPDF(event)"/>
@@ -202,15 +202,14 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
           <thead><tr><th>Nível</th><th>Crescimento</th><th>Meta (R$)</th><th>Bônus geral</th><th>Bônus Produto</th></tr></thead>
           <tbody id="tbody-niveis"></tbody>
         </table>
-      </div>
+      </div></div>
 
-      <div class="card">
-        <h2>MRR líquido adicionado do mês</h2>
+      <div class="card"><h2 class="acordeao-titulo" onclick="toggleAcordeao(this)">MRR líquido adicionado do mês <span class="acordeao-seta">▾</span></h2><div class="acordeao-corpo" style="display:none;">
         <div class="field"><label>Valor realizado (R$)</label><input type="text" id="mrr-input" placeholder="Ex: 12.168,51" oninput="recalcular()"/></div>
         <div class="resultado-nivel" id="resultado-nivel" style="display:none;">
           <div class="rotulo">Nível atingido</div><div class="valor" id="nivel-atingido-texto">—</div>
         </div>
-      </div>
+      </div></div>
 
       <div class="card" id="card-bonus" style="display:none;">
         <h2>Bônus — Marketing, Comercial, Administrativo e CS</h2>
@@ -239,14 +238,7 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
 
     <div class="secao-area-header">📣 Marketing</div>
     <div class="tab-panel" id="tab-marketing">
-      <div class="card">
-        <h2>Histórico de Fechamentos — Marketing</h2>
-        <div class="loading-inline" id="historico-mkt-loading">Carregando histórico...</div>
-        <div id="historico-mkt-lista"></div>
-      </div>
-
-      <div class="card">
-        <h2>KPI 1 — Novo cadastro para teste do ZenFisio</h2>
+      <div class="card"><h2 class="acordeao-titulo" onclick="toggleAcordeao(this)">KPI 1 — Novo cadastro para teste do ZenFisio <span class="acordeao-seta">▾</span></h2><div class="acordeao-corpo" style="display:none;">
         <div class="field-row">
           <div class="field"><label>Nº de cadastros no mês</label><input type="text" id="input-cadastroTeste-cadastros" oninput="recalcularMarketing()"/></div>
           <div class="field"><label>MRR base (R$)</label><input type="text" id="input-cadastroTeste-mrr" placeholder="Ex: 5.000,00" oninput="recalcularMarketing()"/></div>
@@ -257,11 +249,10 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
         <table class="produto-table"><thead><tr><th>Pessoa</th><th>%</th><th>Valor</th><th></th></tr></thead><tbody id="equipe-cadastroTeste"></tbody></table>
         <button class="btn-add" onclick="adicionarPessoaMkt('cadastroTeste')">+ Adicionar pessoa</button>
         <div class="total-linha"><span>Total: <strong id="total-cadastroTeste">0%</strong></span><span class="badge" id="badge-cadastroTeste">—</span></div>
-      </div>
+      </div></div>
 
       <!-- KPI 2: Extensão de teste -->
-      <div class="card">
-        <h2>KPI 2 — Novo teste do ZenFisio por mais 7 dias</h2>
+      <div class="card"><h2 class="acordeao-titulo" onclick="toggleAcordeao(this)">KPI 2 — Novo teste do ZenFisio por mais 7 dias <span class="acordeao-seta">▾</span></h2><div class="acordeao-corpo" style="display:none;">
         <div class="field-row">
           <div class="field"><label>Nº de cadastros no mês</label><input type="text" id="input-extensaoTeste-cadastros" oninput="recalcularMarketing()"/></div>
           <div class="field"><label>MRR base (R$)</label><input type="text" id="input-extensaoTeste-mrr" placeholder="Ex: 3.000,00" oninput="recalcularMarketing()"/></div>
@@ -272,11 +263,10 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
         <table class="produto-table"><thead><tr><th>Pessoa</th><th>%</th><th>Valor</th><th></th></tr></thead><tbody id="equipe-extensaoTeste"></tbody></table>
         <button class="btn-add" onclick="adicionarPessoaMkt('extensaoTeste')">+ Adicionar pessoa</button>
         <div class="total-linha"><span>Total: <strong id="total-extensaoTeste">0%</strong></span><span class="badge" id="badge-extensaoTeste">—</span></div>
-      </div>
+      </div></div>
 
       <!-- KPI 3: Novos clientes Marketing -->
-      <div class="card">
-        <h2>KPI 3 — Novos clientes: Equipe de Marketing</h2>
+      <div class="card"><h2 class="acordeao-titulo" onclick="toggleAcordeao(this)">KPI 3 — Novos clientes: Equipe de Marketing <span class="acordeao-seta">▾</span></h2><div class="acordeao-corpo" style="display:none;">
         <div class="field-row">
           <div class="field"><label>Nº de novos clientes no mês</label><input type="text" id="input-novosClientesMkt-clientes" oninput="recalcularMarketing()"/></div>
           <div class="field"><label>MRR Adicionado (R$)</label><input type="text" id="input-novosClientesMkt-mrr" placeholder="Ex: 13.096,00" oninput="recalcularMarketing()"/></div>
@@ -287,7 +277,7 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
         <table class="produto-table"><thead><tr><th>Pessoa</th><th>%</th><th>Valor</th><th></th></tr></thead><tbody id="equipe-novosClientesMkt"></tbody></table>
         <button class="btn-add" onclick="adicionarPessoaMkt('novosClientesMkt')">+ Adicionar pessoa</button>
         <div class="total-linha"><span>Total: <strong id="total-novosClientesMkt">0%</strong></span><span class="badge" id="badge-novosClientesMkt">—</span></div>
-      </div>
+      </div></div>
 
       <div class="card">
         <button class="btn-primario" onclick="salvarMarketing()" id="btn-salvar-mkt">Salvar fechamento de Marketing</button>
@@ -298,14 +288,7 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
     <!-- ============= TABS AINDA NÃO CONSTRUÍDAS ============= -->
     <div class="secao-area-header">💼 Vendas / Comercial</div>
     <div class="tab-panel" id="tab-vendas">
-      <div class="card">
-        <h2>Histórico de Fechamentos — Vendas</h2>
-        <div class="loading-inline" id="historico-vendas-loading">Carregando histórico...</div>
-        <div id="historico-vendas-lista"></div>
-      </div>
-
-      <div class="card">
-        <h2>KPI 1 — Novos clientes: Equipe Comercial</h2>
+      <div class="card"><h2 class="acordeao-titulo" onclick="toggleAcordeao(this)">KPI 1 — Novos clientes: Equipe Comercial <span class="acordeao-seta">▾</span></h2><div class="acordeao-corpo" style="display:none;">
         <div class="field-row">
           <div class="field"><label>Nº de novos clientes no mês</label><input type="text" id="input-equipeComercial-clientes" oninput="recalcularVendas()"/></div>
           <div class="field"><label>MRR Adicionado (R$)</label><input type="text" id="input-equipeComercial-mrr" placeholder="Ex: 13.096,00" oninput="recalcularVendas()"/></div>
@@ -316,10 +299,9 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
         <table class="produto-table"><thead><tr><th>Pessoa</th><th>%</th><th>Valor</th><th></th></tr></thead><tbody id="equipe-equipeComercial"></tbody></table>
         <button class="btn-add" onclick="adicionarPessoaVendasEquipe()">+ Adicionar pessoa</button>
         <div class="total-linha"><span>Total: <strong id="total-equipeComercial">0%</strong></span><span class="badge" id="badge-equipeComercial">—</span></div>
-      </div>
+      </div></div>
 
-      <div class="card">
-        <h2>KPI 2 + 3 — Comissão Individual por Vendedor</h2>
+      <div class="card"><h2 class="acordeao-titulo" onclick="toggleAcordeao(this)">KPI 2 + 3 — Comissão Individual por Vendedor <span class="acordeao-seta">▾</span></h2><div class="acordeao-corpo" style="display:none;">
         <div class="hint" style="margin-bottom:16px;">
           Anexe os 2 PDFs abaixo (exportados direto da planilha "Indicadores ZenFisio") pra preencher a comissão base e o nível de cada vendedor(a) automaticamente. Os campos continuam editáveis se precisar corrigir algo.
         </div>
@@ -340,7 +322,7 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
           <tbody id="tbody-vendedores"></tbody>
         </table>
         <button class="btn-add" onclick="adicionarVendedor()">+ Adicionar vendedor(a)</button>
-      </div>
+      </div></div>
 
       <div class="card">
         <button class="btn-primario" onclick="salvarVendas()" id="btn-salvar-vendas">Salvar fechamento de Vendas</button>
@@ -349,14 +331,7 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
     </div>
     <div class="secao-area-header">🤝 CS e Suporte</div>
     <div class="tab-panel" id="tab-cs">
-      <div class="card">
-        <h2>Histórico de Fechamentos — CS e Suporte</h2>
-        <div class="loading-inline" id="historico-cs-loading">Carregando histórico...</div>
-        <div id="historico-cs-lista"></div>
-      </div>
-
-      <div class="card">
-        <h2>KPI 1 — UpSell: Equipe</h2>
+      <div class="card"><h2 class="acordeao-titulo" onclick="toggleAcordeao(this)">KPI 1 — UpSell: Equipe <span class="acordeao-seta">▾</span></h2><div class="acordeao-corpo" style="display:none;">
         <div class="field-row">
           <div class="field"><label>% de crescimento (UpSell)</label><input type="text" id="input-upsellEquipe-crescimento" placeholder="Ex: 1,51" oninput="recalcularCS()"/></div>
           <div class="field"><label>MRR adicionado com UpSell (R$)</label><input type="text" id="input-upsellEquipe-mrr" placeholder="Ex: 8.991,34" oninput="recalcularCS()"/></div>
@@ -367,10 +342,9 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
         <table class="produto-table"><thead><tr><th>Pessoa</th><th>%</th><th>Valor</th><th></th></tr></thead><tbody id="equipe-upsellEquipe"></tbody></table>
         <button class="btn-add" onclick="adicionarPessoaMkt('upsellEquipe')">+ Adicionar pessoa</button>
         <div class="total-linha"><span>Total: <strong id="total-upsellEquipe">0%</strong></span><span class="badge" id="badge-upsellEquipe">—</span></div>
-      </div>
+      </div></div>
 
-      <div class="card">
-        <h2>KPI 1b — UpSell: Individual</h2>
+      <div class="card"><h2 class="acordeao-titulo" onclick="toggleAcordeao(this)">KPI 1b — UpSell: Individual <span class="acordeao-seta">▾</span></h2><div class="acordeao-corpo" style="display:none;">
         <div class="field">
           <label>PDF "Comissão individual em UpSell para Clientes"</label>
           <input type="file" accept="application/pdf" onchange="processarComissaoUpsellCSPDF(event)"/>
@@ -378,10 +352,9 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
         </div>
         <table class="produto-table"><thead><tr><th>Pessoa</th><th>Valor (R$)</th><th></th></tr></thead><tbody id="tbody-upsellIndividual"></tbody></table>
         <button class="btn-add" onclick="adicionarUpsellIndividual()">+ Adicionar pessoa</button>
-      </div>
+      </div></div>
 
-      <div class="card">
-        <h2>KPI 2 — Churn (cancelamentos)</h2>
+      <div class="card"><h2 class="acordeao-titulo" onclick="toggleAcordeao(this)">KPI 2 — Churn (cancelamentos) <span class="acordeao-seta">▾</span></h2><div class="acordeao-corpo" style="display:none;">
         <div class="field-row">
           <div class="field">
             <label>PDF "Churn (cancelamentos)"</label>
@@ -405,10 +378,9 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
         <table class="produto-table"><thead><tr><th>Pessoa</th><th>%</th><th>Valor</th><th></th></tr></thead><tbody id="equipe-churn"></tbody></table>
         <button class="btn-add" onclick="adicionarPessoaMkt('churn')">+ Adicionar pessoa</button>
         <div class="total-linha"><span>Total: <strong id="total-churn">0%</strong></span><span class="badge" id="badge-churn">—</span></div>
-      </div>
+      </div></div>
 
-      <div class="card">
-        <h2>KPI 3 — NPS (Net Promoter Score)</h2>
+      <div class="card"><h2 class="acordeao-titulo" onclick="toggleAcordeao(this)">KPI 3 — NPS (Net Promoter Score) <span class="acordeao-seta">▾</span></h2><div class="acordeao-corpo" style="display:none;">
         <div class="field"><label>Nota NPS do mês</label><input type="text" id="input-nps-nota" placeholder="Ex: 76" oninput="recalcularCS()"/></div>
         <table class="niveis-table"><thead><tr><th>Nível</th><th>Meta (nota)</th><th>Bônus</th></tr></thead><tbody id="tabela-nps"></tbody></table>
         <div class="resultado-kpi" id="resultado-nps">Aguardando leitura do PDF (acima)...</div>
@@ -416,10 +388,9 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
         <table class="produto-table"><thead><tr><th>Pessoa</th><th>%</th><th>Valor</th><th></th></tr></thead><tbody id="equipe-nps"></tbody></table>
         <button class="btn-add" onclick="adicionarPessoaMkt('nps')">+ Adicionar pessoa</button>
         <div class="total-linha"><span>Total: <strong id="total-nps">0%</strong></span><span class="badge" id="badge-nps">—</span></div>
-      </div>
+      </div></div>
 
-      <div class="card">
-        <h2>KPI 4 — Health Score (saúde do cliente)</h2>
+      <div class="card"><h2 class="acordeao-titulo" onclick="toggleAcordeao(this)">KPI 4 — Health Score (saúde do cliente) <span class="acordeao-seta">▾</span></h2><div class="acordeao-corpo" style="display:none;">
         <div class="field"><label>Nota Health Score do mês</label><input type="text" id="input-healthScore-nota" placeholder="Ex: 74" oninput="recalcularCS()"/></div>
         <table class="niveis-table"><thead><tr><th>Nível</th><th>Meta (nota)</th><th>Bônus</th></tr></thead><tbody id="tabela-healthScore"></tbody></table>
         <div class="resultado-kpi" id="resultado-healthScore">Aguardando leitura do PDF (acima)...</div>
@@ -427,7 +398,7 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
         <table class="produto-table"><thead><tr><th>Pessoa</th><th>%</th><th>Valor</th><th></th></tr></thead><tbody id="equipe-healthScore"></tbody></table>
         <button class="btn-add" onclick="adicionarPessoaMkt('healthScore')">+ Adicionar pessoa</button>
         <div class="total-linha"><span>Total: <strong id="total-healthScore">0%</strong></span><span class="badge" id="badge-healthScore">—</span></div>
-      </div>
+      </div></div>
 
       <div class="card">
         <button class="btn-primario" onclick="salvarCS()" id="btn-salvar-cs">Salvar fechamento de CS e Suporte</button>
@@ -485,6 +456,15 @@ let todosHistoricos = { mrr: null, marketing: null, vendas: null, cs: null };
 let mesAtivo = null;
 let chartArea = null, chartPessoas = null;
 
+// ── TABS ──────────────────────────────────────────────────
+function toggleAcordeao(h2el) {
+  const corpo = h2el.nextElementSibling;
+  const seta = h2el.querySelector('.acordeao-seta');
+  const aberto = corpo.style.display === 'block';
+  corpo.style.display = aberto ? 'none' : 'block';
+  if (seta) seta.textContent = aberto ? '▾' : '▴';
+}
+
 // ── LOGIN ─────────────────────────────────────────────────
 async function fazerLogin() {
   const user = document.getElementById('login-user').value.trim();
@@ -499,10 +479,6 @@ async function fazerLogin() {
       document.getElementById('painel-wrap').style.display = 'block';
       document.getElementById('header-user').textContent = user;
       carregarColaboradoresProduto();
-      carregarHistorico();
-      carregarHistoricoMarketing();
-      carregarHistoricoVendas();
-      carregarHistoricoCS();
       carregarTodosHistoricos();
       Object.keys(equipesMkt).forEach(renderEquipeMkt);
       renderEquipeVendasEquipe();
@@ -540,46 +516,6 @@ function atualizarBadgeTotal(chave, total) {
 function recalcularPD() { /* será implementado quando construirmos a aba P&D */ }
 
 // ══════════════════════ MRR ══════════════════════
-async function carregarHistorico() {
-  document.getElementById('historico-loading').style.display = 'block';
-  try {
-    const r = await fetch(`${SCRIPT_URL}?acao=historicoFechamentos&user=${encodeURIComponent(usuarioAtual)}&pass=${encodeURIComponent(senhaAtual)}`);
-    const data = await r.json();
-    document.getElementById('historico-loading').style.display = 'none';
-    if (!data.ok) { document.getElementById('historico-lista').innerHTML = `<div class="hint">Erro: ${data.erro}</div>`; return; }
-    renderHistorico(data.fechamentos, data.detalhePorMes);
-  } catch(e) { document.getElementById('historico-loading').textContent = 'Erro ao carregar histórico.'; }
-}
-function renderHistorico(fechamentos, detalhePorMes) {
-  const container = document.getElementById('historico-lista');
-  if (!fechamentos || fechamentos.length === 0) { container.innerHTML = '<div class="hint">Nenhum fechamento registrado ainda.</div>'; return; }
-  const ordenado = [...fechamentos].reverse();
-  container.innerHTML = ordenado.map((f, i) => {
-    const detalhes = detalhePorMes[f.mesReferencia] || [];
-    const linhasDetalhe = detalhes.map(d => `<tr><td>${d.nome}</td><td class="num">${d.percentual}%</td><td class="num">${fmtBRL(d.valor)}</td></tr>`).join('');
-    return `<div class="historico-item">
-      <div class="historico-header" onclick="toggleHistorico('mrr',${i})">
-        <span class="mes">${f.mesReferencia}</span><span class="nivel">${f.nivel}</span><span>${fmtBRL(f.mrrValor)}</span>
-        <span id="arrow-mrr-${i}">→</span>
-      </div>
-      <div class="historico-detalhe" id="detalhe-mrr-${i}" style="display:none;">
-        <div class="bonus-resumo">
-          <div class="bonus-box"><div class="label">% Bônus Geral</div><div class="valor">${f.percGeral}%</div></div>
-          <div class="bonus-box"><div class="label">Valor por pessoa (Geral)</div><div class="valor">${fmtBRL(f.valorPorPessoa)}</div></div>
-        </div>
-        <table class="produto-table"><thead><tr><th>Colaborador (Produto)</th><th>%</th><th>Valor</th></tr></thead><tbody>${linhasDetalhe}</tbody></table>
-        <div class="hint" style="margin-top:8px;">Registrado por ${f.registradoPor} em ${f.dataRegistro}</div>
-      </div>
-    </div>`;
-  }).join('');
-}
-function toggleHistorico(tipo, i) {
-  const det = document.getElementById(`detalhe-${tipo}-${i}`);
-  const arrow = document.getElementById(`arrow-${tipo}-${i}`);
-  const aberto = det.style.display === 'block';
-  det.style.display = aberto ? 'none' : 'block';
-  arrow.textContent = aberto ? '→' : '↓';
-}
 async function carregarColaboradoresProduto() {
   try {
     const r = await fetch(`${SCRIPT_URL}?acao=metasColaboradores&user=${encodeURIComponent(usuarioAtual)}&pass=${encodeURIComponent(senhaAtual)}&setor=${encodeURIComponent('Produto & Desenvolvimento')}`);
@@ -713,7 +649,7 @@ async function salvarFechamento() {
   try {
     const r = await fetch(SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ acao: 'salvarFechamentoMetas', user: usuarioAtual, pass: senhaAtual, payload }) });
     const data = await r.json();
-    if (data.ok) { statusDiv.className = 'status-msg ok'; statusDiv.textContent = 'Fechamento salvo com sucesso!'; carregarHistorico(); carregarTodosHistoricos(); }
+    if (data.ok) { statusDiv.className = 'status-msg ok'; statusDiv.textContent = 'Fechamento salvo com sucesso!'; carregarTodosHistoricos(); }
     else { statusDiv.className = 'status-msg erro'; statusDiv.textContent = 'Erro ao salvar: ' + data.erro; }
   } catch(e) { statusDiv.className = 'status-msg erro'; statusDiv.textContent = 'Erro ao salvar: ' + e.message; }
   btn.disabled = false; btn.textContent = 'Salvar fechamento do mês';
@@ -906,42 +842,11 @@ async function salvarMarketing() {
   try {
     const r = await fetch(SCRIPT_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({ acao:'salvarFechamentoMarketing', user:usuarioAtual, pass:senhaAtual, payload:{ mesReferencia, kpis: kpisPayload } }) });
     const data = await r.json();
-    if (data.ok) { statusDiv.className='status-msg ok'; statusDiv.textContent='Marketing salvo com sucesso!'; carregarHistoricoMarketing(); carregarTodosHistoricos(); }
+    if (data.ok) { statusDiv.className='status-msg ok'; statusDiv.textContent='Marketing salvo com sucesso!'; carregarTodosHistoricos(); }
     else { statusDiv.className='status-msg erro'; statusDiv.textContent='Erro: '+data.erro; }
   } catch(e) { statusDiv.className='status-msg erro'; statusDiv.textContent='Erro: '+e.message; }
   btn.disabled = false; btn.textContent = 'Salvar fechamento de Marketing';
 }
-async function carregarHistoricoMarketing() {
-  document.getElementById('historico-mkt-loading').style.display = 'block';
-  try {
-    const r = await fetch(`${SCRIPT_URL}?acao=historicoMarketing&user=${encodeURIComponent(usuarioAtual)}&pass=${encodeURIComponent(senhaAtual)}`);
-    const data = await r.json();
-    document.getElementById('historico-mkt-loading').style.display = 'none';
-    if (!data.ok) { document.getElementById('historico-mkt-lista').innerHTML = `<div class="hint">Erro: ${data.erro}</div>`; return; }
-    renderHistoricoMarketing(data.registros, data.detalhe);
-  } catch(e) { document.getElementById('historico-mkt-loading').textContent = 'Erro ao carregar histórico.'; }
-}
-function renderHistoricoMarketing(registros, detalhe) {
-  const container = document.getElementById('historico-mkt-lista');
-  if (!registros || registros.length === 0) { container.innerHTML = '<div class="hint">Nenhum fechamento registrado ainda.</div>'; return; }
-  const ordenado = [...registros].reverse();
-  container.innerHTML = ordenado.map((f,i) => {
-    const chave = f.mesReferencia + '|' + f.nomeKpi;
-    const pessoas = detalhe[chave] || [];
-    const linhas = pessoas.map(p => `<tr><td>${p.nome}</td><td class="num">${p.percentual}%</td><td class="num">${fmtBRL(p.valor)}</td></tr>`).join('');
-    return `<div class="historico-item">
-      <div class="historico-header" onclick="toggleHistorico('mkt',${i})">
-        <span class="mes">${f.mesReferencia} — ${f.nomeKpi}</span><span class="nivel">${f.nivel}</span><span>${fmtBRL(f.pool)}</span>
-        <span id="arrow-mkt-${i}">→</span>
-      </div>
-      <div class="historico-detalhe" id="detalhe-mkt-${i}" style="display:none;">
-        <table class="produto-table"><thead><tr><th>Pessoa</th><th>%</th><th>Valor</th></tr></thead><tbody>${linhas}</tbody></table>
-        <div class="hint" style="margin-top:8px;">Registrado em ${f.dataRegistro}</div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
 // ══════════════════════ VENDAS ══════════════════════
 function renderEquipeVendasEquipe() {
   const el = document.getElementById('equipe-equipeComercial');
@@ -1150,41 +1055,10 @@ async function salvarVendas() {
   try {
     const r = await fetch(SCRIPT_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({ acao:'salvarFechamentoVendas', user:usuarioAtual, pass:senhaAtual, payload:{ mesReferencia, kpis: kpisPayload } }) });
     const data = await r.json();
-    if (data.ok) { statusDiv.className='status-msg ok'; statusDiv.textContent='Vendas salvo com sucesso!'; carregarHistoricoVendas(); carregarTodosHistoricos(); }
+    if (data.ok) { statusDiv.className='status-msg ok'; statusDiv.textContent='Vendas salvo com sucesso!'; carregarTodosHistoricos(); }
     else { statusDiv.className='status-msg erro'; statusDiv.textContent='Erro: '+data.erro; }
   } catch(e) { statusDiv.className='status-msg erro'; statusDiv.textContent='Erro: '+e.message; }
   btn.disabled = false; btn.textContent = 'Salvar fechamento de Vendas';
-}
-
-async function carregarHistoricoVendas() {
-  document.getElementById('historico-vendas-loading').style.display = 'block';
-  try {
-    const r = await fetch(`${SCRIPT_URL}?acao=historicoVendas&user=${encodeURIComponent(usuarioAtual)}&pass=${encodeURIComponent(senhaAtual)}`);
-    const data = await r.json();
-    document.getElementById('historico-vendas-loading').style.display = 'none';
-    if (!data.ok) { document.getElementById('historico-vendas-lista').innerHTML = `<div class="hint">Erro: ${data.erro}</div>`; return; }
-    renderHistoricoVendas(data.registros, data.detalhe);
-  } catch(e) { document.getElementById('historico-vendas-loading').textContent = 'Erro ao carregar histórico.'; }
-}
-function renderHistoricoVendas(registros, detalhe) {
-  const container = document.getElementById('historico-vendas-lista');
-  if (!registros || registros.length === 0) { container.innerHTML = '<div class="hint">Nenhum fechamento registrado ainda.</div>'; return; }
-  const ordenado = [...registros].reverse();
-  container.innerHTML = ordenado.map((f,i) => {
-    const chave = f.mesReferencia + '|' + f.nomeKpi;
-    const pessoas = detalhe[chave] || [];
-    const linhas = pessoas.map(p => `<tr><td>${p.nome}</td><td class="num">${p.percentual}%</td><td class="num">${fmtBRL(p.valor)}</td></tr>`).join('');
-    return `<div class="historico-item">
-      <div class="historico-header" onclick="toggleHistorico('vendas',${i})">
-        <span class="mes">${f.mesReferencia} — ${f.nomeKpi}</span><span class="nivel">${f.nivel}</span><span>${fmtBRL(f.pool)}</span>
-        <span id="arrow-vendas-${i}">→</span>
-      </div>
-      <div class="historico-detalhe" id="detalhe-vendas-${i}" style="display:none;">
-        <table class="produto-table"><thead><tr><th>Pessoa</th><th>%</th><th>Valor</th></tr></thead><tbody>${linhas}</tbody></table>
-        <div class="hint" style="margin-top:8px;">Registrado em ${f.dataRegistro}</div>
-      </div>
-    </div>`;
-  }).join('');
 }
 
 // ══════════════════════ CS E SUPORTE ══════════════════════
@@ -1324,41 +1198,10 @@ async function salvarCS() {
   try {
     const r = await fetch(SCRIPT_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({ acao:'salvarFechamentoCS', user:usuarioAtual, pass:senhaAtual, payload:{ mesReferencia, kpis: kpisPayload } }) });
     const data = await r.json();
-    if (data.ok) { statusDiv.className='status-msg ok'; statusDiv.textContent='CS e Suporte salvo com sucesso!'; carregarHistoricoCS(); carregarTodosHistoricos(); }
+    if (data.ok) { statusDiv.className='status-msg ok'; statusDiv.textContent='CS e Suporte salvo com sucesso!'; carregarTodosHistoricos(); }
     else { statusDiv.className='status-msg erro'; statusDiv.textContent='Erro: '+data.erro; }
   } catch(e) { statusDiv.className='status-msg erro'; statusDiv.textContent='Erro: '+e.message; }
   btn.disabled = false; btn.textContent = 'Salvar fechamento de CS e Suporte';
-}
-
-async function carregarHistoricoCS() {
-  document.getElementById('historico-cs-loading').style.display = 'block';
-  try {
-    const r = await fetch(`${SCRIPT_URL}?acao=historicoCS&user=${encodeURIComponent(usuarioAtual)}&pass=${encodeURIComponent(senhaAtual)}`);
-    const data = await r.json();
-    document.getElementById('historico-cs-loading').style.display = 'none';
-    if (!data.ok) { document.getElementById('historico-cs-lista').innerHTML = `<div class="hint">Erro: ${data.erro}</div>`; return; }
-    renderHistoricoCS(data.registros, data.detalhe);
-  } catch(e) { document.getElementById('historico-cs-loading').textContent = 'Erro ao carregar histórico.'; }
-}
-function renderHistoricoCS(registros, detalhe) {
-  const container = document.getElementById('historico-cs-lista');
-  if (!registros || registros.length === 0) { container.innerHTML = '<div class="hint">Nenhum fechamento registrado ainda.</div>'; return; }
-  const ordenado = [...registros].reverse();
-  container.innerHTML = ordenado.map((f,i) => {
-    const chave = f.mesReferencia + '|' + f.nomeKpi;
-    const pessoas = detalhe[chave] || [];
-    const linhas = pessoas.map(p => `<tr><td>${p.nome}</td><td class="num">${p.percentual}%</td><td class="num">${fmtBRL(p.valor)}</td></tr>`).join('');
-    return `<div class="historico-item">
-      <div class="historico-header" onclick="toggleHistorico('cs',${i})">
-        <span class="mes">${f.mesReferencia} — ${f.nomeKpi}</span><span class="nivel">${f.nivel}</span><span>${fmtBRL(f.pool)}</span>
-        <span id="arrow-cs-${i}">→</span>
-      </div>
-      <div class="historico-detalhe" id="detalhe-cs-${i}" style="display:none;">
-        <table class="produto-table"><thead><tr><th>Pessoa</th><th>%</th><th>Valor</th></tr></thead><tbody>${linhas}</tbody></table>
-        <div class="hint" style="margin-top:8px;">Registrado em ${f.dataRegistro}</div>
-      </div>
-    </div>`;
-  }).join('');
 }
 
 // ══════════════════════ NAVEGAÇÃO POR MÊS + DASHBOARD ══════════════════════
@@ -1406,15 +1249,20 @@ function selecionarMes(mes) {
     renderDashboardMes(mes);
   }
 }
+function editarMes() {
+  if (!mesAtivo) return;
+  document.getElementById('mes-referencia-global').value = mesAtivo;
+  selecionarMes(null);
+}
 
 function totalAreaMes(mes, tipo) {
   if (tipo === 'mrr') {
     const linhas = (todosHistoricos.mrr?.fechamentos||[]).filter(x => x.mesReferencia === mes);
-    if (linhas.length === 0) return { nivel:'—', pool:0 };
+    if (linhas.length === 0) return { nivel:'—', pool:0, mrrValor:0 };
     const f = linhas[linhas.length-1];
     const poolProduto = (todosHistoricos.mrr.detalhePorMes[mes]||[]).reduce((s,p)=>s+(Number(p.valor)||0),0);
     const poolGeral = (Number(f.valorPorPessoa)||0) * (Number(f.numPessoas)||0);
-    return { nivel: f.nivel, pool: poolProduto + poolGeral };
+    return { nivel: f.nivel, pool: poolProduto + poolGeral, mrrValor: Number(f.mrrValor)||0 };
   }
   const mapa = { marketing: todosHistoricos.marketing, vendas: todosHistoricos.vendas, cs: todosHistoricos.cs };
   const dados = mapa[tipo];
@@ -1455,6 +1303,7 @@ function renderDashboardMes(mes) {
       <div class="dash-card-area">${t.area}</div>
       <div class="dash-card-nivel">${t.nivel}</div>
       <div class="dash-card-valor">${fmtBRL(t.pool)}</div>
+      ${t.mrrValor !== undefined ? `<div class="hint" style="margin-top:6px;">MRR realizado: ${fmtBRL(t.mrrValor)}</div>` : ''}
     </div>`).join('');
 
   if (typeof Chart !== 'undefined') {

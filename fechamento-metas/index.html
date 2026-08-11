@@ -865,21 +865,41 @@ async function salvarFechamento(recarregarHistorico) {
   if (recarregarHistorico === undefined) recarregarHistorico = true;
   const mesReferencia = document.getElementById('mes-referencia-global').value.trim();
   const mrrValor = parseValorBR(document.getElementById('mrr-input').value);
-  const nivelChave = determinarNivel(mrrValor);
   const statusDiv = document.getElementById('status-salvar');
   const btn = document.getElementById('btn-salvar');
   if (!mesReferencia) { statusDiv.className = 'status-msg erro'; statusDiv.textContent = 'Preencha o mês/ano de referência no topo da página.'; return; }
-  const nivel = nivelChave ? niveisExtraidos[nivelChave] : null;
+
+  // Nível/% do bônus: se um PDF de metas foi lido nesta sessão, usa ele (prioridade).
+  // Senão, se o mês foi reaberto pra edição (mrrRestaurado), usa o que já estava salvo —
+  // sem isso, salvar sem reenviar o PDF zerava nível/%/pool por cima do que já existia.
+  let nivelTexto, percBonusGeral, percBonusProduto;
+  if (niveisExtraidos) {
+    const nivelChave = determinarNivel(mrrValor);
+    const nivel = nivelChave ? niveisExtraidos[nivelChave] : null;
+    nivelTexto = nivelChave ? nivelChave.charAt(0).toUpperCase() + nivelChave.slice(1) : 'Nenhum';
+    percBonusGeral = nivel ? nivel.bonusGeral : 0;
+    percBonusProduto = nivel ? nivel.bonusProduto : 0;
+  } else if (mrrRestaurado) {
+    nivelTexto = mrrRestaurado.nivelTexto || 'Nenhum';
+    percBonusGeral = mrrRestaurado.percBonusGeral || 0;
+    percBonusProduto = mrrRestaurado.percBonusProduto || 0;
+  } else {
+    nivelTexto = 'Nenhum';
+    percBonusGeral = 0;
+    percBonusProduto = 0;
+  }
   const numPessoas = equipeBonusGeral.length || 1;
-  const poolGeral = nivel ? mrrValor * (nivel.bonusGeral / 100) : 0;
-  const poolProduto = nivel ? mrrValor * (nivel.bonusProduto / 100) : 0;
+  const poolGeral = mrrValor * (percBonusGeral / 100);
+  const poolProduto = mrrValor * (percBonusProduto / 100);
   const valorPorPessoaGeral = numPessoas ? poolGeral / numPessoas : 0;
   const payload = {
-    mesReferencia, mrrValor, nivel: nivelChave ? nivelChave.charAt(0).toUpperCase() + nivelChave.slice(1) : 'Nenhum',
-    percBonusGeral: nivel ? nivel.bonusGeral : 0, percBonusProduto: nivel ? nivel.bonusProduto : 0,
+    mesReferencia, mrrValor, nivel: nivelTexto,
+    percBonusGeral, percBonusProduto,
     numPessoasGeral: numPessoas, valorPorPessoaGeral: valorPorPessoaGeral,
     bonusGeralPessoas: equipeBonusGeral.map(p => ({ nome: p.nome, valor: valorPorPessoaGeral })),
-    produtoDev: colaboradoresProduto.map(c => ({ nome: c.nome, percentual: c.percentual, valor: poolProduto * (c.percentual / 100) }))
+    // valorEfetivo protege o valor de cada pessoa: se o mês foi restaurado e ela tem um
+    // valor manual/recuperado, ele prevalece mesmo com poolProduto zerado.
+    produtoDev: colaboradoresProduto.map(c => ({ nome: c.nome, percentual: c.percentual, valor: valorEfetivo(c, poolProduto * (c.percentual / 100)) }))
   };
   btn.disabled = true; btn.textContent = 'Salvando...';
   try {

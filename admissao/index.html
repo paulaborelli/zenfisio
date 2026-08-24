@@ -95,7 +95,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);pad
       <li>Cópia: Comprovante de Escolaridade dos filhos com idade entre 5 e 14 anos</li>
       <li>Cópia: Certidão de Casamento, CPF e RG do cônjuge</li>
       <li>Cópia: Comprovante de Residência atualizado</li>
-      <li><strong>Exame Admissional</strong>, com data anterior ao início das atividades — <strong>obrigatório</strong></li>
+      <li><strong>Exame Admissional</strong>, com data anterior ao início das atividades — se ainda não estiver em mãos ao enviar a ficha, o envio pelo WhatsApp ao RH é <strong>obrigatório e impreterível</strong> antes do início das atividades</li>
     </ul>
     <div class="alert" style="margin-top:1rem;margin-bottom:0;">Importante: para <strong>todos os dependentes</strong> (filhos e cônjuge), informe também o nº de CPF e a data de nascimento — há um campo para isso na seção "Estado civil &amp; família", abaixo.</div>
   </div>
@@ -372,7 +372,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);pad
     <!-- Anexos -->
     <div class="card">
       <div class="section-label">Documentos (anexos)</div>
-      <div class="alert" style="margin-bottom:1rem;">Envie cópias legíveis (foto ou PDF) de cada documento. Tamanho máximo de 5&nbsp;MB por arquivo. Todos os anexos abaixo são opcionais — quem preferir, envia depois pelo WhatsApp ao RH — <strong>exceto o Exame Admissional, que é obrigatório para enviar a ficha.</strong></div>
+      <div class="alert" style="margin-bottom:1rem;">Envie cópias legíveis (foto ou PDF) de cada documento. Tamanho máximo de 5&nbsp;MB por arquivo. Todos os anexos abaixo são opcionais — quem preferir, envia depois pelo WhatsApp ao RH.</div>
 
       <div class="conditional" id="anexo-ctps-wrap">
         <div class="field">
@@ -447,9 +447,9 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);pad
 
       <div class="section-label" style="margin-top:1.25rem;">Exame Admissional</div>
       <div class="field">
-        <label>Exame Admissional (data anterior ao início das atividades) <span class="req">*</span></label>
+        <label>Exame Admissional (data anterior ao início das atividades)</label>
         <input type="file" id="doc_exame_admissional" accept="image/*,.pdf">
-        <span class="field-error" id="err-doc_exame_admissional">Anexo obrigatório</span>
+        <div class="alert-error show" id="aviso-exame" style="margin-top:8px;">⚠ Você ainda não anexou o Exame Admissional. Se ainda não estiver com ele em mãos, o envio pelo WhatsApp ao RH é <strong>obrigatório e impreterível</strong> antes do início das atividades.</div>
       </div>
     </div>
 
@@ -464,7 +464,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);pad
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4A7C59" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
     </div>
     <div class="success-title">Ficha enviada com sucesso!</div>
-    <div class="success-sub">Obrigada! O RH da ZenFisio receberá seus dados e os documentos anexados. Se ainda faltar algum documento, você pode enviá-lo pelo WhatsApp ao RH.</div>
+    <div class="success-sub" id="success-sub">Obrigada! O RH da ZenFisio receberá seus dados e os documentos anexados. Se ainda faltar algum documento, você pode enviá-lo pelo WhatsApp ao RH.</div>
   </div>
 
 </div>
@@ -563,6 +563,15 @@ document.querySelectorAll('input[type="file"]').forEach(function(inp) {
   inp.addEventListener('change', function() { checkFileSize(inp); });
 });
 
+// Exame Admissional é opcional na ficha, mas mantém o aviso de WhatsApp
+// visível enquanto não houver arquivo anexado.
+function atualizarAvisoExame() {
+  const input = document.getElementById('doc_exame_admissional');
+  const aviso = document.getElementById('aviso-exame');
+  if (input && aviso) aviso.classList.toggle('show', !input.files.length);
+}
+document.getElementById('doc_exame_admissional').addEventListener('change', atualizarAvisoExame);
+
 function validar() {
   let erros = false;
 
@@ -594,10 +603,6 @@ function validar() {
 
   // Primeiro emprego
   if (setRadioError('primeiro-group','err-primeiro', !primeiroVal)) erros = true;
-
-  // Exame Admissional — único anexo obrigatório
-  const exameInput = document.getElementById('doc_exame_admissional');
-  if (setError('doc_exame_admissional', !exameInput.files.length)) erros = true;
 
   // Tamanho de todos os arquivos anexados
   document.querySelectorAll('input[type="file"]').forEach(function(inp) {
@@ -690,6 +695,10 @@ async function enviar() {
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify(dados)
   }).then(() => {
+    const semExame = !document.getElementById('doc_exame_admissional').files.length;
+    document.getElementById('success-sub').innerHTML = semExame
+      ? 'Obrigada! O RH da ZenFisio receberá seus dados e os documentos anexados. <strong>Atenção:</strong> você não anexou o Exame Admissional — o envio pelo WhatsApp ao RH é obrigatório e impreterível antes do início das atividades.'
+      : 'Obrigada! O RH da ZenFisio receberá seus dados e os documentos anexados. Se ainda faltar algum outro documento, você pode enviá-lo pelo WhatsApp ao RH.';
     document.getElementById('form-area').style.display = 'none';
     document.getElementById('success-screen').style.display = 'flex';
   }).catch(() => {

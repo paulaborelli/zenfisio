@@ -29,9 +29,12 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);pad
 .field:last-child{margin-bottom:0;}
 .field label{font-size:12px;font-weight:500;color:var(--text-muted);}
 .field label .req{color:var(--error);margin-left:2px;}
-.field input,.field select{font-family:"DM Sans",sans-serif;font-size:14px;color:var(--text);background:#F7F8F5;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 13px;outline:none;width:100%;transition:border-color 0.15s,box-shadow 0.15s;}
-.field input:focus,.field select:focus{border-color:var(--border-focus);background:#fff;box-shadow:0 0 0 3px rgba(74,124,89,0.1);}
-.field input.invalid{border-color:var(--error);background:var(--error-light);}
+.field input,.field select,.field textarea{font-family:"DM Sans",sans-serif;font-size:14px;color:var(--text);background:#F7F8F5;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 13px;outline:none;width:100%;transition:border-color 0.15s,box-shadow 0.15s;}
+.field textarea{min-height:64px;resize:vertical;line-height:1.5;}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--border-focus);background:#fff;box-shadow:0 0 0 3px rgba(74,124,89,0.1);}
+.field input.invalid,.field input[type="file"].invalid{border-color:var(--error);background:var(--error-light);}
+.docs-list{padding-left:1.15rem;font-size:13.5px;color:var(--text);line-height:1.75;}
+.docs-list li{margin-bottom:2px;}
 .field select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239AA394' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-color:#F7F8F5;padding-right:32px;cursor:pointer;}
 .field select.invalid{border-color:var(--error);background:var(--error-light);}
 .field-error{font-size:11px;color:var(--error);margin-top:2px;display:none;}
@@ -58,14 +61,15 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);pad
 .back-btn {
     display: inline-flex; align-items: center; gap: 6px;
     font-family: "DM Sans", sans-serif; font-size: 0.82rem; font-weight: 600;
-    color: white; text-decoration: none;
+    color: #4A7C59; text-decoration: none;
     padding: 6px 14px; border-radius: 8px;
-    border: 1.5px solid rgba(255,255,255,0.6);
-    background: rgba(255,255,255,0.15);
-    transition: all 0.15s;
-    position: absolute; top: 1rem; left: 1rem; z-index: 10;
+    border: 1.5px solid #4A7C59;
+    background: white;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    transition: background 0.15s;
+    position: fixed; top: 1rem; right: 1rem; z-index: 9999;
   }
-  .back-btn:hover { background: rgba(255,255,255,0.25); }
+  .back-btn:hover { background: #EAF2EC; }
   @media print { .back-btn { display: none !important; } }
   </style>
 </head>
@@ -78,8 +82,23 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);pad
 </div>
 
 <div class="page-wrap">
-  <div class="alert">Preencha todos os campos obrigatórios (<span style="color:#C0392B">*</span>). Após enviar, os documentos solicitados devem ser encaminhados pelo WhatsApp ao RH da ZenFisio.</div>
+  <div class="alert">Preencha todos os campos obrigatórios (<span style="color:#C0392B">*</span>). Você pode anexar os documentos solicitados diretamente nesta ficha, na seção "Documentos (anexos)" no final do formulário — quem preferir, pode enviá-los depois pelo WhatsApp ao RH da ZenFisio.</div>
   <div class="alert-error" id="alert-error">Por favor, preencha todos os campos obrigatórios antes de enviar.</div>
+
+  <div class="card" id="docs-necessarios">
+    <div class="section-label">Documentos necessários</div>
+    <ul class="docs-list">
+      <li>Carteira de Trabalho (com a baixa do último emprego) — se for CTPS digital, não é necessário anexar</li>
+      <li>Cópia: Carteira de Identidade, CPF, Título de Eleitor, Certificado de Reservista (sexo masculino), Carteira de Motorista</li>
+      <li>Cópia: Certidão de Nascimento dos filhos menores de 14 anos, com CPF</li>
+      <li>Cópia: Carteira de Vacinação dos filhos menores de 06 anos</li>
+      <li>Cópia: Comprovante de Escolaridade dos filhos com idade entre 5 e 14 anos</li>
+      <li>Cópia: Certidão de Casamento, CPF e RG do cônjuge</li>
+      <li>Cópia: Comprovante de Residência atualizado</li>
+      <li><strong>Exame Admissional</strong>, com data anterior ao início das atividades — <strong>obrigatório</strong></li>
+    </ul>
+    <div class="alert" style="margin-top:1rem;margin-bottom:0;">Importante: para <strong>todos os dependentes</strong> (filhos e cônjuge), informe também o nº de CPF e a data de nascimento — há um campo para isso na seção "Estado civil &amp; família", abaixo.</div>
+  </div>
 
   <div id="form-area">
 
@@ -207,7 +226,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);pad
         </div>
       </div>
 
-      <div class="grid-2">
+      <div class="grid-3">
         <div class="field">
           <label>Nome do cônjuge</label>
           <input type="text" id="conjuge" placeholder="Nome completo (opcional)">
@@ -216,6 +235,15 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);pad
           <label>Data de nascimento do cônjuge</label>
           <input type="date" id="nasc_conjuge">
         </div>
+        <div class="field">
+          <label>CPF do cônjuge</label>
+          <input type="text" id="cpf_conjuge" placeholder="000.000.000-00 (opcional)">
+        </div>
+      </div>
+
+      <div class="field" style="margin-top:12px;">
+        <label>CPF e data de nascimento dos dependentes (filhos)</label>
+        <textarea id="dependentes_info" placeholder="Informe nome, CPF e data de nascimento de cada filho(a). Ex.: Maria Silva — CPF 000.000.000-00 — nasc. 12/03/2019 (opcional)"></textarea>
       </div>
     </div>
 
@@ -341,6 +369,90 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);pad
       </div>
     </div>
 
+    <!-- Anexos -->
+    <div class="card">
+      <div class="section-label">Documentos (anexos)</div>
+      <div class="alert" style="margin-bottom:1rem;">Envie cópias legíveis (foto ou PDF) de cada documento. Tamanho máximo de 5&nbsp;MB por arquivo. Todos os anexos abaixo são opcionais — quem preferir, envia depois pelo WhatsApp ao RH — <strong>exceto o Exame Admissional, que é obrigatório para enviar a ficha.</strong></div>
+
+      <div class="conditional" id="anexo-ctps-wrap">
+        <div class="field">
+          <label>Carteira de Trabalho (com baixa do último emprego)</label>
+          <input type="file" id="doc_ctps" accept="image/*,.pdf">
+        </div>
+      </div>
+
+      <div class="section-label" style="margin-top:1.25rem;">Documentos pessoais</div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Carteira de Identidade (RG)</label>
+          <input type="file" id="doc_rg" accept="image/*,.pdf">
+        </div>
+        <div class="field">
+          <label>CPF</label>
+          <input type="file" id="doc_cpf" accept="image/*,.pdf">
+        </div>
+        <div class="field">
+          <label>Título de Eleitor</label>
+          <input type="file" id="doc_titulo" accept="image/*,.pdf">
+        </div>
+        <div class="field">
+          <label>Certificado de Reservista (sexo masculino)</label>
+          <input type="file" id="doc_reservista" accept="image/*,.pdf">
+        </div>
+        <div class="field">
+          <label>Carteira de Motorista (CNH)</label>
+          <input type="file" id="doc_cnh" accept="image/*,.pdf">
+        </div>
+        <div class="field">
+          <label>Comprovante de Residência atualizado</label>
+          <input type="file" id="doc_comprovante_residencia" accept="image/*,.pdf">
+        </div>
+      </div>
+
+      <div class="conditional" id="anexo-filhos-wrap">
+        <div class="section-label" style="margin-top:1.25rem;">Dependentes (filhos menores de 14 anos)</div>
+        <div class="grid-3">
+          <div class="field">
+            <label>Certidão de Nascimento (com CPF)</label>
+            <input type="file" id="doc_certidao_filhos" accept="image/*,.pdf" multiple>
+          </div>
+          <div class="field">
+            <label>Carteira de Vacinação (menores de 6 anos)</label>
+            <input type="file" id="doc_vacinacao_filhos" accept="image/*,.pdf" multiple>
+          </div>
+          <div class="field">
+            <label>Comprovante de Escolaridade (5 a 14 anos)</label>
+            <input type="file" id="doc_escolaridade_filhos" accept="image/*,.pdf" multiple>
+          </div>
+        </div>
+      </div>
+
+      <div class="conditional" id="anexo-conjuge-wrap">
+        <div class="section-label" style="margin-top:1.25rem;">Cônjuge</div>
+        <div class="grid-3">
+          <div class="field">
+            <label>Certidão de Casamento</label>
+            <input type="file" id="doc_certidao_casamento" accept="image/*,.pdf">
+          </div>
+          <div class="field">
+            <label>CPF do cônjuge</label>
+            <input type="file" id="doc_cpf_conjuge" accept="image/*,.pdf">
+          </div>
+          <div class="field">
+            <label>RG do cônjuge</label>
+            <input type="file" id="doc_rg_conjuge" accept="image/*,.pdf">
+          </div>
+        </div>
+      </div>
+
+      <div class="section-label" style="margin-top:1.25rem;">Exame Admissional</div>
+      <div class="field">
+        <label>Exame Admissional (data anterior ao início das atividades) <span class="req">*</span></label>
+        <input type="file" id="doc_exame_admissional" accept="image/*,.pdf">
+        <span class="field-error" id="err-doc_exame_admissional">Anexo obrigatório</span>
+      </div>
+    </div>
+
     <div class="form-footer">
       <button class="btn-primary" id="btn-enviar" onclick="enviar()">Enviar ficha →</button>
     </div>
@@ -352,7 +464,7 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);pad
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4A7C59" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
     </div>
     <div class="success-title">Ficha enviada com sucesso!</div>
-    <div class="success-sub">Obrigada! O RH da ZenFisio receberá seus dados. Lembre-se de enviar os documentos solicitados pelo WhatsApp.</div>
+    <div class="success-sub">Obrigada! O RH da ZenFisio receberá seus dados e os documentos anexados. Se ainda faltar algum documento, você pode enviá-lo pelo WhatsApp ao RH.</div>
   </div>
 
 </div>
@@ -370,6 +482,7 @@ function toggleFilhos(el) {
   el.classList.add('on');
   filhosVal = el.dataset.val;
   document.getElementById('qtd-filhos').classList.toggle('show', filhosVal === 'Sim');
+  document.getElementById('anexo-filhos-wrap').classList.toggle('show', filhosVal === 'Sim');
   document.getElementById('err-filhos').classList.remove('show');
   document.getElementById('filhos-group').classList.remove('invalid');
 }
@@ -379,8 +492,15 @@ function toggleCTPS(el) {
   el.classList.add('on');
   ctpsVal = el.dataset.val;
   document.getElementById('ctps-fisica').classList.toggle('show', ctpsVal === 'Não');
+  document.getElementById('anexo-ctps-wrap').classList.toggle('show', ctpsVal === 'Não');
   document.getElementById('err-ctps').classList.remove('show');
   document.getElementById('ctps-group').classList.remove('invalid');
+}
+
+function toggleConjugeDocs() {
+  const v = document.getElementById('estado_civil').value;
+  const mostrar = v === 'Casado(a)' || v === 'União estável';
+  document.getElementById('anexo-conjuge-wrap').classList.toggle('show', mostrar);
 }
 
 function selectRaca(el) {
@@ -417,6 +537,32 @@ function setRadioError(groupId, errId, show) {
   return show;
 }
 
+document.getElementById('estado_civil').addEventListener('change', toggleConjugeDocs);
+
+// Anexos — limite de tamanho por arquivo
+const MAX_FILE_MB = 5;
+function checkFileSize(input) {
+  const errId = 'size-err-' + input.id;
+  let err = document.getElementById(errId);
+  if (!err) {
+    err = document.createElement('span');
+    err.id = errId;
+    err.className = 'field-error';
+    input.insertAdjacentElement('afterend', err);
+  }
+  let tooBig = false;
+  for (const f of input.files) {
+    if (f.size > MAX_FILE_MB * 1024 * 1024) { tooBig = true; break; }
+  }
+  err.textContent = `Arquivo muito grande (máx. ${MAX_FILE_MB}MB). Escolha um arquivo menor.`;
+  err.classList.toggle('show', tooBig);
+  input.classList.toggle('invalid', tooBig);
+  return !tooBig;
+}
+document.querySelectorAll('input[type="file"]').forEach(function(inp) {
+  inp.addEventListener('change', function() { checkFileSize(inp); });
+});
+
 function validar() {
   let erros = false;
 
@@ -449,10 +595,53 @@ function validar() {
   // Primeiro emprego
   if (setRadioError('primeiro-group','err-primeiro', !primeiroVal)) erros = true;
 
+  // Exame Admissional — único anexo obrigatório
+  const exameInput = document.getElementById('doc_exame_admissional');
+  if (setError('doc_exame_admissional', !exameInput.files.length)) erros = true;
+
+  // Tamanho de todos os arquivos anexados
+  document.querySelectorAll('input[type="file"]').forEach(function(inp) {
+    if (!checkFileSize(inp)) erros = true;
+  });
+
   return !erros;
 }
 
-function enviar() {
+function fileToBase64(file) {
+  return new Promise(function(resolve, reject) {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function coletarAnexos() {
+  const camposUnicos = ['doc_ctps','doc_rg','doc_cpf','doc_titulo','doc_reservista','doc_cnh',
+    'doc_comprovante_residencia','doc_certidao_casamento','doc_cpf_conjuge','doc_rg_conjuge','doc_exame_admissional'];
+  const camposMultiplos = ['doc_certidao_filhos','doc_vacinacao_filhos','doc_escolaridade_filhos'];
+  const anexos = {};
+
+  for (const id of camposUnicos) {
+    const input = document.getElementById(id);
+    if (input && input.files.length) {
+      const f = input.files[0];
+      anexos[id] = { nome: f.name, tipo: f.type, base64: await fileToBase64(f) };
+    }
+  }
+  for (const id of camposMultiplos) {
+    const input = document.getElementById(id);
+    if (input && input.files.length) {
+      anexos[id] = [];
+      for (const f of input.files) {
+        anexos[id].push({ nome: f.name, tipo: f.type, base64: await fileToBase64(f) });
+      }
+    }
+  }
+  return anexos;
+}
+
+async function enviar() {
   document.getElementById('alert-error').classList.remove('show');
 
   if (!validar()) {
@@ -460,6 +649,18 @@ function enviar() {
     // Scroll até o primeiro erro
     const primeiro = document.querySelector('.invalid, .field-error.show');
     if (primeiro) primeiro.scrollIntoView({behavior:'smooth', block:'center'});
+    return;
+  }
+
+  const btn = document.getElementById('btn-enviar');
+  btn.textContent = 'Lendo documentos...'; btn.disabled = true;
+
+  let anexos = {};
+  try {
+    anexos = await coletarAnexos();
+  } catch (e) {
+    btn.textContent = 'Enviar ficha →'; btn.disabled = false;
+    alert('Erro ao ler os documentos anexados. Tente novamente.');
     return;
   }
 
@@ -471,17 +672,18 @@ function enviar() {
     bairro: g('bairro'), cidade: g('cidade'), uf_end: g('uf_end'), cep: g('cep'),
     fone: g('fone'), celular: g('celular'),
     estado_civil: g('estado_civil'), filhos: filhosVal, qtd_filhos: g('qtd_filhos'),
-    conjuge: g('conjuge'), nasc_conjuge: g('nasc_conjuge'),
+    conjuge: g('conjuge'), nasc_conjuge: g('nasc_conjuge'), cpf_conjuge: g('cpf_conjuge'),
+    dependentes_info: g('dependentes_info'),
     ctps_digital: ctpsVal, ctps_num: g('ctps_num'), ctps_serie: g('ctps_serie'), ctps_data: g('ctps_data'),
     rg: g('rg'), rg_data: g('rg_data'), rg_orgao: g('rg_orgao'),
     cpf: g('cpf'), pis: g('pis'), pis_data: g('pis_data'),
     titulo: g('titulo'), zona: g('zona'), secao: g('secao'),
     raca: racaVal, instrucao: g('instrucao'), primeiro_emprego: primeiroVal,
-    data_envio: new Date().toLocaleDateString('pt-BR')
+    data_envio: new Date().toLocaleDateString('pt-BR'),
+    anexos: anexos
   };
 
-  const btn = document.getElementById('btn-enviar');
-  btn.textContent = 'Enviando...'; btn.disabled = true;
+  btn.textContent = 'Enviando...';
 
   fetch(SCRIPT_URL, {
     method: 'POST', mode: 'no-cors',

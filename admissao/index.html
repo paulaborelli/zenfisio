@@ -411,20 +411,8 @@ body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);pad
 
       <div class="conditional" id="anexo-filhos-wrap">
         <div class="section-label" style="margin-top:1.25rem;">Dependentes (filhos menores de 14 anos)</div>
-        <div class="grid-3">
-          <div class="field">
-            <label>Certidão de Nascimento (com CPF)</label>
-            <input type="file" id="doc_certidao_filhos" accept="image/*,.pdf" multiple>
-          </div>
-          <div class="field">
-            <label>Carteira de Vacinação (menores de 6 anos)</label>
-            <input type="file" id="doc_vacinacao_filhos" accept="image/*,.pdf" multiple>
-          </div>
-          <div class="field">
-            <label>Comprovante de Escolaridade (5 a 14 anos)</label>
-            <input type="file" id="doc_escolaridade_filhos" accept="image/*,.pdf" multiple>
-          </div>
-        </div>
+        <div style="font-size:12.5px;color:var(--text-hint);margin-bottom:10px;">As caixas abaixo aparecem automaticamente de acordo com a quantidade de filhos informada em "Quantos?", acima.</div>
+        <div id="filhos-anexos-container"></div>
       </div>
 
       <div class="conditional" id="anexo-conjuge-wrap">
@@ -485,6 +473,45 @@ function toggleFilhos(el) {
   document.getElementById('anexo-filhos-wrap').classList.toggle('show', filhosVal === 'Sim');
   document.getElementById('err-filhos').classList.remove('show');
   document.getElementById('filhos-group').classList.remove('invalid');
+  if (filhosVal === 'Sim') {
+    renderFilhosAnexos();
+  } else {
+    document.getElementById('filhos-anexos-container').innerHTML = '';
+  }
+}
+
+// Gera/remove as caixas de anexo dos filhos conforme "Quantos?" muda,
+// preservando arquivos já escolhidos nas caixas que continuam existindo.
+function renderFilhosAnexos() {
+  const n = Math.max(0, Math.min(20, parseInt(g('qtd_filhos'), 10) || 0));
+  const container = document.getElementById('filhos-anexos-container');
+  const blocosAtuais = container.querySelectorAll('.filho-anexo-bloco');
+
+  if (n > blocosAtuais.length) {
+    for (let i = blocosAtuais.length + 1; i <= n; i++) {
+      const bloco = document.createElement('div');
+      bloco.className = 'filho-anexo-bloco';
+      bloco.style.marginBottom = '14px';
+      bloco.innerHTML =
+        '<div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:8px;">Filho(a) ' + i + '</div>' +
+        '<div class="grid-3">' +
+          '<div class="field"><label>Certidão de Nascimento (com CPF)</label>' +
+          '<input type="file" id="doc_certidao_filho_' + i + '" class="doc-certidao-filho" accept="image/*,.pdf"></div>' +
+          '<div class="field"><label>Carteira de Vacinação (menores de 6 anos)</label>' +
+          '<input type="file" id="doc_vacinacao_filho_' + i + '" class="doc-vacinacao-filho" accept="image/*,.pdf"></div>' +
+          '<div class="field"><label>Comprovante de Escolaridade (5 a 14 anos)</label>' +
+          '<input type="file" id="doc_escolaridade_filho_' + i + '" class="doc-escolaridade-filho" accept="image/*,.pdf"></div>' +
+        '</div>';
+      container.appendChild(bloco);
+      bloco.querySelectorAll('input[type="file"]').forEach(function(inp) {
+        inp.addEventListener('change', function() { checkFileSize(inp); });
+      });
+    }
+  } else if (n < blocosAtuais.length) {
+    for (let i = blocosAtuais.length - 1; i >= n; i--) {
+      blocosAtuais[i].remove();
+    }
+  }
 }
 
 function toggleCTPS(el) {
@@ -538,6 +565,7 @@ function setRadioError(groupId, errId, show) {
 }
 
 document.getElementById('estado_civil').addEventListener('change', toggleConjugeDocs);
+document.getElementById('qtd_filhos').addEventListener('input', renderFilhosAnexos);
 
 // Anexos — limite de tamanho por arquivo
 const MAX_FILE_MB = 5;
@@ -624,7 +652,6 @@ function fileToBase64(file) {
 async function coletarAnexos() {
   const camposUnicos = ['doc_ctps','doc_rg','doc_cpf','doc_titulo','doc_reservista','doc_cnh',
     'doc_comprovante_residencia','doc_certidao_casamento','doc_cpf_conjuge','doc_rg_conjuge','doc_exame_admissional'];
-  const camposMultiplos = ['doc_certidao_filhos','doc_vacinacao_filhos','doc_escolaridade_filhos'];
   const anexos = {};
 
   for (const id of camposUnicos) {
@@ -634,15 +661,26 @@ async function coletarAnexos() {
       anexos[id] = { nome: f.name, tipo: f.type, base64: await fileToBase64(f) };
     }
   }
-  for (const id of camposMultiplos) {
-    const input = document.getElementById(id);
-    if (input && input.files.length) {
-      anexos[id] = [];
-      for (const f of input.files) {
-        anexos[id].push({ nome: f.name, tipo: f.type, base64: await fileToBase64(f) });
+
+  // Anexos dos filhos — uma caixa por filho, agrupadas de volta em listas
+  // (mesma chave para todos os filhos, na ordem em que as caixas aparecem)
+  const grupoFilhos = {
+    doc_certidao_filhos: 'doc-certidao-filho',
+    doc_vacinacao_filhos: 'doc-vacinacao-filho',
+    doc_escolaridade_filhos: 'doc-escolaridade-filho'
+  };
+  for (const chave in grupoFilhos) {
+    const inputs = document.querySelectorAll('.' + grupoFilhos[chave]);
+    const lista = [];
+    for (const inp of inputs) {
+      if (inp.files.length) {
+        const f = inp.files[0];
+        lista.push({ nome: f.name, tipo: f.type, base64: await fileToBase64(f) });
       }
     }
+    if (lista.length) anexos[chave] = lista;
   }
+
   return anexos;
 }
 

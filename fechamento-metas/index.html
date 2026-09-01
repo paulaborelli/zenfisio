@@ -758,6 +758,9 @@ async function processarPDF(event) {
     niveisExtraidos = extrairNiveis(textoCompleto);
     if (!niveisExtraidos || Object.keys(niveisExtraidos).length === 0) { document.getElementById('pdf-status').textContent = 'Não consegui identificar os níveis no PDF.'; return; }
     document.getElementById('pdf-status').textContent = `PDF lido — ${Object.keys(niveisExtraidos).length} nível(is) identificado(s).`;
+    // Um PDF de metas do MRR novo tem prioridade sobre o valor "protegido" (valorManual)
+    // que a equipe de Produto possa ter herdado de uma restauração de mês já salvo.
+    colaboradoresProduto.forEach(c => delete c.valorManual);
     renderTabelaNiveis(); recalcular();
   } catch(e) { document.getElementById('pdf-status').textContent = 'Erro ao ler o PDF: ' + e.message; }
 }
@@ -987,6 +990,12 @@ async function processarPDFAreas(event) {
     tiersMkt.cadastroTeste   = extrairKpiTiers(textoMkt, 'Novo cadastro para teste do ZenFisio', 'cadastros', false);
     tiersMkt.extensaoTeste    = extrairKpiTiers(textoMkt, 'Novo teste do ZenFisio por mais 7 dias', 'cadastros', false);
     tiersMkt.novosClientesMkt = extrairKpiTiers(textoMkt, 'Novos clientes: Equipe de Marketing', 'clientes', true);
+    // Um PDF novo com tiers válidos tem prioridade sobre qualquer valor "protegido"
+    // (valorManual) que tenha vindo de uma restauração de mês já salvo — senão, depois de
+    // corrigir a leitura do PDF, o valor de cada pessoa continuava travado no 0 antigo.
+    limparValorManualDaEquipe('cadastroTeste', tiersMkt.cadastroTeste);
+    limparValorManualDaEquipe('extensaoTeste', tiersMkt.extensaoTeste);
+    limparValorManualDaEquipe('novosClientesMkt', tiersMkt.novosClientesMkt);
     const okCount = Object.values(tiersMkt).filter(Boolean).length;
     document.getElementById('pdf-areas-status').textContent = `PDF lido — ${okCount}/3 KPIs de Marketing identificados.`;
     recalcularMarketing();
@@ -994,6 +1003,7 @@ async function processarPDFAreas(event) {
     // ── Vendas ──
     const textoVendas = secoesPDFAreas['Vendas'] || '';
     tiersVendas.equipeComercial = extrairKpiTiers(textoVendas, 'Novos clientes: Equipe Comercial', 'clientes', true);
+    if (tiersVendas.equipeComercial) (equipesVendas.equipeComercial || []).forEach(p => delete p.valorManual);
 
     const mPerc = textoVendas.match(/Principal:\s*(\d+)%\s*do MRR adicionado\s*Principal:\s*(\d+)%\s*do MRR adicionado\s*Assistente:\s*(\d+)%\s*do MRR adicionado/i);
     if (mPerc) { percIndividuais.solo = parseInt(mPerc[1]); percIndividuais.comAssist = parseInt(mPerc[2]); percIndividuais.assistente = parseInt(mPerc[3]); }
@@ -1023,6 +1033,10 @@ async function processarPDFAreas(event) {
     tiersCS.churn        = extrairKpiGenerico(textoCS, 'Churn (cancelamentos)');
     tiersCS.nps          = extrairKpiGenerico(textoCS, 'NPS (Net Promoter Score)');
     tiersCS.healthScore  = extrairKpiGenerico(textoCS, 'Health Score (saúde do cliente)');
+    limparValorManualDaEquipe('upsellEquipe', tiersCS.upsellEquipe);
+    limparValorManualDaEquipe('churn', tiersCS.churn);
+    limparValorManualDaEquipe('nps', tiersCS.nps);
+    limparValorManualDaEquipe('healthScore', tiersCS.healthScore);
     recalcularCS();
 
     // ── P&D ──
@@ -1030,6 +1044,9 @@ async function processarPDFAreas(event) {
     tiersPD.nps            = extrairKpiGenerico(textoPD, 'NPS (Net Promoter Score)');
     tiersPD.healthScore    = extrairKpiGenerico(textoPD, 'Health Score (saúde do cliente)');
     tiersPD.infraestrutura = extrairKpiGenerico(textoPD, 'Índice de Eficiência de Infraestrutura');
+    limparValorManualDaEquipe('npsPD', tiersPD.nps);
+    limparValorManualDaEquipe('healthScorePD', tiersPD.healthScore);
+    limparValorManualDaEquipe('infraestrutura', tiersPD.infraestrutura);
     recalcularPD();
   } catch(e) { document.getElementById('pdf-areas-status').textContent = 'Erro ao ler PDF: ' + e.message; }
 }
@@ -1038,6 +1055,14 @@ async function processarPDFAreas(event) {
 // automaticamente por %. Usado tanto pra exibir na tela quanto pra montar o payload de salvar.
 function valorEfetivo(p, calculado) {
   return (p.valorManual !== undefined && p.valorManual !== null) ? p.valorManual : calculado;
+}
+// Quando um PDF de metas novo é lido com sucesso pra uma equipe (tiers != null), o cálculo
+// automático passa a valer de novo pra essa equipe — remove qualquer valorManual que tenha
+// vindo de uma restauração de "Editar mês" (senão o valor de cada pessoa ficava travado no
+// que estava salvo antes, mesmo depois de corrigir a leitura do PDF e recalcular o pool).
+function limparValorManualDaEquipe(chave, tiersLidos) {
+  if (!tiersLidos) return;
+  (equipesMkt[chave] || []).forEach(p => delete p.valorManual);
 }
 // Qual função recalcular depois de editar nome/%/valor de uma pessoa nessas listas —
 // cada chave pertence a uma área diferente (Marketing, CS ou P&D), mesmo estando todas
@@ -1458,7 +1483,9 @@ async function processarComissaoComercialPDF(event) {
     const texto = await lerPDFGenerico(file);
     const dados = parsePessoaTotalValor(texto);
     let count = 0;
-    vendedoresIndividuais.forEach(v => { const d = dados[normalizarNomeMatch(v.nome)]; if (d) { v.comissaoBase = d.valor; count++; } });
+    // Uma comissão base nova (vinda do PDF) tem prioridade sobre um valor "protegido"
+    // (valorManual) herdado de uma restauração de mês já salvo.
+    vendedoresIndividuais.forEach(v => { const d = dados[normalizarNomeMatch(v.nome)]; if (d) { v.comissaoBase = d.valor; delete v.valorManual; count++; } });
     document.getElementById('status-comissao-comercial').textContent = `PDF lido — ${count} vendedor(a) preenchido(s) automaticamente.`;
     renderVendedores(); recalcularVendas();
   } catch(e) { document.getElementById('status-comissao-comercial').textContent = 'Erro ao ler PDF: ' + e.message; }
@@ -1470,7 +1497,7 @@ async function processarMetaComercialPDF(event) {
     const texto = await lerPDFGenerico(file);
     const dados = parsePessoaTiers(texto);
     let count = 0;
-    vendedoresIndividuais.forEach(v => { const d = dados[normalizarNomeMatch(v.nome)]; if (d) { v.tiersPercentuais = d; count++; } });
+    vendedoresIndividuais.forEach(v => { const d = dados[normalizarNomeMatch(v.nome)]; if (d) { v.tiersPercentuais = d; delete v.valorManual; count++; } });
     document.getElementById('status-meta-comercial').textContent = `PDF lido — ${count} vendedor(a) com meta individual identificada.`;
     recalcularVendas();
   } catch(e) { document.getElementById('status-meta-comercial').textContent = 'Erro ao ler PDF: ' + e.message; }

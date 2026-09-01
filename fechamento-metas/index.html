@@ -913,7 +913,10 @@ async function salvarFechamento(recarregarHistorico) {
 
 // ══════════════════════ MARKETING ══════════════════════
 function extrairSecoesPDFAreas(texto) {
-  const regexArea = /Metas e bonifica[cç][aã]o de\s*(Marketing|Vendas|CS e Suporte|P&D)/gi;
+  // O PDF traz o nome da área ANTES de "Metas e Bonificações de <mês>" (ex.: "Marketing:
+  // Metas e Bonificações de Julho"), e no plural ("Bonificações", não "bonificação").
+  // \S* depois de "Bonifica" cobre "ção"/"ções" sem depender do acento exato.
+  const regexArea = /(Marketing|Vendas|CS e Suporte|P&D):\s*Metas e Bonifica\S*\s*de\s*\S+/gi;
   const matches = [...texto.matchAll(regexArea)].sort((a,b) => a.index - b.index);
   const secoes = {};
   matches.forEach((m, idx) => {

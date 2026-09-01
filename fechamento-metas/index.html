@@ -342,8 +342,23 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
             <div class="hint" id="status-meta-comercial">Nenhum arquivo carregado ainda.</div>
           </div>
         </div>
+        <div class="field-row" style="align-items:flex-end;">
+          <div class="field">
+            <label id="label-perc-melhorMes">% Melhor do mês</label>
+            <input type="number" step="0.01" id="input-perc-melhorMes" value="5" onchange="atualizarPercIndividual('melhorMes', this.value)"/>
+          </div>
+          <div class="field">
+            <label id="label-perc-melhor2Meses">% Melhor 2 meses seguidos</label>
+            <input type="number" step="0.01" id="input-perc-melhor2Meses" value="10" onchange="atualizarPercIndividual('melhor2Meses', this.value)"/>
+          </div>
+          <div class="field">
+            <label id="label-perc-melhor3Meses">% Melhor 3 meses seguidos</label>
+            <input type="number" step="0.01" id="input-perc-melhor3Meses" value="15" onchange="atualizarPercIndividual('melhor3Meses', this.value)"/>
+          </div>
+        </div>
+        <div class="hint" style="margin-bottom:16px;">Esses 3 percentuais vêm do PDF de KPIs por áreas quando ele é lido, mas ficam editáveis aqui — ajuste direto se a regra mudar ou se a leitura do PDF não bater.</div>
         <table class="produto-table" id="tabela-vendedores">
-          <thead><tr><th>Vendedor(a)</th><th>Comissão base (R$)</th><th>Melhor do mês</th><th>Melhor 2 meses</th><th>Nível</th><th>Valor final</th><th></th></tr></thead>
+          <thead><tr><th>Vendedor(a)</th><th>Comissão base (R$)</th><th>Melhor do mês</th><th>Melhor 2 meses</th><th>Melhor 3 meses</th><th>Nível</th><th>Valor final</th><th></th></tr></thead>
           <tbody id="tbody-vendedores"></tbody>
         </table>
         <button class="btn-add" onclick="adicionarVendedor()">+ Adicionar vendedor(a)</button>
@@ -537,11 +552,11 @@ let equipesVendas = {
   equipeComercial: [{nome:'Luana',percentual:45},{nome:'Jéssica',percentual:35},{nome:'Laura',percentual:20}]
 };
 let tiersVendas = { equipeComercial: null, metaIndividual: null };
-let percIndividuais = { solo: 35, comAssist: 25, assistente: 10, melhorMes: 5, melhor2Meses: 10 };
+let percIndividuais = { solo: 35, comAssist: 25, assistente: 10, melhorMes: 5, melhor2Meses: 10, melhor3Meses: 15 };
 let vendedoresIndividuais = [
-  { nome:'Bianca', comissaoBase:0, tiersPercentuais:null, melhorMes:false, melhor2Meses:false, nivel:null, valorFinal:0 },
-  { nome:'Jéssica', comissaoBase:0, tiersPercentuais:null, melhorMes:false, melhor2Meses:false, nivel:null, valorFinal:0 },
-  { nome:'Luana', comissaoBase:0, tiersPercentuais:null, melhorMes:false, melhor2Meses:false, nivel:null, valorFinal:0 }
+  { nome:'Bianca', comissaoBase:0, tiersPercentuais:null, melhorMes:false, melhor2Meses:false, melhor3Meses:false, nivel:null, valorFinal:0 },
+  { nome:'Jéssica', comissaoBase:0, tiersPercentuais:null, melhorMes:false, melhor2Meses:false, melhor3Meses:false, nivel:null, valorFinal:0 },
+  { nome:'Luana', comissaoBase:0, tiersPercentuais:null, melhorMes:false, melhor2Meses:false, melhor3Meses:false, nivel:null, valorFinal:0 }
 ];
 let resultadosVendasAtual = {};
 
@@ -585,6 +600,7 @@ async function fazerLogin() {
       Object.keys(equipesMkt).forEach(renderEquipeMkt);
       renderEquipeVendasEquipe();
       renderVendedores();
+      atualizarCamposPercIndividuais();
       renderUpsellIndividual();
       selecionarMes(null);
     } else {
@@ -1008,8 +1024,14 @@ async function processarPDFAreas(event) {
     const mPerc = textoVendas.match(/Principal:\s*(\d+)%\s*do MRR adicionado\s*Principal:\s*(\d+)%\s*do MRR adicionado\s*Assistente:\s*(\d+)%\s*do MRR adicionado/i);
     if (mPerc) { percIndividuais.solo = parseInt(mPerc[1]); percIndividuais.comAssist = parseInt(mPerc[2]); percIndividuais.assistente = parseInt(mPerc[3]); }
 
-    const acrescimos = [...textoVendas.matchAll(/Acréscimo de\s*(\d+)%/gi)].map(m => parseInt(m[1]));
-    if (acrescimos.length >= 2) { percIndividuais.melhorMes = acrescimos[0]; percIndividuais.melhor2Meses = acrescimos[1]; }
+    // Texto real do PDF é "N% sobre a bonificação individual para o melhor vendedor [do mês |
+    // por 2 meses consecutivos | por 3 meses consecutivos]" — não "Acréscimo de N%" (o padrão
+    // antigo nunca batia, então esses 3 percentuais nunca eram atualizados pelo PDF).
+    const acrescimos = [...textoVendas.matchAll(/(\d+)%\s*sobre\s*a\s*bonifica[cç][aã]o\s*individual\s*para\s*o\s*melhor\s*vendedor/gi)].map(m => parseInt(m[1]));
+    if (acrescimos.length >= 1) percIndividuais.melhorMes = acrescimos[0];
+    if (acrescimos.length >= 2) percIndividuais.melhor2Meses = acrescimos[1];
+    if (acrescimos.length >= 3) percIndividuais.melhor3Meses = acrescimos[2];
+    atualizarCamposPercIndividuais();
 
     const idxV3 = textoVendas.indexOf('Novos clientes: Meta Individual por vendedor');
     if (idxV3 !== -1) {
@@ -1266,6 +1288,7 @@ function renderVendedores() {
       <td><input type="text" value="${v.comissaoBase || ''}" placeholder="Ex: 2.310,04" onchange="atualizarVendedor(${i},'comissaoBase',this.value)"/></td>
       <td class="check"><input type="checkbox" ${v.melhorMes?'checked':''} onchange="atualizarVendedor(${i},'melhorMes',this.checked)"/></td>
       <td class="check"><input type="checkbox" ${v.melhor2Meses?'checked':''} onchange="atualizarVendedor(${i},'melhor2Meses',this.checked)"/></td>
+      <td class="check"><input type="checkbox" ${v.melhor3Meses?'checked':''} onchange="atualizarVendedor(${i},'melhor3Meses',this.checked)"/></td>
       <td id="nivel-vend-${i}">—</td>
       <td><input type="text" class="num" id="valor-vend-${i}" value="${v.valorManual !== undefined && v.valorManual !== null ? fmtBRL(v.valorManual) : 'R$ 0,00'}" title="Editável — deixe em branco pra voltar ao cálculo automático" onchange="atualizarValorManualVendedor(${i}, this.value)"/></td>
       <td><button class="btn-remover" onclick="removerVendedor(${i})">✕</button></td>
@@ -1283,7 +1306,20 @@ function atualizarValorManualVendedor(i, valorTexto) {
   recalcularVendas();
 }
 function removerVendedor(i) { vendedoresIndividuais.splice(i,1); renderVendedores(); recalcularVendas(); }
-function adicionarVendedor() { vendedoresIndividuais.push({nome:'Novo(a) vendedor(a)', comissaoBase:0, tiersPercentuais:null, melhorMes:false, melhor2Meses:false, nivel:null, valorFinal:0}); renderVendedores(); recalcularVendas(); }
+function adicionarVendedor() { vendedoresIndividuais.push({nome:'Novo(a) vendedor(a)', comissaoBase:0, tiersPercentuais:null, melhorMes:false, melhor2Meses:false, melhor3Meses:false, nivel:null, valorFinal:0}); renderVendedores(); recalcularVendas(); }
+
+// Os 3 percentuais de bonificação adicional (melhor do mês / 2 meses seguidos / 3 meses
+// seguidos) ficam editáveis aqui, além de virem do PDF de KPIs por áreas quando ele é lido.
+function atualizarPercIndividual(campo, valor) {
+  percIndividuais[campo] = parseFloat(String(valor).replace(',', '.')) || 0;
+  recalcularVendas();
+}
+function atualizarCamposPercIndividuais() {
+  ['melhorMes','melhor2Meses','melhor3Meses'].forEach(campo => {
+    const inp = document.getElementById('input-perc-' + campo);
+    if (inp) inp.value = percIndividuais[campo];
+  });
+}
 
 function calcularComissaoIndividual() {
   vendedoresIndividuais.forEach((v, i) => {
@@ -1297,6 +1333,7 @@ function calcularComissaoIndividual() {
     }
     if (v.melhorMes) percExtra += percIndividuais.melhorMes;
     if (v.melhor2Meses) percExtra += percIndividuais.melhor2Meses;
+    if (v.melhor3Meses) percExtra += percIndividuais.melhor3Meses;
     const valorFinalCalculado = v.comissaoBase * (1 + percExtra/100);
     const valorFinal = valorEfetivo(v, valorFinalCalculado);
     v.nivel = nivel; v.percExtra = percExtra; v.valorFinal = valorFinal;
@@ -1497,21 +1534,29 @@ async function processarComissaoComercialPDF(event) {
   document.getElementById('status-comissao-comercial').textContent = 'Lendo PDF...';
   try {
     const texto = await lerPDFGenerico(file);
-    // Este PDF ("Comercial: Novos clientes") só traz o MRR bruto gerado como Principal e
-    // como Assistente — a comissão base é o MRR de cada papel vezes o % correspondente
-    // (percIndividuais.solo pro Principal, percIndividuais.assistente pro Assistente).
-    const dados = parsePessoaPrincipalAssistente(texto);
     let count = 0;
-    // Uma comissão base nova (vinda do PDF) tem prioridade sobre um valor "protegido"
-    // (valorManual) herdado de uma restauração de mês já salvo.
-    vendedoresIndividuais.forEach(v => {
-      const d = dados[normalizarNomeMatch(v.nome)];
-      if (d) {
-        v.comissaoBase = d.mrrPrincipal * (percIndividuais.solo / 100) + d.mrrAssistente * (percIndividuais.assistente / 100);
-        delete v.valorManual;
-        count++;
-      }
-    });
+    // O PDF certo pra este campo ("Comissão individual em vendas para Novos Clientes") já
+    // vem com a comissão pronta na coluna "Total Valor" — é só usar esse valor direto.
+    const dadosProntos = parsePessoaTotalValor(texto);
+    if (Object.keys(dadosProntos).length > 0) {
+      vendedoresIndividuais.forEach(v => {
+        const d = dadosProntos[normalizarNomeMatch(v.nome)];
+        if (d) { v.comissaoBase = d.valor; delete v.valorManual; count++; }
+      });
+    } else {
+      // Fallback pra quando o arquivo anexado é a versão mais simples ("Comercial: Novos
+      // clientes"), que só traz o MRR bruto por papel (Principal/Assistente) sem o total já
+      // calculado — nesse caso, calcula aplicando os % de percIndividuais.
+      const dadosBrutos = parsePessoaPrincipalAssistente(texto);
+      vendedoresIndividuais.forEach(v => {
+        const d = dadosBrutos[normalizarNomeMatch(v.nome)];
+        if (d) {
+          v.comissaoBase = d.mrrPrincipal * (percIndividuais.solo / 100) + d.mrrAssistente * (percIndividuais.assistente / 100);
+          delete v.valorManual;
+          count++;
+        }
+      });
+    }
     document.getElementById('status-comissao-comercial').textContent = `PDF lido — ${count} vendedor(a) preenchido(s) automaticamente.`;
     renderVendedores(); recalcularVendas();
   } catch(e) { document.getElementById('status-comissao-comercial').textContent = 'Erro ao ler PDF: ' + e.message; }
@@ -1906,7 +1951,7 @@ function restaurarComissaoIndividualVendedores(mes) {
   const detalhe = historico?.detalhe?.[mes + '|Comissão Individual por Vendedor'];
   if (!detalhe || !detalhe.length) return false;
   vendedoresIndividuais = detalhe.map(d => ({
-    nome: d.nome, comissaoBase: 0, tiersPercentuais: null, melhorMes: false, melhor2Meses: false,
+    nome: d.nome, comissaoBase: 0, tiersPercentuais: null, melhorMes: false, melhor2Meses: false, melhor3Meses: false,
     nivel: null, percExtra: Number(d.percentual) || 0, valorFinal: Number(d.valor) || 0, valorManual: Number(d.valor) || 0
   }));
   renderVendedores();

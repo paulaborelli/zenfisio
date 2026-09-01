@@ -1327,6 +1327,22 @@ function parsePessoaTotalValor(texto) {
   });
   return resultado;
 }
+// Tabela "Comercial: Novos clientes" (Principal | Assistente, cada um com Clientes/MRR).
+// Diferente do parsePessoaTotalValor: aqui o PDF não traz um valor de comissão já pronto —
+// só o MRR bruto gerado como Principal e como Assistente — então a comissão base precisa
+// ser calculada aqui aplicando os % de percIndividuais.
+function parsePessoaPrincipalAssistente(texto) {
+  const mHeader = texto.match(/Clientes\s+MRR\s+Clientes\s+MRR\s*(?:Principal\s+Assistente)?/i);
+  const corpo = mHeader ? texto.slice(mHeader.index + mHeader[0].length) : texto;
+  const regex = /([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ.'\s]*?)\s+(\d+)\s+R\$\s*([\d.,]+)\s+(\d+)\s+R\$\s*([\d.,]+)/g;
+  const resultado = {};
+  [...corpo.matchAll(regex)].forEach(m => {
+    const nome = m[1].trim();
+    if (nome === 'Total' || nome === 'Nulo' || nome.length < 2) return;
+    resultado[normalizarNomeMatch(nome)] = { nomeOriginal: nome, mrrPrincipal: parseValorBR(m[3]), mrrAssistente: parseValorBR(m[5]) };
+  });
+  return resultado;
+}
 function parsePessoaTiers(texto) {
   const idxHeader = texto.lastIndexOf('Percentual');
   const corpo = idxHeader === -1 ? texto : texto.slice(idxHeader + 'Percentual'.length);
@@ -1481,11 +1497,21 @@ async function processarComissaoComercialPDF(event) {
   document.getElementById('status-comissao-comercial').textContent = 'Lendo PDF...';
   try {
     const texto = await lerPDFGenerico(file);
-    const dados = parsePessoaTotalValor(texto);
+    // Este PDF ("Comercial: Novos clientes") só traz o MRR bruto gerado como Principal e
+    // como Assistente — a comissão base é o MRR de cada papel vezes o % correspondente
+    // (percIndividuais.solo pro Principal, percIndividuais.assistente pro Assistente).
+    const dados = parsePessoaPrincipalAssistente(texto);
     let count = 0;
     // Uma comissão base nova (vinda do PDF) tem prioridade sobre um valor "protegido"
     // (valorManual) herdado de uma restauração de mês já salvo.
-    vendedoresIndividuais.forEach(v => { const d = dados[normalizarNomeMatch(v.nome)]; if (d) { v.comissaoBase = d.valor; delete v.valorManual; count++; } });
+    vendedoresIndividuais.forEach(v => {
+      const d = dados[normalizarNomeMatch(v.nome)];
+      if (d) {
+        v.comissaoBase = d.mrrPrincipal * (percIndividuais.solo / 100) + d.mrrAssistente * (percIndividuais.assistente / 100);
+        delete v.valorManual;
+        count++;
+      }
+    });
     document.getElementById('status-comissao-comercial').textContent = `PDF lido — ${count} vendedor(a) preenchido(s) automaticamente.`;
     renderVendedores(); recalcularVendas();
   } catch(e) { document.getElementById('status-comissao-comercial').textContent = 'Erro ao ler PDF: ' + e.message; }

@@ -562,9 +562,9 @@ let resultadosVendasAtual = {};
 
 let tiersCS = { upsellEquipe: null, churn: null, nps: null, healthScore: null };
 let upsellIndividual = [
-  {nome:'Ana Tobias', valor:0}, {nome:'Bernardo', valor:0}, {nome:'Camila', valor:0}, {nome:'Franciele', valor:0},
-  {nome:'Heloísa', valor:0}, {nome:'José V.', valor:0}, {nome:'Kéuri', valor:0}, {nome:'Laura', valor:0},
-  {nome:'Marília', valor:0}, {nome:'Milena', valor:0}, {nome:'Viviane', valor:0}
+  {nome:'Ana Tobias', valor:0}, {nome:'Bernardo', valor:0}, {nome:'Camila', valor:0}, {nome:'Eduarda', valor:0},
+  {nome:'Franciele', valor:0}, {nome:'Heloísa', valor:0}, {nome:'José V.', valor:0}, {nome:'Kéuri', valor:0},
+  {nome:'Laura', valor:0}, {nome:'Lauren', valor:0}, {nome:'Marília', valor:0}, {nome:'Milena', valor:0}, {nome:'Viviane', valor:0}
 ];
 let resultadosCSAtual = {};
 
@@ -1579,9 +1579,16 @@ async function processarComissaoUpsellCSPDF(event) {
   try {
     const texto = await lerPDFGenerico(file);
     const dados = parsePessoaTotalValor(texto);
-    let count = 0;
-    upsellIndividual.forEach(p => { const d = dados[normalizarNomeMatch(p.nome)]; if (d) { p.valor = d.valor; count++; } });
-    document.getElementById('status-comissao-upsell-cs').textContent = `PDF lido — ${count} pessoa(s) preenchida(s) automaticamente.`;
+    const encontrados = Object.values(dados);
+    // O PDF é a fonte mais atual da equipe de UpSell individual — reconstrói a lista
+    // inteira a partir dele, em vez de só atualizar quem já estava na lista. Antes, gente
+    // nova no PDF (ou removida da lista manualmente antes) nunca aparecia — só quem já
+    // estava cadastrado tinha o valor atualizado, então a contagem nunca batia com a
+    // equipe real (ex.: 13 pessoas no PDF, só 8 na lista → "8 pessoa(s)" preenchidas).
+    if (encontrados.length > 0) {
+      upsellIndividual = encontrados.map(d => ({ nome: d.nomeOriginal, valor: d.valor }));
+    }
+    document.getElementById('status-comissao-upsell-cs').textContent = `PDF lido — ${encontrados.length} pessoa(s) preenchida(s) automaticamente.`;
     renderUpsellIndividual();
   } catch(e) { document.getElementById('status-comissao-upsell-cs').textContent = 'Erro ao ler PDF: ' + e.message; }
 }

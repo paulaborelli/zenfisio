@@ -7,6 +7,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<!-- OCR (rede de segurança): usado só quando um PDF anexado não tem texto de verdade dentro
+     (ex.: print da planilha colado num Word e depois "salvo como PDF" — vira uma imagem por
+     dentro) ou quando o arquivo anexado já é uma foto/print (PNG/JPG). Roda 100% no navegador. -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
@@ -194,8 +198,8 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
     <div class="card">
       <h2>PDF de KPIs por áreas do mês</h2>
       <div class="field">
-        <label>Anexar PDF ("Metas e bonificação de KPIs por áreas")</label>
-        <input type="file" id="pdf-areas-input" accept="application/pdf" onchange="processarPDFAreas(event)"/><button type="button" class="btn-remover-arquivo" onclick="limparCampoArquivo(this, 'pdf-areas-status', 'Nenhum arquivo carregado ainda. Carregue uma vez aqui — vale para Marketing, Vendas, CS e Suporte e P&amp;D.')" title="Remover arquivo">🗑️ Remover</button>
+        <label>Anexar PDF ("Metas e bonificação de KPIs por áreas") — também aceita print/foto (PNG/JPG)</label>
+        <input type="file" id="pdf-areas-input" accept="application/pdf,image/png,image/jpeg" onchange="processarPDFAreas(event)"/><button type="button" class="btn-remover-arquivo" onclick="limparCampoArquivo(this, 'pdf-areas-status', 'Nenhum arquivo carregado ainda. Carregue uma vez aqui — vale para Marketing, Vendas, CS e Suporte e P&amp;D.')" title="Remover arquivo">🗑️ Remover</button>
         <div class="hint" id="pdf-areas-status">Nenhum arquivo carregado ainda. Carregue uma vez aqui — vale para Marketing, Vendas, CS e Suporte e P&amp;D.</div>
       </div>
     </div>
@@ -204,7 +208,7 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
       <h2>Resultados realizados do mês (upload múltiplo)</h2>
       <div class="field">
         <label>Anexe de uma vez: MRR - %, MRR - R$, Vendas Novos Clientes, Vendas MRR Adicionado, Churn e UpSell</label>
-        <input type="file" id="pdf-resultados-input" accept="application/pdf" multiple onchange="processarResultadosRealizadosPDF(event)"/><button type="button" class="btn-remover-arquivo" onclick="limparCampoArquivo(this, 'status-resultados-realizados', 'Nenhum arquivo carregado ainda. Identifica sozinho qual arquivo é qual e preenche os campos certos.')" title="Remover arquivo">🗑️ Remover</button>
+        <input type="file" id="pdf-resultados-input" accept="application/pdf,image/png,image/jpeg" multiple onchange="processarResultadosRealizadosPDF(event)"/><button type="button" class="btn-remover-arquivo" onclick="limparCampoArquivo(this, 'status-resultados-realizados', 'Nenhum arquivo carregado ainda. Identifica sozinho qual arquivo é qual e preenche os campos certos.')" title="Remover arquivo">🗑️ Remover</button>
         <div class="hint" id="status-resultados-realizados">Nenhum arquivo carregado ainda. Identifica sozinho qual arquivo é qual e preenche os campos certos.</div>
       </div>
     </div>
@@ -214,7 +218,7 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
       <div class="card"><h2 class="acordeao-titulo" onclick="toggleAcordeao(this)">PDF de metas do mês (MRR) <span class="acordeao-seta">▾</span></h2><div class="acordeao-corpo" style="display:none;">
         <div class="field">
           <label>Anexar PDF ("Metas e bonificação por MRR")</label>
-          <input type="file" id="pdf-input" accept="application/pdf" onchange="processarPDF(event)"/><button type="button" class="btn-remover-arquivo" onclick="limparCampoArquivo(this, 'pdf-status', 'Nenhum arquivo carregado ainda.')" title="Remover arquivo">🗑️ Remover</button>
+          <input type="file" id="pdf-input" accept="application/pdf,image/png,image/jpeg" onchange="processarPDF(event)"/><button type="button" class="btn-remover-arquivo" onclick="limparCampoArquivo(this, 'pdf-status', 'Nenhum arquivo carregado ainda.')" title="Remover arquivo">🗑️ Remover</button>
           <div class="hint" id="pdf-status">Nenhum arquivo carregado ainda.</div>
         </div>
         <table class="niveis-table" id="tabela-niveis" style="display:none;">
@@ -328,17 +332,17 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
 
       <div class="card"><h2 class="acordeao-titulo" onclick="toggleAcordeao(this)">KPI 2 + 3 — Comissão Individual por Vendedor <span class="acordeao-seta">▾</span></h2><div class="acordeao-corpo" style="display:none;">
         <div class="hint" style="margin-bottom:16px;">
-          Anexe os 2 PDFs abaixo (exportados direto da planilha "Indicadores ZenFisio") pra preencher a comissão base e o nível de cada vendedor(a) automaticamente. Os campos continuam editáveis se precisar corrigir algo.
+          Anexe os 2 PDFs abaixo (exportados direto da planilha "Indicadores ZenFisio") pra preencher a comissão base e o nível de cada vendedor(a) automaticamente. Também aceita print/foto (PNG/JPG) — nesse caso a leitura é por OCR e o sistema avisa pra você conferir os valores. Os campos continuam editáveis se precisar corrigir algo.
         </div>
         <div class="field-row">
           <div class="field">
             <label>PDF "Comissão individual em vendas para Novos Clientes"</label>
-            <input type="file" accept="application/pdf" onchange="processarComissaoComercialPDF(event)"/><button type="button" class="btn-remover-arquivo" onclick="limparCampoArquivo(this, 'status-comissao-comercial', 'Nenhum arquivo carregado ainda.')" title="Remover arquivo">🗑️ Remover</button>
+            <input type="file" accept="application/pdf,image/png,image/jpeg" onchange="processarComissaoComercialPDF(event)"/><button type="button" class="btn-remover-arquivo" onclick="limparCampoArquivo(this, 'status-comissao-comercial', 'Nenhum arquivo carregado ainda.')" title="Remover arquivo">🗑️ Remover</button>
             <div class="hint" id="status-comissao-comercial">Nenhum arquivo carregado ainda.</div>
           </div>
           <div class="field">
             <label>PDF "Meta individual de venda"</label>
-            <input type="file" accept="application/pdf" onchange="processarMetaComercialPDF(event)"/><button type="button" class="btn-remover-arquivo" onclick="limparCampoArquivo(this, 'status-meta-comercial', 'Nenhum arquivo carregado ainda.')" title="Remover arquivo">🗑️ Remover</button>
+            <input type="file" accept="application/pdf,image/png,image/jpeg" onchange="processarMetaComercialPDF(event)"/><button type="button" class="btn-remover-arquivo" onclick="limparCampoArquivo(this, 'status-meta-comercial', 'Nenhum arquivo carregado ainda.')" title="Remover arquivo">🗑️ Remover</button>
             <div class="hint" id="status-meta-comercial">Nenhum arquivo carregado ainda.</div>
           </div>
         </div>
@@ -375,7 +379,7 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
       <div class="card"><h2 class="acordeao-titulo" onclick="toggleAcordeao(this)">KPI 1 — UpSell: Equipe <span class="acordeao-seta">▾</span></h2><div class="acordeao-corpo" style="display:none;">
         <div class="field">
           <label>PDF "CS: UpSell"</label>
-          <input type="file" accept="application/pdf" onchange="processarUpsellEquipePDF(event)"/><button type="button" class="btn-remover-arquivo" onclick="limparCampoArquivo(this, 'status-upsell-equipe-pdf', 'Preenche o campo "MRR adicionado com UpSell" abaixo.')" title="Remover arquivo">🗑️ Remover</button>
+          <input type="file" accept="application/pdf,image/png,image/jpeg" onchange="processarUpsellEquipePDF(event)"/><button type="button" class="btn-remover-arquivo" onclick="limparCampoArquivo(this, 'status-upsell-equipe-pdf', 'Preenche o campo "MRR adicionado com UpSell" abaixo.')" title="Remover arquivo">🗑️ Remover</button>
           <div class="hint" id="status-upsell-equipe-pdf">Preenche o campo "MRR adicionado com UpSell" abaixo.</div>
         </div>
         <div class="field-row">
@@ -392,8 +396,8 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
 
       <div class="card"><h2 class="acordeao-titulo" onclick="toggleAcordeao(this)">KPI 1b — UpSell: Individual <span class="acordeao-seta">▾</span></h2><div class="acordeao-corpo" style="display:none;">
         <div class="field">
-          <label>PDF "Comissão individual em UpSell para Clientes"</label>
-          <input type="file" accept="application/pdf" onchange="processarComissaoUpsellCSPDF(event)"/><button type="button" class="btn-remover-arquivo" onclick="limparCampoArquivo(this, 'status-comissao-upsell-cs', 'Nenhum arquivo carregado ainda.')" title="Remover arquivo">🗑️ Remover</button>
+          <label>PDF "Comissão individual em UpSell para Clientes" — também aceita print/foto (PNG/JPG)</label>
+          <input type="file" accept="application/pdf,image/png,image/jpeg" onchange="processarComissaoUpsellCSPDF(event)"/><button type="button" class="btn-remover-arquivo" onclick="limparCampoArquivo(this, 'status-comissao-upsell-cs', 'Nenhum arquivo carregado ainda.')" title="Remover arquivo">🗑️ Remover</button>
           <div class="hint" id="status-comissao-upsell-cs">Nenhum arquivo carregado ainda.</div>
         </div>
         <table class="produto-table"><thead><tr><th>Pessoa</th><th>Valor (R$)</th><th></th></tr></thead><tbody id="tbody-upsellIndividual"></tbody></table>
@@ -404,12 +408,12 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
         <div class="field-row">
           <div class="field">
             <label>PDF "Churn (cancelamentos)"</label>
-            <input type="file" accept="application/pdf" onchange="processarChurnPDF(event)"/><button type="button" class="btn-remover-arquivo" onclick="limparCampoArquivo(this, 'status-churn-pdf', 'Preenche o campo "Churn em R$" abaixo.')" title="Remover arquivo">🗑️ Remover</button>
+            <input type="file" accept="application/pdf,image/png,image/jpeg" onchange="processarChurnPDF(event)"/><button type="button" class="btn-remover-arquivo" onclick="limparCampoArquivo(this, 'status-churn-pdf', 'Preenche o campo "Churn em R$" abaixo.')" title="Remover arquivo">🗑️ Remover</button>
             <div class="hint" id="status-churn-pdf">Preenche o campo "Churn em R$" abaixo.</div>
           </div>
           <div class="field">
             <label>PDF "CS: DownSell"</label>
-            <input type="file" accept="application/pdf" onchange="processarDownsellPDF(event)"/><button type="button" class="btn-remover-arquivo" onclick="limparCampoArquivo(this, 'status-downsell-pdf', 'Preenche o campo "DownSell em R$" abaixo.')" title="Remover arquivo">🗑️ Remover</button>
+            <input type="file" accept="application/pdf,image/png,image/jpeg" onchange="processarDownsellPDF(event)"/><button type="button" class="btn-remover-arquivo" onclick="limparCampoArquivo(this, 'status-downsell-pdf', 'Preenche o campo "DownSell em R$" abaixo.')" title="Remover arquivo">🗑️ Remover</button>
             <div class="hint" id="status-downsell-pdf">Preenche o campo "DownSell em R$" abaixo.</div>
           </div>
         </div>
@@ -763,22 +767,17 @@ function adicionarBonusGeral() { equipeBonusGeral.push({ nome: 'Nova pessoa' });
 async function processarPDF(event) {
   const file = event.target.files[0];
   if (!file) return;
-  document.getElementById('pdf-status').textContent = 'Lendo PDF...';
+  document.getElementById('pdf-status').textContent = 'Lendo arquivo...';
   try {
-    const buffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
-    let textoCompleto = '';
-    for (let i = 1; i <= pdf.numPages; i++) { const page = await pdf.getPage(i); const content = await page.getTextContent(); textoCompleto += ' ' + content.items.map(it => it.str).join(' '); }
-    textoCompleto = textoCompleto.replace(/(\S)\s+fi\s+(\S)/g, '$1fi$2');
-    textoCompleto = textoCompleto.replace(/\s+/g, ' ');
+    const { texto: textoCompleto, ocr } = await extrairTextoArquivo(file);
     niveisExtraidos = extrairNiveis(textoCompleto);
-    if (!niveisExtraidos || Object.keys(niveisExtraidos).length === 0) { document.getElementById('pdf-status').textContent = 'Não consegui identificar os níveis no PDF.'; return; }
-    document.getElementById('pdf-status').textContent = `PDF lido — ${Object.keys(niveisExtraidos).length} nível(is) identificado(s).`;
+    if (!niveisExtraidos || Object.keys(niveisExtraidos).length === 0) { document.getElementById('pdf-status').textContent = 'Não consegui identificar os níveis no arquivo.'; return; }
+    document.getElementById('pdf-status').innerHTML = comAvisoOCR(`Arquivo lido — ${Object.keys(niveisExtraidos).length} nível(is) identificado(s).`, ocr);
     // Um PDF de metas do MRR novo tem prioridade sobre o valor "protegido" (valorManual)
     // que a equipe de Produto possa ter herdado de uma restauração de mês já salvo.
     colaboradoresProduto.forEach(c => delete c.valorManual);
     renderTabelaNiveis(); recalcular();
-  } catch(e) { document.getElementById('pdf-status').textContent = 'Erro ao ler o PDF: ' + e.message; }
+  } catch(e) { document.getElementById('pdf-status').textContent = 'Erro ao ler o arquivo: ' + e.message; }
 }
 function extrairNiveis(texto) {
   const regexBloco = /(Diamante|Ouro|Prata|Bronze)[^\d]{0,25}(\d+(?:[.,]\d+)?)\s*%\s*de\s*crescimento\s*-\s*R\$\s*([\d.,]+)/gi;
@@ -993,14 +992,9 @@ function extrairKpiTiers(texto, tituloKpi, unidade, temAdicional) {
 async function processarPDFAreas(event) {
   const file = event.target.files[0];
   if (!file) return;
-  document.getElementById('pdf-areas-status').textContent = 'Lendo PDF...';
+  document.getElementById('pdf-areas-status').textContent = 'Lendo arquivo...';
   try {
-    const buffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
-    let textoCompleto = '';
-    for (let i = 1; i <= pdf.numPages; i++) { const page = await pdf.getPage(i); const content = await page.getTextContent(); textoCompleto += ' ' + content.items.map(it => it.str).join(' '); }
-    textoCompleto = textoCompleto.replace(/(\S)\s+fi\s+(\S)/g, '$1fi$2');
-    textoCompleto = textoCompleto.replace(/\s+/g, ' ');
+    const { texto: textoCompleto, ocr } = await extrairTextoArquivo(file);
     secoesPDFAreas = extrairSecoesPDFAreas(textoCompleto);
     const textoMkt = secoesPDFAreas['Marketing'] || '';
     tiersMkt.cadastroTeste   = extrairKpiTiers(textoMkt, 'Novo cadastro para teste do ZenFisio', 'cadastros', false);
@@ -1013,7 +1007,7 @@ async function processarPDFAreas(event) {
     limparValorManualDaEquipe('extensaoTeste', tiersMkt.extensaoTeste);
     limparValorManualDaEquipe('novosClientesMkt', tiersMkt.novosClientesMkt);
     const okCount = Object.values(tiersMkt).filter(Boolean).length;
-    document.getElementById('pdf-areas-status').textContent = `PDF lido — ${okCount}/3 KPIs de Marketing identificados.`;
+    document.getElementById('pdf-areas-status').innerHTML = comAvisoOCR(`Arquivo lido — ${okCount}/3 KPIs de Marketing identificados.`, ocr);
     recalcularMarketing();
 
     // ── Vendas ──
@@ -1344,13 +1338,60 @@ function calcularComissaoIndividual() {
   });
 }
 
-// ── LEITURA DE PDFs DE DETALHE (Vendas/CS) ────────────────
-async function lerPDFGenerico(file) {
+// ── LEITURA DE ARQUIVOS (PDF/imagem), COM OCR DE RESERVA ──────────────────
+// Normaliza o texto extraído de um PDF: junta a ligadura "fi" que o pdf.js às vezes separa
+// e reduz espaços múltiplos a um só, pra deixar os regexes de leitura mais confiáveis.
+function limparTextoExtraido(texto) {
+  return texto.replace(/(\S)\s+fi\s+(\S)/g, '$1fi$2').replace(/\s+/g, ' ').trim();
+}
+// Abaixo de quantos caracteres um PDF é tratado como "sem texto de verdade" (provável print
+// colado num Word e depois salvo como PDF — vira uma imagem por dentro, sem nenhum texto
+// pesquisável). PDFs reais de metas/comissão sempre têm centenas de caracteres; um PDF assim
+// tipicamente devolve 0-1 caractere do pdf.js.
+const OCR_MIN_CHARS = 40;
+// Lê texto de uma imagem (arquivo PNG/JPG ou um <canvas> com a página renderizada) via OCR,
+// rodando inteiramente no navegador da Paula (Tesseract.js). Mais lento e menos confiável que
+// ler texto real de um PDF — por isso só é usado como último recurso.
+async function ocrImagem(fonte) {
+  const { data } = await Tesseract.recognize(fonte, 'por');
+  return data.text || '';
+}
+// Ponto único de leitura de arquivo usado por todo upload de PDF/imagem do sistema:
+//   - Se o arquivo já é uma imagem (PNG/JPG, ex.: print colado direto), lê com OCR.
+//   - Se é um PDF, tenta o texto real primeiro (rápido e confiável); só recorre a OCR
+//     (renderizando cada página como imagem) se o PDF não tiver texto de verdade dentro.
+// Retorna { texto, ocr } — "ocr: true" avisa quem chamou que o valor merece conferência,
+// já que leitura por imagem pode errar um dígito ocasionalmente.
+async function extrairTextoArquivo(file) {
+  if (file.type && file.type.startsWith('image/')) {
+    return { texto: limparTextoExtraido(await ocrImagem(file)), ocr: true };
+  }
   const buffer = await file.arrayBuffer();
   const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
   let texto = '';
   for (let i = 1; i <= pdf.numPages; i++) { const page = await pdf.getPage(i); const content = await page.getTextContent(); texto += ' ' + content.items.map(it => it.str).join(' '); }
-  return texto.replace(/(\S)\s+fi\s+(\S)/g, '$1fi$2');
+  texto = limparTextoExtraido(texto);
+  if (texto.length >= OCR_MIN_CHARS) return { texto, ocr: false };
+  let textoOCR = '';
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const viewport = page.getViewport({ scale: 2.5 });
+    const canvas = document.createElement('canvas');
+    canvas.width = viewport.width; canvas.height = viewport.height;
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+    textoOCR += ' ' + await ocrImagem(canvas);
+  }
+  return { texto: limparTextoExtraido(textoOCR), ocr: true };
+}
+// Mantido por compatibilidade — os pontos de upload mais recentes chamam extrairTextoArquivo
+// diretamente pra também terem acesso ao aviso de "ocr: true".
+async function lerPDFGenerico(file) {
+  return (await extrairTextoArquivo(file)).texto;
+}
+// Acrescenta o aviso de "conferir os valores" na mensagem de status quando a leitura desse
+// arquivo caiu no caminho de OCR (imagem), em vez de texto real de PDF.
+function comAvisoOCR(mensagem, ocr) {
+  return ocr ? (mensagem + ' ⚠️ Leitura por OCR (imagem, não texto do PDF) — confira os valores antes de salvar.') : mensagem;
 }
 function parsePessoaTotalValor(texto) {
   const idxHeader = texto.search(/Total\s+Valor/);
@@ -1466,9 +1507,11 @@ async function processarResultadosRealizadosPDF(event) {
   if (!files || files.length === 0) return;
   statusEl.textContent = 'Lendo ' + files.length + ' arquivo(s)...';
   const encontrados = [];
+  let algumViaOCR = false;
   for (const file of files) {
     try {
-      const texto = await lerPDFGenerico(file);
+      const { texto, ocr } = await extrairTextoArquivo(file);
+      if (ocr) algumViaOCR = true;
       const tipo = detectarTipoArquivoResumo(texto);
       if (!tipo) { encontrados.push(`${file.name}: não identificado`); continue; }
 
@@ -1526,14 +1569,15 @@ async function processarResultadosRealizadosPDF(event) {
       }
     } catch(e) { encontrados.push(`${file.name}: erro ao ler (${e.message})`); }
   }
-  statusEl.innerHTML = encontrados.length ? ('✅ ' + encontrados.join(' · ')) : 'Nenhum dado identificado nos arquivos.';
+  const resultado = encontrados.length ? ('✅ ' + encontrados.join(' · ')) : 'Nenhum dado identificado nos arquivos.';
+  statusEl.innerHTML = comAvisoOCR(resultado, algumViaOCR);
 }
 
 async function processarComissaoComercialPDF(event) {
   const file = event.target.files[0]; if (!file) return;
-  document.getElementById('status-comissao-comercial').textContent = 'Lendo PDF...';
+  document.getElementById('status-comissao-comercial').textContent = 'Lendo arquivo...';
   try {
-    const texto = await lerPDFGenerico(file);
+    const { texto, ocr } = await extrairTextoArquivo(file);
     let count = 0;
     // O PDF certo pra este campo ("Comissão individual em vendas para Novos Clientes") já
     // vem com a comissão pronta na coluna "Total Valor" — é só usar esse valor direto.
@@ -1557,27 +1601,27 @@ async function processarComissaoComercialPDF(event) {
         }
       });
     }
-    document.getElementById('status-comissao-comercial').textContent = `PDF lido — ${count} vendedor(a) preenchido(s) automaticamente.`;
+    document.getElementById('status-comissao-comercial').innerHTML = comAvisoOCR(`Arquivo lido — ${count} vendedor(a) preenchido(s) automaticamente.`, ocr);
     renderVendedores(); recalcularVendas();
-  } catch(e) { document.getElementById('status-comissao-comercial').textContent = 'Erro ao ler PDF: ' + e.message; }
+  } catch(e) { document.getElementById('status-comissao-comercial').textContent = 'Erro ao ler arquivo: ' + e.message; }
 }
 async function processarMetaComercialPDF(event) {
   const file = event.target.files[0]; if (!file) return;
-  document.getElementById('status-meta-comercial').textContent = 'Lendo PDF...';
+  document.getElementById('status-meta-comercial').textContent = 'Lendo arquivo...';
   try {
-    const texto = await lerPDFGenerico(file);
+    const { texto, ocr } = await extrairTextoArquivo(file);
     const dados = parsePessoaTiers(texto);
     let count = 0;
     vendedoresIndividuais.forEach(v => { const d = dados[normalizarNomeMatch(v.nome)]; if (d) { v.tiersPercentuais = d; delete v.valorManual; count++; } });
-    document.getElementById('status-meta-comercial').textContent = `PDF lido — ${count} vendedor(a) com meta individual identificada.`;
+    document.getElementById('status-meta-comercial').innerHTML = comAvisoOCR(`Arquivo lido — ${count} vendedor(a) com meta individual identificada.`, ocr);
     recalcularVendas();
-  } catch(e) { document.getElementById('status-meta-comercial').textContent = 'Erro ao ler PDF: ' + e.message; }
+  } catch(e) { document.getElementById('status-meta-comercial').textContent = 'Erro ao ler arquivo: ' + e.message; }
 }
 async function processarComissaoUpsellCSPDF(event) {
   const file = event.target.files[0]; if (!file) return;
-  document.getElementById('status-comissao-upsell-cs').textContent = 'Lendo PDF...';
+  document.getElementById('status-comissao-upsell-cs').textContent = 'Lendo arquivo...';
   try {
-    const texto = await lerPDFGenerico(file);
+    const { texto, ocr } = await extrairTextoArquivo(file);
     const dados = parsePessoaTotalValor(texto);
     const encontrados = Object.values(dados);
     // O PDF é a fonte mais atual da equipe de UpSell individual — reconstrói a lista
@@ -1588,38 +1632,38 @@ async function processarComissaoUpsellCSPDF(event) {
     if (encontrados.length > 0) {
       upsellIndividual = encontrados.map(d => ({ nome: d.nomeOriginal, valor: d.valor }));
     }
-    document.getElementById('status-comissao-upsell-cs').textContent = `PDF lido — ${encontrados.length} pessoa(s) preenchida(s) automaticamente.`;
+    document.getElementById('status-comissao-upsell-cs').innerHTML = comAvisoOCR(`Arquivo lido — ${encontrados.length} pessoa(s) preenchida(s) automaticamente.`, ocr);
     renderUpsellIndividual();
-  } catch(e) { document.getElementById('status-comissao-upsell-cs').textContent = 'Erro ao ler PDF: ' + e.message; }
+  } catch(e) { document.getElementById('status-comissao-upsell-cs').textContent = 'Erro ao ler arquivo: ' + e.message; }
 }
 async function processarChurnPDF(event) {
   const file = event.target.files[0]; if (!file) return;
-  document.getElementById('status-churn-pdf').textContent = 'Lendo PDF...';
+  document.getElementById('status-churn-pdf').textContent = 'Lendo arquivo...';
   try {
-    const texto = await lerPDFGenerico(file);
+    const { texto, ocr } = await extrairTextoArquivo(file);
     const total = parseTotalGeralPDF(texto);
-    if (total !== null) { document.getElementById('input-churn-valor').value = total.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); document.getElementById('status-churn-pdf').textContent = `PDF lido — Total: ${fmtBRL(total)}`; recalcularCS(); }
-    else document.getElementById('status-churn-pdf').textContent = 'Não consegui encontrar o total no PDF.';
-  } catch(e) { document.getElementById('status-churn-pdf').textContent = 'Erro ao ler PDF: ' + e.message; }
+    if (total !== null) { document.getElementById('input-churn-valor').value = total.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); document.getElementById('status-churn-pdf').innerHTML = comAvisoOCR(`Arquivo lido — Total: ${fmtBRL(total)}`, ocr); recalcularCS(); }
+    else document.getElementById('status-churn-pdf').textContent = 'Não consegui encontrar o total no arquivo.';
+  } catch(e) { document.getElementById('status-churn-pdf').textContent = 'Erro ao ler arquivo: ' + e.message; }
 }
 async function processarDownsellPDF(event) {
   const file = event.target.files[0]; if (!file) return;
-  document.getElementById('status-downsell-pdf').textContent = 'Lendo PDF...';
+  document.getElementById('status-downsell-pdf').textContent = 'Lendo arquivo...';
   try {
-    const texto = await lerPDFGenerico(file);
+    const { texto, ocr } = await extrairTextoArquivo(file);
     const total = parseTotalGeralPDF(texto);
-    if (total !== null) { document.getElementById('input-churn-downsell').value = total.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); document.getElementById('status-downsell-pdf').textContent = `PDF lido — Total: ${fmtBRL(total)}`; recalcularCS(); }
-    else document.getElementById('status-downsell-pdf').textContent = 'Não consegui encontrar o total no PDF.';
-  } catch(e) { document.getElementById('status-downsell-pdf').textContent = 'Erro ao ler PDF: ' + e.message; }
+    if (total !== null) { document.getElementById('input-churn-downsell').value = total.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); document.getElementById('status-downsell-pdf').innerHTML = comAvisoOCR(`Arquivo lido — Total: ${fmtBRL(total)}`, ocr); recalcularCS(); }
+    else document.getElementById('status-downsell-pdf').textContent = 'Não consegui encontrar o total no arquivo.';
+  } catch(e) { document.getElementById('status-downsell-pdf').textContent = 'Erro ao ler arquivo: ' + e.message; }
 }
 async function processarUpsellEquipePDF(event) {
   const file = event.target.files[0]; if (!file) return;
-  document.getElementById('status-upsell-equipe-pdf').textContent = 'Lendo PDF...';
+  document.getElementById('status-upsell-equipe-pdf').textContent = 'Lendo arquivo...';
   try {
-    const texto = await lerPDFGenerico(file);
+    const { texto, ocr } = await extrairTextoArquivo(file);
     const total = parseTotalGeralPDF(texto);
-    if (total !== null) { document.getElementById('input-upsellEquipe-mrr').value = total.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); document.getElementById('status-upsell-equipe-pdf').textContent = `PDF lido — Total: ${fmtBRL(total)}`; recalcularCS(); }
-    else document.getElementById('status-upsell-equipe-pdf').textContent = 'Não consegui encontrar o total no PDF.';
+    if (total !== null) { document.getElementById('input-upsellEquipe-mrr').value = total.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); document.getElementById('status-upsell-equipe-pdf').innerHTML = comAvisoOCR(`Arquivo lido — Total: ${fmtBRL(total)}`, ocr); recalcularCS(); }
+    else document.getElementById('status-upsell-equipe-pdf').textContent = 'Não consegui encontrar o total no arquivo.';
   } catch(e) { document.getElementById('status-upsell-equipe-pdf').textContent = 'Erro ao ler PDF: ' + e.message; }
 }
 

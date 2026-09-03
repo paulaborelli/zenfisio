@@ -211,6 +211,17 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
         <input type="file" id="pdf-resultados-input" accept="application/pdf,image/png,image/jpeg" multiple onchange="processarResultadosRealizadosPDF(event)"/><button type="button" class="btn-remover-arquivo" onclick="limparCampoArquivo(this, 'status-resultados-realizados', 'Nenhum arquivo carregado ainda. Identifica sozinho qual arquivo é qual e preenche os campos certos.')" title="Remover arquivo">🗑️ Remover</button>
         <div class="hint" id="status-resultados-realizados">Nenhum arquivo carregado ainda. Identifica sozinho qual arquivo é qual e preenche os campos certos.</div>
       </div>
+      <div class="hint" style="margin:14px 0 6px;">Confira aqui os valores identificados no(s) arquivo(s) acima — ou digite direto, sem precisar anexar nada:</div>
+      <div class="field-row">
+        <div class="field"><label>MRR Realizado (R$)</label><input type="text" id="input-resumo-mrr" placeholder="Ex: 20.000,00" oninput="atualizarResumoRealizado('mrr', this.value)"/></div>
+        <div class="field"><label>Novos Clientes (nº)</label><input type="text" id="input-resumo-clientes" placeholder="Ex: 12" oninput="atualizarResumoRealizado('clientes', this.value)"/></div>
+        <div class="field"><label>MRR Adicionado (R$)</label><input type="text" id="input-resumo-mrrAdicionado" placeholder="Ex: 11.180,00" oninput="atualizarResumoRealizado('mrrAdicionado', this.value)"/></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Churn (%)</label><input type="text" id="input-resumo-churn" placeholder="Ex: 2" oninput="atualizarResumoRealizado('churn', this.value)"/></div>
+        <div class="field"><label>UpSell (%)</label><input type="text" id="input-resumo-upsell" placeholder="Ex: 1,51" oninput="atualizarResumoRealizado('upsell', this.value)"/></div>
+      </div>
+      <div class="hint">MRR - % não tem campo aqui porque é só informativo — nenhum cálculo do sistema usa esse número diretamente, só o MRR em R$.</div>
     </div>
 
     <div class="secao-area-header">🎯 MRR</div>
@@ -1523,6 +1534,33 @@ function fecharTodosAcordeoesDaArea(tabId) {
     if (produto) produto.style.display = 'none';
   }
 }
+// Os 5 campos do card "Resultados realizados do mês" são um espelho dos campos reais
+// (mrr-input, input-novosClientesMkt-*, input-equipeComercial-*, input-churn-percentual,
+// input-upsellEquipe-crescimento), que continuam existindo dentro de cada aba. Digitar aqui
+// tem exatamente o mesmo efeito de digitar direto no campo de origem — e a leitura por
+// PDF/OCR também preenche estes campos aqui, pra Paula conferir tudo num lugar só.
+function atualizarResumoRealizado(campo, valor) {
+  if (campo === 'mrr') {
+    document.getElementById('mrr-input').value = valor;
+    recalcular();
+  } else if (campo === 'clientes') {
+    document.getElementById('input-novosClientesMkt-clientes').value = valor;
+    document.getElementById('input-equipeComercial-clientes').value = valor;
+    recalcularMarketing(); recalcularVendas();
+  } else if (campo === 'mrrAdicionado') {
+    document.getElementById('input-cadastroTeste-mrr').value = valor;
+    document.getElementById('input-extensaoTeste-mrr').value = valor;
+    document.getElementById('input-novosClientesMkt-mrr').value = valor;
+    document.getElementById('input-equipeComercial-mrr').value = valor;
+    recalcularMarketing(); recalcularVendas();
+  } else if (campo === 'churn') {
+    document.getElementById('input-churn-percentual').value = valor;
+    recalcularCS();
+  } else if (campo === 'upsell') {
+    document.getElementById('input-upsellEquipe-crescimento').value = valor;
+    recalcularCS();
+  }
+}
 async function processarResultadosRealizadosPDF(event) {
   const files = event.target.files;
   const statusEl = document.getElementById('status-resultados-realizados');
@@ -1540,9 +1578,10 @@ async function processarResultadosRealizadosPDF(event) {
       if (tipo === 'mrrReal') {
         const v = extrairRealizadoTabelaTopo(texto, 'moeda');
         if (v !== null) {
-          document.getElementById('mrr-input').value = v.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+          const vFmt = v.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+          document.getElementById('mrr-input').value = vFmt;
+          document.getElementById('input-resumo-mrr').value = vFmt;
           recalcular();
-          fecharAcordeaoDoElemento('mrr-input');
           encontrados.push(`MRR R$: ${fmtBRL(v)}`);
         }
       } else if (tipo === 'mrrPercentual') {
@@ -1552,9 +1591,8 @@ async function processarResultadosRealizadosPDF(event) {
         if (v !== null) {
           document.getElementById('input-novosClientesMkt-clientes').value = v;
           document.getElementById('input-equipeComercial-clientes').value = v;
+          document.getElementById('input-resumo-clientes').value = v;
           recalcularMarketing(); recalcularVendas();
-          fecharAcordeaoDoElemento('input-novosClientesMkt-clientes');
-          fecharAcordeaoDoElemento('input-equipeComercial-clientes');
           encontrados.push(`Novos Clientes: ${v}`);
         }
       } else if (tipo === 'vendasMrrAdicionado') {
@@ -1565,27 +1603,26 @@ async function processarResultadosRealizadosPDF(event) {
           document.getElementById('input-extensaoTeste-mrr').value = vFmt;
           document.getElementById('input-novosClientesMkt-mrr').value = vFmt;
           document.getElementById('input-equipeComercial-mrr').value = vFmt;
+          document.getElementById('input-resumo-mrrAdicionado').value = vFmt;
           recalcularMarketing(); recalcularVendas();
-          fecharAcordeaoDoElemento('input-cadastroTeste-mrr');
-          fecharAcordeaoDoElemento('input-extensaoTeste-mrr');
-          fecharAcordeaoDoElemento('input-novosClientesMkt-mrr');
-          fecharAcordeaoDoElemento('input-equipeComercial-mrr');
           encontrados.push(`MRR Adicionado (Marketing×3 + Vendas): ${fmtBRL(v)}`);
         }
       } else if (tipo === 'churnResumo') {
         const v = extrairRealizadoTabelaTopo(texto, 'percentual');
         if (v !== null) {
-          document.getElementById('input-churn-percentual').value = String(v).replace('.', ',');
+          const vFmt = String(v).replace('.', ',');
+          document.getElementById('input-churn-percentual').value = vFmt;
+          document.getElementById('input-resumo-churn').value = vFmt;
           recalcularCS();
-          fecharAcordeaoDoElemento('input-churn-percentual');
           encontrados.push(`Churn: ${v}%`);
         }
       } else if (tipo === 'upsellResumo') {
         const v = extrairRealizadoTabelaTopo(texto, 'percentual');
         if (v !== null) {
-          document.getElementById('input-upsellEquipe-crescimento').value = String(v).replace('.', ',');
+          const vFmt = String(v).replace('.', ',');
+          document.getElementById('input-upsellEquipe-crescimento').value = vFmt;
+          document.getElementById('input-resumo-upsell').value = vFmt;
           recalcularCS();
-          fecharAcordeaoDoElemento('input-upsellEquipe-crescimento');
           encontrados.push(`UpSell: ${v}%`);
         }
       }

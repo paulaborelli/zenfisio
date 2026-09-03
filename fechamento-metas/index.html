@@ -1349,12 +1349,34 @@ function limparTextoExtraido(texto) {
 // pesquisável). PDFs reais de metas/comissão sempre têm centenas de caracteres; um PDF assim
 // tipicamente devolve 0-1 caractere do pdf.js.
 const OCR_MIN_CHARS = 40;
+// Tempo máximo de espera pelo OCR antes de desistir com um erro claro, em vez de deixar a
+// Paula olhando pra "Lendo arquivo..." indefinidamente se a rede travar no meio do caminho.
+const OCR_TIMEOUT_MS = 45000;
+// Tesseract.js calcula sozinho a URL do worker/core a partir da própria versão instalada, mas
+// o resultado ("tesseract.js@v5.1.1", com "v") não existe no CDN do pacote npm (que usa
+// "tesseract.js@5.1.1", sem "v") — isso fazia TODA leitura por OCR falhar silenciosamente
+// (erro sem mensagem). Por isso as URLs abaixo são passadas explicitamente, já testadas.
+const OCR_CONFIG = {
+  workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js',
+  corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5',
+  langPath: 'https://tessdata.projectnaptha.com/4.0.0',
+};
 // Lê texto de uma imagem (arquivo PNG/JPG ou um <canvas> com a página renderizada) via OCR,
 // rodando inteiramente no navegador da Paula (Tesseract.js). Mais lento e menos confiável que
 // ler texto real de um PDF — por isso só é usado como último recurso.
 async function ocrImagem(fonte) {
-  const { data } = await Tesseract.recognize(fonte, 'por');
-  return data.text || '';
+  const comTimeout = Promise.race([
+    Tesseract.recognize(fonte, 'por', OCR_CONFIG),
+    new Promise((_, reject) => setTimeout(() => reject(new Error('OCR demorou demais pra responder — confira sua conexão ou tente exportar o PDF direto da planilha.')), OCR_TIMEOUT_MS)),
+  ]);
+  try {
+    const { data } = await comTimeout;
+    return data.text || '';
+  } catch (e) {
+    // Alguns erros de OCR (ex.: falha ao baixar o worker/idioma) chegam sem uma mensagem
+    // legível (e.message undefined) — normaliza pra sempre sobrar algo útil na tela.
+    throw new Error('Falha na leitura por OCR: ' + (e && e.message ? e.message : 'não consegui baixar o motor de OCR (verifique a conexão com a internet).'));
+  }
 }
 // Ponto único de leitura de arquivo usado por todo upload de PDF/imagem do sistema:
 //   - Se o arquivo já é uma imagem (PNG/JPG, ex.: print colado direto), lê com OCR.

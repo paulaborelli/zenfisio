@@ -61,6 +61,7 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
 .niveis-table th, .produto-table th { padding: 8px 10px; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-hint); text-align: left; border-bottom: 1px solid var(--border); }
 .niveis-table td, .produto-table td { padding: 9px 10px; border-bottom: 1px solid var(--border); }
 .niveis-table tr.atingido td { background: var(--accent-light); font-weight: 600; }
+.niveis-table input.input-tier { width: 90px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; }
 .produto-table input[type=number], .produto-table input[type=text] { width: 100%; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; }
 .produto-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .produto-table td.check { text-align: center; }
@@ -231,6 +232,7 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
           <label>Anexar PDF ("Metas e bonificação por MRR")</label>
           <input type="file" id="pdf-input" accept="application/pdf,image/png,image/jpeg" onchange="processarPDF(event)"/><button type="button" class="btn-remover-arquivo" onclick="limparCampoArquivo(this, 'pdf-status', 'Nenhum arquivo carregado ainda.')" title="Remover arquivo">🗑️ Remover</button>
           <div class="hint" id="pdf-status">Nenhum arquivo carregado ainda.</div>
+          <div class="hint"><a href="javascript:void(0)" onclick="iniciarNiveisManual()" style="color:#4A7C59;font-weight:600;">Sem PDF, ou a leitura falhou? Preencher os níveis manualmente</a></div>
         </div>
         <table class="niveis-table" id="tabela-niveis" style="display:none;">
           <thead><tr><th>Nível</th><th>Crescimento</th><th>Meta (R$)</th><th>Bônus geral</th><th>Bônus Produto</th></tr></thead>
@@ -652,18 +654,121 @@ function atualizarBadgeTotal(chave, total) {
   if (Math.abs(total - 100) < 0.01) { elBadge.textContent = 'OK'; elBadge.className = 'badge ok'; }
   else { elBadge.textContent = 'Deveria somar 100%'; elBadge.className = 'badge erro'; }
 }
+
+// ── Tabelas de nível (Bronze/Prata/Ouro/Diamante) dos 11 KPIs de área — editáveis na mão ────
+// Até aqui, as 11 tabelas de meta por nível (uma por KPI de Marketing/Vendas/CS/P&D) só eram
+// preenchidas pela leitura do "PDF de KPIs por áreas do mês" — se a leitura falhasse (PDF
+// ruim, OCR sem sucesso, ou simplesmente não tiver PDF nenhum), a tabela ficava vazia sem
+// nenhum jeito de digitar os números na mão. Agora, uma vez que a tabela exista (leitura OK,
+// OU depois de clicar em "preencher manualmente"), toda célula é um campo de texto editável
+// que grava no MESMO formato de dados que a leitura do PDF geraria — o cálculo de nível, pool
+// e valor por pessoa roda idêntico, não importa se o número veio do PDF ou foi digitado à mão.
+const ORDEM_NIVEIS_TIER = ['bronze','prata','ouro','diamante'];
+const NOME_NIVEL_TIER = { bronze:'🥉 Bronze', prata:'🥈 Prata', ouro:'🥇 Ouro', diamante:'💎 Diamante' };
+// Onde cada KPI guarda seus dados (qual objeto global + chave) e qual função de recálculo
+// chamar depois de uma edição manual. campos = colunas de número da tabela, na mesma ordem
+// do <thead> já existente no HTML (2 colunas — meta+bônus — ou 3, com "adicional").
+// metaEhPercentual: true nos KPIs cuja "Meta" já era exibida com "%" antes (UpSell, Churn,
+// Infraestrutura) — nos demais (cadastros/clientes/nota), a meta não leva "%". Bônus e
+// Adicional são sempre percentuais.
+// chaveInterna: em P&D o objeto tiersPD usa as chaves "nps"/"healthScore" (sem o sufixo "PD")
+// — diferente da chave usada nos ids do HTML/status ("npsPD"/"healthScorePD"). Em todos os
+// outros KPIs a chave interna é igual à chave externa.
+const CONFIG_TIERS_KPI = {
+  cadastroTeste:    { grupo:'tiersMkt',    chaveInterna:'cadastroTeste',    campos:['meta','bonus'],             recalc:'recalcularMarketing', metaEhPercentual:false },
+  extensaoTeste:    { grupo:'tiersMkt',    chaveInterna:'extensaoTeste',    campos:['meta','bonus'],             recalc:'recalcularMarketing', metaEhPercentual:false },
+  novosClientesMkt: { grupo:'tiersMkt',    chaveInterna:'novosClientesMkt', campos:['meta','bonus','adicional'], recalc:'recalcularMarketing', metaEhPercentual:false },
+  equipeComercial:  { grupo:'tiersVendas', chaveInterna:'equipeComercial',  campos:['meta','bonus','adicional'], recalc:'recalcularVendas',    metaEhPercentual:false },
+  upsellEquipe:     { grupo:'tiersCS',     chaveInterna:'upsellEquipe',     campos:['meta','bonus'],             recalc:'recalcularCS',        metaEhPercentual:true },
+  churn:            { grupo:'tiersCS',     chaveInterna:'churn',            campos:['meta','bonus'],             recalc:'recalcularCS',        metaEhPercentual:true },
+  nps:              { grupo:'tiersCS',     chaveInterna:'nps',              campos:['meta','bonus'],             recalc:'recalcularCS',        metaEhPercentual:false },
+  healthScore:      { grupo:'tiersCS',     chaveInterna:'healthScore',      campos:['meta','bonus'],             recalc:'recalcularCS',        metaEhPercentual:false },
+  npsPD:            { grupo:'tiersPD',     chaveInterna:'nps',              campos:['meta','bonus'],             recalc:'recalcularPD',        metaEhPercentual:false },
+  healthScorePD:    { grupo:'tiersPD',     chaveInterna:'healthScore',      campos:['meta','bonus'],             recalc:'recalcularPD',        metaEhPercentual:false },
+  infraestrutura:   { grupo:'tiersPD',     chaveInterna:'infraestrutura',   campos:['meta','bonus'],             recalc:'recalcularPD',        metaEhPercentual:true },
+};
+function obterGrupoTiers(nomeGrupo) {
+  return { tiersMkt, tiersVendas, tiersCS, tiersPD }[nomeGrupo];
+}
+// Interpreta um número digitado no padrão brasileiro (ponto = separador de milhar, vírgula =
+// decimal) — o MESMO padrão usado em todo o resto do sistema (ver parseValorBR/parseNumeroBR).
+// Importante: um "replace(',', '.')" sozinho (sem tirar os pontos de milhar antes) faria
+// "10.000" virar 10 em vez de 10.000 — por isso as tabelas de nível usam sempre esta função,
+// nunca uma conversão simples.
+function parseNumeroTier(texto) {
+  const t = String(texto).trim();
+  if (t === '') return null;
+  const n = parseFloat(t.replace(/\./g, '').replace(',', '.'));
+  return isNaN(n) ? null : n;
+}
+// Cria a estrutura de uma tabela de tiers vazia (4 níveis, campos em branco) — o mesmo
+// "formato de dados" que a leitura do PDF geraria, só que pronta pra ser preenchida na mão.
+function criarTiersVazio(campos) {
+  const obj = { padrao: 0 };
+  ORDEM_NIVEIS_TIER.forEach(k => { obj[k] = {}; campos.forEach(c => obj[k][c] = null); });
+  return obj;
+}
+// Desenha uma tabela de níveis editável a partir do objeto de tiers (ou de um objeto vazio,
+// se ainda não foi lido nenhum PDF nem preenchido nada na mão). Bônus/Adicional sempre levam
+// "%" ao lado do campo; Meta só leva quando o KPI já mostrava "%" antes (ver metaEhPercentual).
+function tabelaTiersEditavelHTML(chaveKpi, tiers, campos, nivelAtingido) {
+  const cfg = CONFIG_TIERS_KPI[chaveKpi];
+  const metaComPercentual = cfg ? cfg.metaEhPercentual : false;
+  return ORDEM_NIVEIS_TIER.map(nivel => {
+    const dados = (tiers && tiers[nivel]) || {};
+    const celulas = campos.map(campo => {
+      const v = dados[campo];
+      const valorStr = (v === null || v === undefined) ? '' : String(v).replace('.', ',');
+      const sufixo = (campo === 'bonus' || campo === 'adicional' || (campo === 'meta' && metaComPercentual)) ? ' %' : '';
+      return `<td><input type="text" class="input-tier" value="${valorStr}" oninput="atualizarTierKPI('${chaveKpi}','${nivel}','${campo}',this.value)"/>${sufixo}</td>`;
+    }).join('');
+    return `<tr class="${nivel===nivelAtingido?'atingido':''}"><td>${NOME_NIVEL_TIER[nivel]}</td>${celulas}</tr>`;
+  }).join('');
+}
+// Handler único usado pelas 11 tabelas de KPI (o MRR tem o seu — atualizarTierMRR — por ter
+// um formato de dados um pouco diferente). Grava o valor digitado no mesmo objeto que o PDF
+// preencheria, criando a estrutura na hora se for a primeira edição manual (sem PDF nenhum
+// lido ainda), e recalcula a área correspondente.
+function atualizarTierKPI(chaveKpi, nivel, campo, valorStr) {
+  const cfg = CONFIG_TIERS_KPI[chaveKpi];
+  if (!cfg) return;
+  const grupo = obterGrupoTiers(cfg.grupo);
+  const chaveInterna = cfg.chaveInterna;
+  if (!grupo[chaveInterna]) grupo[chaveInterna] = criarTiersVazio(cfg.campos);
+  if (!grupo[chaveInterna][nivel]) grupo[chaveInterna][nivel] = {};
+  grupo[chaveInterna][nivel][campo] = parseNumeroTier(valorStr);
+  window[cfg.recalc]();
+}
+// Cria a tabela de um KPI do zero (em branco, editável) — usado pelo link "preencher
+// manualmente" que aparece junto da mensagem "Aguardando leitura do PDF" de cada KPI.
+function iniciarTierManualKPI(chaveKpi) {
+  const cfg = CONFIG_TIERS_KPI[chaveKpi];
+  if (!cfg) return;
+  const grupo = obterGrupoTiers(cfg.grupo);
+  grupo[cfg.chaveInterna] = criarTiersVazio(cfg.campos);
+  window[cfg.recalc]();
+}
+// Link padrão que aparece junto de "Aguardando leitura do PDF" em cada KPI, oferecendo o
+// preenchimento manual como alternativa.
+function linkPreencherManualmente(chaveKpi) {
+  return ` <a href="javascript:void(0)" onclick="iniciarTierManualKPI('${chaveKpi}')" style="color:#4A7C59;font-weight:600;">ou preencha a tabela abaixo na mão</a>`;
+}
 function calcularNPS_PD() {
   const tiers = tiersPD.nps;
   const elResultado = document.getElementById('resultado-npsPD');
   if (!elResultado) return { nivel:'Nenhum', percTotal:0, pool:0 };
-  if (!tiers) { elResultado.textContent = 'Aguardando leitura do PDF (acima)...'; return { nivel:'Nenhum', percTotal:0, pool:0 }; }
+  if (!tiers) {
+    elResultado.innerHTML = 'Aguardando leitura do PDF (acima)...' + linkPreencherManualmente('npsPD');
+    document.getElementById('tabela-npsPD').innerHTML = tabelaTiersEditavelHTML('npsPD', null, CONFIG_TIERS_KPI.npsPD.campos, null);
+    return { nivel:'Nenhum', percTotal:0, pool:0 };
+  }
   const nota = parseNumeroBR(document.getElementById('input-npsPD-nota').value);
   const mrrTotal = parseValorBR(document.getElementById('mrr-total-global').value);
   const nivel = calcularNivelAscendente(nota, tiers);
   const percTotal = nivel ? tiers[nivel].bonus : tiers.padrao;
   const pool = mrrTotal * (percTotal/100);
   elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Nenhum nível atingido (NPS ${nota})`;
-  document.getElementById('tabela-npsPD').innerHTML = ['bronze','prata','ouro','diamante'].map(k => `<tr class="${k===nivel?'atingido':''}"><td>${k}</td><td>${tiers[k].meta}</td><td>${tiers[k].bonus}%</td></tr>`).join('');
+  document.getElementById('tabela-npsPD').innerHTML = tabelaTiersEditavelHTML('npsPD', tiers, CONFIG_TIERS_KPI.npsPD.campos, nivel);
   document.getElementById('pool-npsPD').textContent = fmtBRL(pool);
   let total = 0;
   equipesMkt.npsPD.forEach((p,i) => { const valor = valorEfetivo(p, pool*(p.percentual/100)); total += p.percentual; const inp = document.getElementById('valor-npsPD-'+i); if (inp) inp.value = fmtBRL(valor); });
@@ -674,14 +779,18 @@ function calcularHealthScore_PD() {
   const tiers = tiersPD.healthScore;
   const elResultado = document.getElementById('resultado-healthScorePD');
   if (!elResultado) return { nivel:'Nenhum', percTotal:0, pool:0 };
-  if (!tiers) { elResultado.textContent = 'Aguardando leitura do PDF (acima)...'; return { nivel:'Nenhum', percTotal:0, pool:0 }; }
+  if (!tiers) {
+    elResultado.innerHTML = 'Aguardando leitura do PDF (acima)...' + linkPreencherManualmente('healthScorePD');
+    document.getElementById('tabela-healthScorePD').innerHTML = tabelaTiersEditavelHTML('healthScorePD', null, CONFIG_TIERS_KPI.healthScorePD.campos, null);
+    return { nivel:'Nenhum', percTotal:0, pool:0 };
+  }
   const nota = parseNumeroBR(document.getElementById('input-healthScorePD-nota').value);
   const mrrTotal = parseValorBR(document.getElementById('mrr-total-global').value);
   const nivel = calcularNivelAscendente(nota, tiers);
   const percTotal = nivel ? tiers[nivel].bonus : tiers.padrao;
   const pool = mrrTotal * (percTotal/100);
   elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Nenhum nível atingido (Health Score ${nota})`;
-  document.getElementById('tabela-healthScorePD').innerHTML = ['bronze','prata','ouro','diamante'].map(k => `<tr class="${k===nivel?'atingido':''}"><td>${k}</td><td>${tiers[k].meta}</td><td>${tiers[k].bonus}%</td></tr>`).join('');
+  document.getElementById('tabela-healthScorePD').innerHTML = tabelaTiersEditavelHTML('healthScorePD', tiers, CONFIG_TIERS_KPI.healthScorePD.campos, nivel);
   document.getElementById('pool-healthScorePD').textContent = fmtBRL(pool);
   let total = 0;
   equipesMkt.healthScorePD.forEach((p,i) => { const valor = valorEfetivo(p, pool*(p.percentual/100)); total += p.percentual; const inp = document.getElementById('valor-healthScorePD-'+i); if (inp) inp.value = fmtBRL(valor); });
@@ -692,14 +801,18 @@ function calcularInfraestrutura() {
   const tiers = tiersPD.infraestrutura;
   const elResultado = document.getElementById('resultado-infraestrutura');
   if (!elResultado) return { nivel:'Nenhum', percTotal:0, pool:0 };
-  if (!tiers) { elResultado.textContent = 'Aguardando leitura do PDF (acima)...'; return { nivel:'Nenhum', percTotal:0, pool:0 }; }
+  if (!tiers) {
+    elResultado.innerHTML = 'Aguardando leitura do PDF (acima)...' + linkPreencherManualmente('infraestrutura');
+    document.getElementById('tabela-infraestrutura').innerHTML = tabelaTiersEditavelHTML('infraestrutura', null, CONFIG_TIERS_KPI.infraestrutura.campos, null);
+    return { nivel:'Nenhum', percTotal:0, pool:0 };
+  }
   const percEficiencia = parseNumeroBR(document.getElementById('input-infraestrutura-percentual').value);
   const mrrTotal = parseValorBR(document.getElementById('mrr-total-global').value);
   const nivel = calcularNivelAscendente(percEficiencia, tiers);
   const percTotal = nivel ? tiers[nivel].bonus : tiers.padrao;
   const pool = mrrTotal * (percTotal/100);
   elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Nenhum nível atingido (${percEficiencia}%)`;
-  document.getElementById('tabela-infraestrutura').innerHTML = ['bronze','prata','ouro','diamante'].map(k => `<tr class="${k===nivel?'atingido':''}"><td>${k}</td><td>${tiers[k].meta}%</td><td>${tiers[k].bonus}%</td></tr>`).join('');
+  document.getElementById('tabela-infraestrutura').innerHTML = tabelaTiersEditavelHTML('infraestrutura', tiers, CONFIG_TIERS_KPI.infraestrutura.campos, nivel);
   document.getElementById('pool-infraestrutura').textContent = fmtBRL(pool);
   let total = 0;
   equipesMkt.infraestrutura.forEach((p,i) => { const valor = valorEfetivo(p, pool*(p.percentual/100)); total += p.percentual; const inp = document.getElementById('valor-infraestrutura-'+i); if (inp) inp.value = fmtBRL(valor); });
@@ -808,19 +921,53 @@ function extrairNiveis(texto) {
   });
   return niveis;
 }
+// A tabela de níveis do MRR é editável: cada célula é um campo de texto (função
+// atualizarTierMRR grava direto em niveisExtraidos e recalcula). Antes, se a leitura do PDF
+// falhasse total ou parcialmente, o(s) nível(is) faltante(s) simplesmente sumiam da tabela sem
+// nenhum aviso — agora as 4 linhas aparecem sempre, em branco quando faltar dado, editáveis
+// pra corrigir sem precisar reenviar o arquivo.
 function renderTabelaNiveis() {
   const ordem = ['diamante','ouro','prata','bronze'];
   const nomesExibicao = { diamante: '💎 Diamante', ouro: '🥇 Ouro', prata: '🥈 Prata', bronze: '🥉 Bronze' };
-  document.getElementById('tbody-niveis').innerHTML = ordem.filter(k => niveisExtraidos[k]).map(k => {
-    const n = niveisExtraidos[k];
-    return `<tr id="linha-nivel-${k}"><td>${nomesExibicao[k]}</td><td>${n.crescimento.toLocaleString('pt-BR')}%</td><td>${fmtBRL(n.valor)}</td><td>${n.bonusGeral ?? '—'}%</td><td>${n.bonusProduto ?? '—'}%</td></tr>`;
+  const campoInput = (nivel, chaveCampo, sufixo) => {
+    const n = (niveisExtraidos && niveisExtraidos[nivel]) || {};
+    const v = n[chaveCampo];
+    const valorStr = (v === null || v === undefined) ? '' : String(v).replace('.', ',');
+    return `<td><input type="text" class="input-tier" value="${valorStr}" oninput="atualizarTierMRR('${nivel}','${chaveCampo}',this.value)"/>${sufixo || ''}</td>`;
+  };
+  document.getElementById('tbody-niveis').innerHTML = ordem.map(k => {
+    return `<tr id="linha-nivel-${k}"><td>${nomesExibicao[k]}</td>${campoInput(k,'crescimento',' %')}${campoInput(k,'valor')}${campoInput(k,'bonusGeral',' %')}${campoInput(k,'bonusProduto',' %')}</tr>`;
   }).join('');
   document.getElementById('tabela-niveis').style.display = 'table';
+}
+// Grava a edição manual de uma célula da tabela de níveis do MRR — mesmo formato de dados
+// que a leitura do PDF gera (niveisExtraidos.<nivel>.<campo>), então o resto do cálculo
+// (determinarNivel, pools, valor por pessoa) funciona idêntico não importa a origem do número.
+function atualizarTierMRR(nivel, campo, valorStr) {
+  if (!niveisExtraidos) niveisExtraidos = { bronze:{}, prata:{}, ouro:{}, diamante:{} };
+  if (!niveisExtraidos[nivel]) niveisExtraidos[nivel] = {};
+  niveisExtraidos[nivel][campo] = parseNumeroTier(valorStr);
+  mrrRestaurado = null; // uma edição manual da tabela tem prioridade sobre o que foi restaurado do mês salvo
+  recalcular();
+}
+// Cria a tabela de níveis do MRR do zero (em branco, editável) — usado pelo link "preencher
+// manualmente" quando não há PDF de metas nenhum pra ler, ou a leitura falhou.
+function iniciarNiveisManual() {
+  niveisExtraidos = { bronze:{crescimento:null,valor:null,bonusGeral:null,bonusProduto:null},
+                       prata:{crescimento:null,valor:null,bonusGeral:null,bonusProduto:null},
+                       ouro:{crescimento:null,valor:null,bonusGeral:null,bonusProduto:null},
+                       diamante:{crescimento:null,valor:null,bonusGeral:null,bonusProduto:null} };
+  mrrRestaurado = null;
+  renderTabelaNiveis();
+  recalcular();
 }
 function determinarNivel(mrrValor) {
   if (!niveisExtraidos) return null;
   const ordem = ['diamante','ouro','prata','bronze'];
-  for (const chave of ordem) if (niveisExtraidos[chave] && mrrValor >= niveisExtraidos[chave].valor) return chave;
+  for (const chave of ordem) {
+    const n = niveisExtraidos[chave];
+    if (n && typeof n.valor === 'number' && mrrValor >= n.valor) return chave;
+  }
   return null;
 }
 // Quando um mês já salvo é reaberto pra edição sem reenviar o PDF de metas do MRR,
@@ -1127,15 +1274,18 @@ function adicionarPessoaMkt(chave) { equipesMkt[chave].push({nome:'Nova pessoa',
 function calcularKpiCadastro(chave) {
   const tiers = tiersMkt[chave];
   const elResultado = document.getElementById('resultado-' + chave);
-  if (!tiers) { elResultado.textContent = 'Aguardando leitura do PDF...'; return { nivel:null, percTotal:0, pool:0 }; }
+  if (!tiers) {
+    elResultado.innerHTML = 'Aguardando leitura do PDF...' + linkPreencherManualmente(chave);
+    document.getElementById('tabela-' + chave).innerHTML = tabelaTiersEditavelHTML(chave, null, CONFIG_TIERS_KPI[chave].campos, null);
+    return { nivel:null, percTotal:0, pool:0 };
+  }
   const cadastros = parseInt(document.getElementById('input-' + chave + '-cadastros').value) || 0;
   const mrrBase = parseValorBR(document.getElementById('input-' + chave + '-mrr').value);
-  let nivel = null;
-  ['diamante','ouro','prata','bronze'].forEach(k => { if (!nivel && cadastros >= tiers[k].meta) nivel = k; });
+  const nivel = calcularNivelAscendente(cadastros, tiers);
   const percTotal = nivel ? tiers[nivel].bonus : tiers.padrao;
   const pool = mrrBase * (percTotal/100);
   elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Abaixo do Bronze — bonificação padrão: ${percTotal}%`;
-  document.getElementById('tabela-' + chave).innerHTML = ['bronze','prata','ouro','diamante'].map(k => `<tr class="${k===nivel?'atingido':''}"><td>${k}</td><td>${tiers[k].meta}</td><td>${tiers[k].bonus}%</td></tr>`).join('');
+  document.getElementById('tabela-' + chave).innerHTML = tabelaTiersEditavelHTML(chave, tiers, CONFIG_TIERS_KPI[chave].campos, nivel);
   document.getElementById('pool-' + chave).textContent = fmtBRL(pool);
   let total = 0;
   equipesMkt[chave].forEach((p,i) => { const valor = valorEfetivo(p, pool * (p.percentual/100)); total += p.percentual; const inp = document.getElementById('valor-'+chave+'-'+i); if (inp) inp.value = fmtBRL(valor); });
@@ -1145,17 +1295,20 @@ function calcularKpiCadastro(chave) {
 function calcularKpiNovosClientesMkt() {
   const tiers = tiersMkt.novosClientesMkt;
   const elResultado = document.getElementById('resultado-novosClientesMkt');
-  if (!tiers) { elResultado.textContent = 'Aguardando leitura do PDF...'; return { nivel:null, percTotal:0, pool:0 }; }
+  if (!tiers) {
+    elResultado.innerHTML = 'Aguardando leitura do PDF...' + linkPreencherManualmente('novosClientesMkt');
+    document.getElementById('tabela-novosClientesMkt').innerHTML = tabelaTiersEditavelHTML('novosClientesMkt', null, CONFIG_TIERS_KPI.novosClientesMkt.campos, null);
+    return { nivel:null, percTotal:0, pool:0 };
+  }
   const clientes = parseInt(document.getElementById('input-novosClientesMkt-clientes').value) || 0;
   const mrrAdicionado = parseValorBR(document.getElementById('input-novosClientesMkt-mrr').value);
   const ticketMedio = clientes > 0 ? mrrAdicionado / clientes : 0;
-  let nivel = null;
-  ['diamante','ouro','prata','bronze'].forEach(k => { if (!nivel && clientes >= tiers[k].meta) nivel = k; });
+  const nivel = calcularNivelAscendente(clientes, tiers);
   let percTotal = 0;
   if (nivel) percTotal = tiers[nivel].bonus + (ticketMedio > 130 ? tiers[nivel].adicional : 0);
   const pool = mrrAdicionado * (percTotal/100);
   elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Clientes: ${clientes} — Ticket médio: ${fmtBRL(ticketMedio)} — Bônus total: ${percTotal}%` : `Nenhum nível atingido (${clientes} clientes)`;
-  document.getElementById('tabela-novosClientesMkt').innerHTML = ['bronze','prata','ouro','diamante'].map(k => `<tr class="${k===nivel?'atingido':''}"><td>${k}</td><td>${tiers[k].meta}</td><td>${tiers[k].bonus}%</td><td>${tiers[k].adicional}%</td></tr>`).join('');
+  document.getElementById('tabela-novosClientesMkt').innerHTML = tabelaTiersEditavelHTML('novosClientesMkt', tiers, CONFIG_TIERS_KPI.novosClientesMkt.campos, nivel);
   document.getElementById('pool-novosClientesMkt').textContent = fmtBRL(pool);
   let total = 0;
   equipesMkt.novosClientesMkt.forEach((p,i) => { const valor = valorEfetivo(p, pool * (p.percentual/100)); total += p.percentual; const inp = document.getElementById('valor-novosClientesMkt-'+i); if (inp) inp.value = fmtBRL(valor); });
@@ -1214,18 +1367,21 @@ function adicionarPessoaVendasEquipe() { equipesVendas.equipeComercial.push({nom
 function calcularKpiEquipeComercial() {
   const tiers = tiersVendas.equipeComercial;
   const elResultado = document.getElementById('resultado-equipeComercial');
-  if (!tiers) { elResultado.textContent = 'Aguardando leitura do PDF (acima)...'; return { nivel:null, percTotal:0, pool:0 }; }
+  if (!tiers) {
+    elResultado.innerHTML = 'Aguardando leitura do PDF (acima)...' + linkPreencherManualmente('equipeComercial');
+    document.getElementById('tabela-equipeComercial').innerHTML = tabelaTiersEditavelHTML('equipeComercial', null, CONFIG_TIERS_KPI.equipeComercial.campos, null);
+    return { nivel:null, percTotal:0, pool:0 };
+  }
   const clientes = parseInt(document.getElementById('input-equipeComercial-clientes').value) || 0;
   const mrrAdicionado = parseValorBR(document.getElementById('input-equipeComercial-mrr').value);
   const ticketMedio = clientes > 0 ? mrrAdicionado / clientes : 0;
-  let nivel = null;
-  ['diamante','ouro','prata','bronze'].forEach(k => { if (!nivel && clientes >= tiers[k].meta) nivel = k; });
+  const nivel = calcularNivelAscendente(clientes, tiers);
   let percTotal = 0;
   if (nivel) percTotal = tiers[nivel].bonus + (ticketMedio > 130 ? tiers[nivel].adicional : 0);
   else percTotal = tiers.padrao;
   const pool = mrrAdicionado * (percTotal/100);
   elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Clientes: ${clientes} — Ticket médio: ${fmtBRL(ticketMedio)} — Bônus total: ${percTotal}%` : `Abaixo do Bronze — bonificação padrão: ${percTotal}%`;
-  document.getElementById('tabela-equipeComercial').innerHTML = ['bronze','prata','ouro','diamante'].map(k => `<tr class="${k===nivel?'atingido':''}"><td>${k}</td><td>${tiers[k].meta}</td><td>${tiers[k].bonus}%</td><td>${tiers[k].adicional}%</td></tr>`).join('');
+  document.getElementById('tabela-equipeComercial').innerHTML = tabelaTiersEditavelHTML('equipeComercial', tiers, CONFIG_TIERS_KPI.equipeComercial.campos, nivel);
   document.getElementById('pool-equipeComercial').textContent = fmtBRL(pool);
   let total = 0;
   equipesVendas.equipeComercial.forEach((p,i) => { const valor = valorEfetivo(p, pool * (p.percentual/100)); total += p.percentual; const inp = document.getElementById('valor-equipeComercial-'+i); if (inp) inp.value = fmtBRL(valor); });
@@ -1768,29 +1924,37 @@ function parseNumeroBR(str) {
   return parseFloat(String(str).replace(',', '.')) || 0;
 }
 
+// O guard "typeof ... === 'number'" é o que permite uma tabela parcialmente preenchida na mão
+// (algum nível ainda em branco) sem que isso vire "qualquer valor bate esse nível" — sem essa
+// checagem, uma meta em branco (null) seria tratada como 0 na comparação e qualquer resultado
+// positivo pareceria ter alcançado aquele nível por engano.
 function calcularNivelAscendente(valor, tiers) {
   let nivel = null;
-  ['diamante','ouro','prata','bronze'].forEach(k => { if (!nivel && valor >= tiers[k].meta) nivel = k; });
+  ['diamante','ouro','prata','bronze'].forEach(k => { if (!nivel && tiers[k] && typeof tiers[k].meta === 'number' && valor >= tiers[k].meta) nivel = k; });
   return nivel;
 }
 function calcularNivelDescendente(valor, tiers) {
   // Quanto MENOR o valor, melhor o nível (usado no Churn)
   let nivel = null;
-  ['diamante','ouro','prata','bronze'].forEach(k => { if (!nivel && valor <= tiers[k].meta) nivel = k; });
+  ['diamante','ouro','prata','bronze'].forEach(k => { if (!nivel && tiers[k] && typeof tiers[k].meta === 'number' && valor <= tiers[k].meta) nivel = k; });
   return nivel;
 }
 
 function calcularUpsellEquipe() {
   const tiers = tiersCS.upsellEquipe;
   const elResultado = document.getElementById('resultado-upsellEquipe');
-  if (!tiers) { elResultado.textContent = 'Aguardando leitura do PDF (acima)...'; return { nivel:'Nenhum', percTotal:0, pool:0 }; }
+  if (!tiers) {
+    elResultado.innerHTML = 'Aguardando leitura do PDF (acima)...' + linkPreencherManualmente('upsellEquipe');
+    document.getElementById('tabela-upsellEquipe').innerHTML = tabelaTiersEditavelHTML('upsellEquipe', null, CONFIG_TIERS_KPI.upsellEquipe.campos, null);
+    return { nivel:'Nenhum', percTotal:0, pool:0 };
+  }
   const crescimento = parseNumeroBR(document.getElementById('input-upsellEquipe-crescimento').value);
   const mrrUpsell = parseValorBR(document.getElementById('input-upsellEquipe-mrr').value);
   const nivel = calcularNivelAscendente(crescimento, tiers);
   const percTotal = nivel ? tiers[nivel].bonus : tiers.padrao;
   const pool = mrrUpsell * (percTotal/100);
   elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Abaixo do Bronze — bonificação padrão: ${percTotal}%`;
-  document.getElementById('tabela-upsellEquipe').innerHTML = ['bronze','prata','ouro','diamante'].map(k => `<tr class="${k===nivel?'atingido':''}"><td>${k}</td><td>${tiers[k].meta}%</td><td>${tiers[k].bonus}%</td></tr>`).join('');
+  document.getElementById('tabela-upsellEquipe').innerHTML = tabelaTiersEditavelHTML('upsellEquipe', tiers, CONFIG_TIERS_KPI.upsellEquipe.campos, nivel);
   document.getElementById('pool-upsellEquipe').textContent = fmtBRL(pool);
   let total = 0;
   equipesMkt.upsellEquipe.forEach((p,i) => { const valor = valorEfetivo(p, pool*(p.percentual/100)); total += p.percentual; const inp = document.getElementById('valor-upsellEquipe-'+i); if (inp) inp.value = fmtBRL(valor); });
@@ -1816,7 +1980,11 @@ function adicionarUpsellIndividual() { upsellIndividual.push({nome:'Nova pessoa'
 function calcularChurn() {
   const tiers = tiersCS.churn;
   const elResultado = document.getElementById('resultado-churn');
-  if (!tiers) { elResultado.textContent = 'Aguardando leitura do PDF (acima)...'; return { nivel:'Nenhum', percTotal:0, pool:0 }; }
+  if (!tiers) {
+    elResultado.innerHTML = 'Aguardando leitura do PDF (acima)...' + linkPreencherManualmente('churn');
+    document.getElementById('tabela-churn').innerHTML = tabelaTiersEditavelHTML('churn', null, CONFIG_TIERS_KPI.churn.campos, null);
+    return { nivel:'Nenhum', percTotal:0, pool:0 };
+  }
   const percChurn = parseNumeroBR(document.getElementById('input-churn-percentual').value);
   const churnRS = parseValorBR(document.getElementById('input-churn-valor').value);
   const downsellRS = parseValorBR(document.getElementById('input-churn-downsell').value);
@@ -1826,7 +1994,7 @@ function calcularChurn() {
   const base = mrrTotal * (percTotal/100);
   const pool = Math.max(0, base - churnRS - downsellRS);
   elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Nenhum nível atingido (Churn ${percChurn}%)`;
-  document.getElementById('tabela-churn').innerHTML = ['bronze','prata','ouro','diamante'].map(k => `<tr class="${k===nivel?'atingido':''}"><td>${k}</td><td>${tiers[k].meta}%</td><td>${tiers[k].bonus}%</td></tr>`).join('');
+  document.getElementById('tabela-churn').innerHTML = tabelaTiersEditavelHTML('churn', tiers, CONFIG_TIERS_KPI.churn.campos, nivel);
   document.getElementById('pool-churn').textContent = fmtBRL(pool);
   let total = 0;
   equipesMkt.churn.forEach((p,i) => { const valor = valorEfetivo(p, pool*(p.percentual/100)); total += p.percentual; const inp = document.getElementById('valor-churn-'+i); if (inp) inp.value = fmtBRL(valor); });
@@ -1837,14 +2005,18 @@ function calcularChurn() {
 function calcularNPS() {
   const tiers = tiersCS.nps;
   const elResultado = document.getElementById('resultado-nps');
-  if (!tiers) { elResultado.textContent = 'Aguardando leitura do PDF (acima)...'; return { nivel:'Nenhum', percTotal:0, pool:0 }; }
+  if (!tiers) {
+    elResultado.innerHTML = 'Aguardando leitura do PDF (acima)...' + linkPreencherManualmente('nps');
+    document.getElementById('tabela-nps').innerHTML = tabelaTiersEditavelHTML('nps', null, CONFIG_TIERS_KPI.nps.campos, null);
+    return { nivel:'Nenhum', percTotal:0, pool:0 };
+  }
   const nota = parseNumeroBR(document.getElementById('input-nps-nota').value);
   const mrrTotal = parseValorBR(document.getElementById('mrr-total-global').value);
   const nivel = calcularNivelAscendente(nota, tiers);
   const percTotal = nivel ? tiers[nivel].bonus : tiers.padrao;
   const pool = mrrTotal * (percTotal/100);
   elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Nenhum nível atingido (NPS ${nota})`;
-  document.getElementById('tabela-nps').innerHTML = ['bronze','prata','ouro','diamante'].map(k => `<tr class="${k===nivel?'atingido':''}"><td>${k}</td><td>${tiers[k].meta}</td><td>${tiers[k].bonus}%</td></tr>`).join('');
+  document.getElementById('tabela-nps').innerHTML = tabelaTiersEditavelHTML('nps', tiers, CONFIG_TIERS_KPI.nps.campos, nivel);
   document.getElementById('pool-nps').textContent = fmtBRL(pool);
   let total = 0;
   equipesMkt.nps.forEach((p,i) => { const valor = valorEfetivo(p, pool*(p.percentual/100)); total += p.percentual; const inp = document.getElementById('valor-nps-'+i); if (inp) inp.value = fmtBRL(valor); });
@@ -1855,14 +2027,18 @@ function calcularNPS() {
 function calcularHealthScore() {
   const tiers = tiersCS.healthScore;
   const elResultado = document.getElementById('resultado-healthScore');
-  if (!tiers) { elResultado.textContent = 'Aguardando leitura do PDF (acima)...'; return { nivel:'Nenhum', percTotal:0, pool:0 }; }
+  if (!tiers) {
+    elResultado.innerHTML = 'Aguardando leitura do PDF (acima)...' + linkPreencherManualmente('healthScore');
+    document.getElementById('tabela-healthScore').innerHTML = tabelaTiersEditavelHTML('healthScore', null, CONFIG_TIERS_KPI.healthScore.campos, null);
+    return { nivel:'Nenhum', percTotal:0, pool:0 };
+  }
   const nota = parseNumeroBR(document.getElementById('input-healthScore-nota').value);
   const mrrTotal = parseValorBR(document.getElementById('mrr-total-global').value);
   const nivel = calcularNivelAscendente(nota, tiers);
   const percTotal = nivel ? tiers[nivel].bonus : tiers.padrao;
   const pool = mrrTotal * (percTotal/100);
   elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Nenhum nível atingido (Health Score ${nota})`;
-  document.getElementById('tabela-healthScore').innerHTML = ['bronze','prata','ouro','diamante'].map(k => `<tr class="${k===nivel?'atingido':''}"><td>${k}</td><td>${tiers[k].meta}</td><td>${tiers[k].bonus}%</td></tr>`).join('');
+  document.getElementById('tabela-healthScore').innerHTML = tabelaTiersEditavelHTML('healthScore', tiers, CONFIG_TIERS_KPI.healthScore.campos, nivel);
   document.getElementById('pool-healthScore').textContent = fmtBRL(pool);
   let total = 0;
   equipesMkt.healthScore.forEach((p,i) => { const valor = valorEfetivo(p, pool*(p.percentual/100)); total += p.percentual; const inp = document.getElementById('valor-healthScore-'+i); if (inp) inp.value = fmtBRL(valor); });

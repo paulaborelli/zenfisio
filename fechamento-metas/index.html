@@ -374,8 +374,17 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
           </div>
         </div>
         <div class="hint" style="margin-bottom:16px;">Esses 3 percentuais vêm do PDF de KPIs por áreas quando ele é lido, mas ficam editáveis aqui — ajuste direto se a regra mudar ou se a leitura do PDF não bater.</div>
+
+        <div class="hint" style="margin-bottom:6px;"><strong>Meta individual por vendedor(a) (MRR necessário em cada nível — vem do PDF de KPIs por áreas, seção Vendas):</strong></div>
+        <div class="hint" id="status-metaIndividual" style="margin-bottom:8px;">Aguardando leitura do PDF de KPIs por áreas (acima).</div>
+        <table class="niveis-table" style="margin-bottom:16px;">
+          <thead><tr><th>Nível</th><th>Meta (MRR individual)</th><th>Bônus</th></tr></thead>
+          <tbody id="tabela-metaIndividual"></tbody>
+        </table>
+        <div class="hint" style="margin-bottom:16px;">O "Nível" de cada vendedor(a) na tabela abaixo é calculado a partir do PDF "Meta individual de venda" comparado com a tabela acima — mas fica com um seletor "Forçar nível" pra usar quando a leitura falhar ou vier incompleta.</div>
+
         <table class="produto-table" id="tabela-vendedores">
-          <thead><tr><th>Vendedor(a)</th><th>Comissão base (R$)</th><th>Melhor do mês</th><th>Melhor 2 meses</th><th>Melhor 3 meses</th><th>Nível</th><th>Valor final</th><th></th></tr></thead>
+          <thead><tr><th>Vendedor(a)</th><th>Comissão base (R$)</th><th>Melhor do mês</th><th>Melhor 2 meses</th><th>Melhor 3 meses</th><th>Nível (automático)</th><th>Forçar nível</th><th>Valor final</th><th></th></tr></thead>
           <tbody id="tbody-vendedores"></tbody>
         </table>
         <button class="btn-add" onclick="adicionarVendedor()">+ Adicionar vendedor(a)</button>
@@ -686,6 +695,9 @@ const CONFIG_TIERS_KPI = {
   npsPD:            { grupo:'tiersPD',     chaveInterna:'nps',              campos:['meta','bonus'],             recalc:'recalcularPD',        metaEhPercentual:false },
   healthScorePD:    { grupo:'tiersPD',     chaveInterna:'healthScore',      campos:['meta','bonus'],             recalc:'recalcularPD',        metaEhPercentual:false },
   infraestrutura:   { grupo:'tiersPD',     chaveInterna:'infraestrutura',   campos:['meta','bonus'],             recalc:'recalcularPD',        metaEhPercentual:true },
+  // "Meta individual por vendedor(a)": tabela de MRR necessário em cada nível (mesmo formato
+  // das outras, mas usada por dentro de calcularComissaoIndividual, não tem "pool" próprio).
+  metaIndividual:   { grupo:'tiersVendas', chaveInterna:'metaIndividual',   campos:['meta','bonus'],             recalc:'recalcularVendas',    metaEhPercentual:false },
 };
 function obterGrupoTiers(nomeGrupo) {
   return { tiersMkt, tiersVendas, tiersCS, tiersPD }[nomeGrupo];
@@ -861,7 +873,7 @@ async function carregarColaboradoresProduto() {
 }
 function renderTabelaProduto() {
   const tbody = document.getElementById('tbody-produto');
-  tbody.innerHTML = colaboradoresProduto.map((c, i) => `<tr><td>${c.nome}</td><td><input type="number" step="0.01" min="0" max="100" value="${c.percentual}" onchange="atualizarPercentual(${i}, this.value)"/></td><td><input type="text" class="num" id="valor-produto-${i}" value="${c.valorManual !== undefined && c.valorManual !== null ? fmtBRL(c.valorManual) : 'R$ 0,00'}" title="Editável — deixe em branco pra voltar ao cálculo automático" onchange="atualizarValorManualProduto(${i}, this.value)"/></td></tr>`).join('');
+  tbody.innerHTML = colaboradoresProduto.map((c, i) => `<tr><td>${c.nome}</td><td><input type="number" step="0.01" min="0" max="100" value="${c.percentual}" onchange="atualizarPercentual(${i}, this.value)"/></td><td><input type="text" class="num" id="valor-produto-${i}" value="${valorExibicaoInicial(c)}" title="Editável — deixe em branco pra voltar ao cálculo automático" onchange="atualizarValorManualProduto(${i}, this.value)"/></td></tr>`).join('');
   document.getElementById('tabela-produto').style.display = 'table';
   document.getElementById('total-linha-produto').style.display = 'flex';
   recalcular();
@@ -899,7 +911,7 @@ async function processarPDF(event) {
     document.getElementById('pdf-status').innerHTML = comAvisoOCR(`Arquivo lido — ${Object.keys(niveisExtraidos).length} nível(is) identificado(s).`, ocr);
     // Um PDF de metas do MRR novo tem prioridade sobre o valor "protegido" (valorManual)
     // que a equipe de Produto possa ter herdado de uma restauração de mês já salvo.
-    colaboradoresProduto.forEach(c => delete c.valorManual);
+    colaboradoresProduto.forEach(c => { delete c.valorManual; delete c.valorRestaurado; });
     renderTabelaNiveis(); recalcular();
   } catch(e) { document.getElementById('pdf-status').textContent = 'Erro ao ler o arquivo: ' + e.message; }
 }
@@ -1171,7 +1183,7 @@ async function processarPDFAreas(event) {
     // ── Vendas ──
     const textoVendas = secoesPDFAreas['Vendas'] || '';
     tiersVendas.equipeComercial = extrairKpiTiers(textoVendas, 'Novos clientes: Equipe Comercial', 'clientes', true);
-    if (tiersVendas.equipeComercial) (equipesVendas.equipeComercial || []).forEach(p => delete p.valorManual);
+    if (tiersVendas.equipeComercial) (equipesVendas.equipeComercial || []).forEach(p => { delete p.valorManual; delete p.valorRestaurado; });
 
     const mPerc = textoVendas.match(/Principal:\s*(\d+)%\s*do MRR adicionado\s*Principal:\s*(\d+)%\s*do MRR adicionado\s*Assistente:\s*(\d+)%\s*do MRR adicionado/i);
     if (mPerc) { percIndividuais.solo = parseInt(mPerc[1]); percIndividuais.comAssist = parseInt(mPerc[2]); percIndividuais.assistente = parseInt(mPerc[3]); }
@@ -1230,13 +1242,26 @@ async function processarPDFAreas(event) {
 function valorEfetivo(p, calculado) {
   return (p.valorManual !== undefined && p.valorManual !== null) ? p.valorManual : calculado;
 }
+// Valor pra mostrar no campo ANTES de qualquer cálculo rodar (ex: logo depois de "Editar mês",
+// enquanto ainda não existe tabela de metas carregada pra recalcular por %). Prioridade:
+// 1) valorManual (override que a pessoa digitou de propósito, sempre vence);
+// 2) valorRestaurado (o que já estava salvo pro mês, só pra não aparecer zerado até o cálculo
+//    automático assumir de novo);
+// 3) R$ 0,00. Assim que existir uma tabela de metas (tiers) pra essa área, o cálculo automático
+// passa a escrever direto no campo por cima disso — é por isso que valorRestaurado, ao contrário
+// de valorManual, não trava o valor pra sempre: ele só preenche o vazio antes do primeiro cálculo.
+function valorExibicaoInicial(p) {
+  if (p.valorManual !== undefined && p.valorManual !== null) return fmtBRL(p.valorManual);
+  if (p.valorRestaurado !== undefined && p.valorRestaurado !== null) return fmtBRL(p.valorRestaurado);
+  return 'R$ 0,00';
+}
 // Quando um PDF de metas novo é lido com sucesso pra uma equipe (tiers != null), o cálculo
 // automático passa a valer de novo pra essa equipe — remove qualquer valorManual que tenha
 // vindo de uma restauração de "Editar mês" (senão o valor de cada pessoa ficava travado no
 // que estava salvo antes, mesmo depois de corrigir a leitura do PDF e recalcular o pool).
 function limparValorManualDaEquipe(chave, tiersLidos) {
   if (!tiersLidos) return;
-  (equipesMkt[chave] || []).forEach(p => delete p.valorManual);
+  (equipesMkt[chave] || []).forEach(p => { delete p.valorManual; delete p.valorRestaurado; });
 }
 // Qual função recalcular depois de editar nome/%/valor de uma pessoa nessas listas —
 // cada chave pertence a uma área diferente (Marketing, CS ou P&D), mesmo estando todas
@@ -1255,7 +1280,7 @@ function renderEquipeMkt(chave) {
     <tr>
       <td><input type="text" value="${p.nome}" onchange="atualizarEquipeMkt('${chave}',${i},'nome',this.value)"/></td>
       <td><input type="number" step="0.01" value="${p.percentual}" onchange="atualizarEquipeMkt('${chave}',${i},'percentual',this.value)"/></td>
-      <td><input type="text" class="num" id="valor-${chave}-${i}" value="${p.valorManual !== undefined && p.valorManual !== null ? fmtBRL(p.valorManual) : 'R$ 0,00'}" title="Editável — deixe em branco pra voltar ao cálculo automático" onchange="atualizarValorManualEquipeMkt('${chave}',${i},this.value)"/></td>
+      <td><input type="text" class="num" id="valor-${chave}-${i}" value="${valorExibicaoInicial(p)}" title="Editável — deixe em branco pra voltar ao cálculo automático" onchange="atualizarValorManualEquipeMkt('${chave}',${i},this.value)"/></td>
       <td><button class="btn-remover" onclick="removerPessoaMkt('${chave}',${i})">✕</button></td>
     </tr>`).join('');
 }
@@ -1348,7 +1373,7 @@ function renderEquipeVendasEquipe() {
     <tr>
       <td><input type="text" value="${p.nome}" onchange="atualizarEquipeVendas(${i},'nome',this.value)"/></td>
       <td><input type="number" step="0.01" value="${p.percentual}" onchange="atualizarEquipeVendas(${i},'percentual',this.value)"/></td>
-      <td><input type="text" class="num" id="valor-equipeComercial-${i}" value="${p.valorManual !== undefined && p.valorManual !== null ? fmtBRL(p.valorManual) : 'R$ 0,00'}" title="Editável — deixe em branco pra voltar ao cálculo automático" onchange="atualizarValorManualVendasEquipe(${i},this.value)"/></td>
+      <td><input type="text" class="num" id="valor-equipeComercial-${i}" value="${valorExibicaoInicial(p)}" title="Editável — deixe em branco pra voltar ao cálculo automático" onchange="atualizarValorManualVendasEquipe(${i},this.value)"/></td>
       <td><button class="btn-remover" onclick="removerPessoaVendasEquipe(${i})">✕</button></td>
     </tr>`).join('');
 }
@@ -1443,6 +1468,11 @@ function normalizarNomeMatch(s) {
 }
 function renderVendedores() {
   const tbody = document.getElementById('tbody-vendedores');
+  const opcoesNivel = (v) => ['','nenhum','bronze','prata','ouro','diamante'].map(opt => {
+    const rotulo = opt === '' ? 'Automático (do PDF)' : (opt === 'nenhum' ? 'Nenhum' : opt.charAt(0).toUpperCase()+opt.slice(1));
+    const sel = (v.nivelManual || '') === opt ? 'selected' : '';
+    return `<option value="${opt}" ${sel}>${rotulo}</option>`;
+  }).join('');
   tbody.innerHTML = vendedoresIndividuais.map((v,i) => `
     <tr>
       <td><input type="text" value="${v.nome}" onchange="atualizarVendedor(${i},'nome',this.value)"/></td>
@@ -1451,6 +1481,7 @@ function renderVendedores() {
       <td class="check"><input type="checkbox" ${v.melhor2Meses?'checked':''} onchange="atualizarVendedor(${i},'melhor2Meses',this.checked)"/></td>
       <td class="check"><input type="checkbox" ${v.melhor3Meses?'checked':''} onchange="atualizarVendedor(${i},'melhor3Meses',this.checked)"/></td>
       <td id="nivel-vend-${i}">—</td>
+      <td><select onchange="atualizarVendedor(${i},'nivelManual',this.value)">${opcoesNivel(v)}</select></td>
       <td><input type="text" class="num" id="valor-vend-${i}" value="${v.valorManual !== undefined && v.valorManual !== null ? fmtBRL(v.valorManual) : 'R$ 0,00'}" title="Editável — deixe em branco pra voltar ao cálculo automático" onchange="atualizarValorManualVendedor(${i}, this.value)"/></td>
       <td><button class="btn-remover" onclick="removerVendedor(${i})">✕</button></td>
     </tr>`).join('');
@@ -1483,15 +1514,37 @@ function atualizarCamposPercIndividuais() {
 }
 
 function calcularComissaoIndividual() {
+  // Tabela de "meta individual" (MRR necessário em cada nível + bônus) — mesma tabela pra
+  // todos os vendedores, lida do PDF de KPIs por áreas (seção Vendas). Editável na mão como
+  // as outras 12 tabelas de nível, com o mesmo link "preencher manualmente" se a leitura
+  // falhar ou não tiver PDF nenhum.
+  const tiersMI = tiersVendas.metaIndividual;
+  const elStatusMI = document.getElementById('status-metaIndividual');
+  const elTabelaMI = document.getElementById('tabela-metaIndividual');
+  if (elStatusMI && elTabelaMI) {
+    if (!tiersMI) {
+      elStatusMI.innerHTML = 'Aguardando leitura do PDF de KPIs por áreas (acima).' + linkPreencherManualmente('metaIndividual');
+      elTabelaMI.innerHTML = tabelaTiersEditavelHTML('metaIndividual', null, CONFIG_TIERS_KPI.metaIndividual.campos, null);
+    } else {
+      elStatusMI.textContent = 'Carregado — usado para calcular o nível automático de cada vendedor(a) abaixo.';
+      elTabelaMI.innerHTML = tabelaTiersEditavelHTML('metaIndividual', tiersMI, CONFIG_TIERS_KPI.metaIndividual.campos, null);
+    }
+  }
   vendedoresIndividuais.forEach((v, i) => {
     let nivel = null;
-    let percExtra = 0;
-    if (v.tiersPercentuais && tiersVendas.metaIndividual) {
+    // "Forçar nível" (seletor na linha do vendedor) tem prioridade sobre o cálculo automático
+    // — usado quando a leitura do PDF "Meta individual de venda" falhou ou veio incompleta
+    // pra essa pessoa específica (ela não aparece em v.tiersPercentuais, ou os % vieram errados).
+    if (v.nivelManual === 'nenhum') {
+      nivel = null;
+    } else if (v.nivelManual) {
+      nivel = v.nivelManual;
+    } else if (v.tiersPercentuais) {
       const ordem = ['bronze','prata','ouro','diamante'];
-      const t = tiersVendas.metaIndividual;
       ordem.forEach((k, idx) => { if (v.tiersPercentuais[idx] >= 100) { nivel = k; } });
-      if (nivel) percExtra += t[nivel].bonus;
     }
+    let percExtra = 0;
+    if (nivel && tiersMI && tiersMI[nivel] && typeof tiersMI[nivel].bonus === 'number') percExtra += tiersMI[nivel].bonus;
     if (v.melhorMes) percExtra += percIndividuais.melhorMes;
     if (v.melhor2Meses) percExtra += percIndividuais.melhor2Meses;
     if (v.melhor3Meses) percExtra += percIndividuais.melhor3Meses;
@@ -2156,7 +2209,10 @@ function restaurarAreaMultiKpi(mes, chaves, resultadosAtual, areaHistorico) {
     const registro = (historico?.registros || []).find(r => r.mesReferencia === mes && r.nomeKpi === nomeKpi);
     const detalhe = historico?.detalhe?.[mes + '|' + nomeKpi];
     if (detalhe && detalhe.length) {
-      equipesMkt[chave] = detalhe.map(d => ({ nome: d.nome, percentual: Number(d.percentual) || 0, valorManual: Number(d.valor) || 0 }));
+      // valorRestaurado (não valorManual!) — só preenche o campo até a tabela de metas ter
+      // dados pra recalcular de verdade por %; diferente de valorManual, ele NÃO trava o valor
+      // pra sempre, então editar qualquer input do KPI (ex: DownSell) volta a recalcular certinho.
+      equipesMkt[chave] = detalhe.map(d => ({ nome: d.nome, percentual: Number(d.percentual) || 0, valorRestaurado: Number(d.valor) || 0 }));
       algumEncontrado = true;
     }
     if (registro) {
@@ -2186,7 +2242,7 @@ function restaurarMRR(mes) {
   document.getElementById('mrr-input').value = fmtNumeroBR(fechamento.mrrValor);
   const detalheProduto = historico.detalhePorMes?.[mes] || [];
   if (detalheProduto.length) {
-    colaboradoresProduto = detalheProduto.map(d => ({ nome: d.nome, percentual: Number(d.percentual) || 0, valorManual: Number(d.valor) || 0 }));
+    colaboradoresProduto = detalheProduto.map(d => ({ nome: d.nome, percentual: Number(d.percentual) || 0, valorRestaurado: Number(d.valor) || 0 }));
   }
   const bonusGeral = historico.bonusGeralPorMes?.[mes] || [];
   if (bonusGeral.length) {
@@ -2212,7 +2268,7 @@ function restaurarEquipeComercialVendas(mes) {
   const registro = (historico?.registros || []).find(r => r.mesReferencia === mes && r.nomeKpi === nomeKpi);
   const detalhe = historico?.detalhe?.[mes + '|' + nomeKpi];
   if (detalhe && detalhe.length) {
-    equipesVendas.equipeComercial = detalhe.map(d => ({ nome: d.nome, percentual: Number(d.percentual) || 0, valorManual: Number(d.valor) || 0 }));
+    equipesVendas.equipeComercial = detalhe.map(d => ({ nome: d.nome, percentual: Number(d.percentual) || 0, valorRestaurado: Number(d.valor) || 0 }));
   }
   if (registro) {
     resultadosVendasAtual.equipeComercial = { nivel: registro.nivel, percTotal: Number(registro.percTotal) || 0, pool: Number(registro.pool) || 0 };

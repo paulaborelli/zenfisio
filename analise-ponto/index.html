@@ -465,23 +465,27 @@
       </div>
 
       <div class="card">
-        <h2>Extremos de banco de horas (mês selecionado)</h2>
+        <h2>Extremos de banco de horas (colaboradores do mês selecionado)</h2>
+        <p style="font-size:0.85rem; color:#5F5E5A; margin-top:-8px; margin-bottom:1rem;">
+          Saldo acumulado de banco de horas (desde o início do controle, não só o mês selecionado) — de quem tem ponto individual carregado neste mês.
+        </p>
         <table>
-          <thead><tr><th>Colaborador</th><th class="num">Saldo do mês</th></tr></thead>
+          <thead><tr><th>Colaborador</th><th class="num">Saldo acumulado</th></tr></thead>
           <tbody id="bancoBody"></tbody>
         </table>
       </div>
 
       <div class="card">
         <h2>Ranking por período</h2>
-        <div class="periodo-tabs">
+        <div class="periodo-tabs" id="rankingPeriodoTabs">
+          <div class="periodo-tab" data-n="1" onclick="mudarPeriodoRanking(1, this)">Mensal</div>
           <div class="periodo-tab active" data-n="3" onclick="mudarPeriodoRanking(3, this)">Trimestral</div>
           <div class="periodo-tab" data-n="6" onclick="mudarPeriodoRanking(6, this)">Semestral</div>
           <div class="periodo-tab" data-n="12" onclick="mudarPeriodoRanking(12, this)">Anual</div>
         </div>
         <div class="aviso-cobertura hidden" id="avisoCobertura"></div>
         <table>
-          <thead><tr><th>Colaborador</th><th class="num">Falta média %</th><th class="num">Ajustes (soma)</th><th class="num">Banco total</th></tr></thead>
+          <thead><tr><th>Colaborador</th><th class="num">Falta média %</th><th class="num">Ajustes (soma)</th><th class="num">Banco (saldo acumulado no fim do período)</th></tr></thead>
           <tbody id="rankingPeriodoBody"></tbody>
         </table>
       </div>
@@ -1508,7 +1512,7 @@ function renderDetalheColaborador() {
 
 function mudarPeriodoRanking(n, el) {
   periodoAtivo = n;
-  document.querySelectorAll('.periodo-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('#rankingPeriodoTabs .periodo-tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
   renderRankingPeriodo();
 }
@@ -1519,11 +1523,19 @@ function computarRankingPeriodo(nMeses) {
   const agregados = {};
   for (const m of mesesConsiderados) {
     for (const emp of historico[m].employees) {
-      if (!agregados[emp.nome]) agregados[emp.nome] = { nome: emp.nome, ajustes: 0, faltaSum: 0, faltaCount: 0, bancoMin: 0 };
+      if (!agregados[emp.nome]) agregados[emp.nome] = { nome: emp.nome, ajustes: 0, faltaSum: 0, faltaCount: 0, bancoMin: null, bancoDisponivel: false };
       agregados[emp.nome].ajustes += emp.ajustes;
       agregados[emp.nome].faltaSum += emp.faltaPct;
       agregados[emp.nome].faltaCount += 1;
-      agregados[emp.nome].bancoMin += emp.bancoMin;
+      // Banco é um SALDO ACUMULADO (não um valor por mês) — pega o saldo do
+      // mês mais recente do período em vez de somar os meses (somar inflaria
+      // o número, já que cada mês já carrega o acumulado dos anteriores).
+      // mesesConsiderados está em ordem crescente, então a última atribuição
+      // vencedora é sempre a do mês mais recente com dado disponível.
+      if (emp.bancoDisponivel !== false) {
+        agregados[emp.nome].bancoMin = emp.bancoMin;
+        agregados[emp.nome].bancoDisponivel = true;
+      }
     }
   }
   const lista = Object.values(agregados).map(a => ({ ...a, faltaMedia: a.faltaSum / a.faltaCount }));
@@ -1545,7 +1557,7 @@ function renderRankingPeriodo() {
       <td>${r.nome}</td>
       <td class="num">${r.faltaMedia.toFixed(2).replace('.', ',')}%</td>
       <td class="num">${r.ajustes}</td>
-      <td class="num ${r.bancoMin < 0 ? 'bad' : 'good'}">${formatarMinutos(r.bancoMin)}</td>
+      <td class="num ${r.bancoDisponivel ? (r.bancoMin < 0 ? 'bad' : 'good') : ''}">${r.bancoDisponivel ? formatarMinutos(r.bancoMin) : '—'}</td>
     </tr>
   `).join('') || '<tr><td colspan="4">Sem dados suficientes.</td></tr>';
 }

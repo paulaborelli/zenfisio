@@ -743,23 +743,48 @@ function parseJornada(texto) {
 // via parseEventosDia, pois exigem checar se é feriado (cross-colaborador).
 function parseAbonoParcial(texto, jornadaPadraoMin) {
   if (!jornadaPadraoMin) return { totalMin: 0, dias: [] };
-  const linhas = texto.split('\n');
-  const diasSemana = '(?:seg|ter|qua|qui|sex)';
-  const re = new RegExp(`^(\\d{2}\\/\\d{2})\\s+${diasSemana}\\s+(?:\\d{1,2}:\\d{2}[~*^]?\\s+){4}(-?\\d{1,3}:\\d{2})`, 'i');
-  let totalMin = 0;
+  // O número de colunas de horário (Ent./Saí.) não é fixo por arquivo — varia
+  // DIA A DIA (a mesma pessoa pode ter a maioria dos dias com 4 colunas e só
+  // alguns dias, com abono no meio do expediente, usando um 3º turno/6
+  // colunas). Por isso isolamos cada dia (mesma técnica de parseEventosDia,
+  // pra nunca deixar um dia vazar pro outro) e, dentro de cada dia, testamos
+  // primeiro 4 colunas e só usamos 6 se 4 não fizer sentido estruturalmente
+  // (ex: a 5ª posição não é um número — é a palavra "ABONO").
+  let textoUnico = texto.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+  const fimTabela = textoUnico.search(/Previstas:\s*-?\d/i);
+  if (fimTabela > -1) textoUnico = textoUnico.slice(0, fimTabela);
+  const diasSemana = '(seg|ter|qua|qui|sex)'; // fins de semana não têm jornada prevista, não interessam aqui
+  const marcadorRe = new RegExp(`(\\d{2}\\/\\d{2})\\s+${diasSemana}\\s+`, 'gi');
+  const marcadores = [];
+  let mm;
+  while ((mm = marcadorRe.exec(textoUnico)) !== null) {
+    marcadores.push({ dia: mm[1], inicioConteudo: marcadorRe.lastIndex, inicioMarcador: mm.index });
+  }
+  const totalMinArr = { total: 0 };
   const dias = [];
-  for (const linhaRaw of linhas) {
-    const linha = linhaRaw.trim();
-    const m = linha.match(re);
-    if (!m) continue;
-    const previstasDia = paraMinutos(m[2]);
+  const tokenRe = /-?\d{1,3}:\d{2}[~*^]?|ABONO/gi;
+  for (let i = 0; i < marcadores.length; i++) {
+    const inicio = marcadores[i].inicioConteudo;
+    const fim = (i + 1 < marcadores.length) ? marcadores[i + 1].inicioMarcador : textoUnico.length;
+    const trecho = textoUnico.slice(inicio, fim).trim();
+    const tokens = trecho.match(tokenRe) || [];
+    let previstasDia = null;
+    for (const candidatoColunas of [4, 6]) {
+      if (tokens.length < candidatoColunas + 3) continue; // precisa sobrar Previstas+Diurnas+Intervalo
+      const candidato = tokens[candidatoColunas];
+      if (candidato && /^-?\d{1,3}:\d{2}$/.test(candidato.replace(/[~*^]/g, ''))) {
+        previstasDia = paraMinutos(candidato);
+        break;
+      }
+    }
+    if (previstasDia === null) continue;
     if (previstasDia > 0 && previstasDia < jornadaPadraoMin) {
       const min = jornadaPadraoMin - previstasDia;
-      totalMin += min;
-      dias.push({ dia: m[1], minutos: min });
+      totalMinArr.total += min;
+      dias.push({ dia: marcadores[i].dia, minutos: min });
     }
   }
-  return { totalMin, dias };
+  return { totalMin: totalMinArr.total, dias };
 }
 
 // Extrai dias inteiros em que os horários foram substituídos por um texto
@@ -769,18 +794,36 @@ function parseAbonoParcial(texto, jornadaPadraoMin) {
 // iguais para recuperar a frase original.
 function parseEventosDia(texto) {
   // Não confiamos na quebra de linha exata que o pdf.js gera (pode variar
-  // dependendo do PDF) — por isso juntamos tudo num texto só, do mesmo jeito
-  // que já é feito para o relatório de Ausências agregado, e buscamos o
-  // padrão "data + dia da semana + texto repetido + 00:00" nesse texto único.
-  const textoUnico = texto.replace(/\n/g, ' ').replace(/\s+/g, ' ');
+  // dependendo do PDF) — por isso juntamos tudo num texto só. MAS: uma busca
+  // aberta (sem limite) até o próximo "00:00" é perigosa — se um dia comum de
+  // trabalho não terminar em 00:00 (termina em Intervalo/Débito/Crédito), a
+  // busca pode "atravessar" pra frente e engolir o próximo dia inteiro (isso
+  // já aconteceu de verdade: um Atestado Médico sumiu por ter sido engolido
+  // junto com o dia anterior). Por isso, primeiro localizamos onde CADA dia
+  // começa (data + dia da semana), e limitamos a busca do texto de cada dia
+  // a "daqui até o início do próximo dia" — nunca mais longe que isso.
+  let textoUnico = texto.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+  // Corta fora o rodapé de totais (a linha "Previstas: 168:00 Diurnas: ...")
+  // antes de procurar os dias — senão o último dia do mês pode "vazar" pro
+  // rodapé (o rodapé também tem uma sequência de números que não termina
+  // necessariamente em 00:00, mas pode conter "00:00" em algum lugar e
+  // corromper a detecção do último dia da tabela).
+  const fimTabela = textoUnico.search(/Previstas:\s*-?\d/i);
+  if (fimTabela > -1) textoUnico = textoUnico.slice(0, fimTabela);
   const diasSemana = '(seg|ter|qua|qui|sex|s[áa]b|dom)';
-  const re = new RegExp(`(\\d{2}\\/\\d{2})\\s+${diasSemana}\\s+(.+?)\\s+00:00`, 'gi');
+  const marcadorRe = new RegExp(`(\\d{2}\\/\\d{2})\\s+${diasSemana}\\s+`, 'gi');
+  const marcadores = [];
+  let mm;
+  while ((mm = marcadorRe.exec(textoUnico)) !== null) {
+    marcadores.push({ dia: mm[1], diaSemana: mm[2].toLowerCase(), inicioConteudo: marcadorRe.lastIndex, inicioMarcador: mm.index });
+  }
   const eventos = [];
-  let m;
-  while ((m = re.exec(textoUnico)) !== null) {
-    const dia = m[1];
-    const diaSemana = m[2].toLowerCase();
-    const meio = m[3].trim();
+  for (let i = 0; i < marcadores.length; i++) {
+    const inicio = marcadores[i].inicioConteudo;
+    const fim = (i + 1 < marcadores.length) ? marcadores[i + 1].inicioMarcador : textoUnico.length;
+    const trecho = textoUnico.slice(inicio, fim).trim();
+    if (!trecho.endsWith('00:00')) continue; // dia normal (termina em intervalo/débito/crédito) — não é evento de dia inteiro
+    const meio = trecho.slice(0, trecho.length - 5).trim();
     if (!meio) continue;
     const palavras = meio.split(/\s+/);
     const total = palavras.length;
@@ -800,7 +843,7 @@ function parseEventosDia(texto) {
       if (reconstruida === meio) { frase = candidata; break; }
     }
     if (!frase) continue;
-    eventos.push({ dia, diaSemana, motivo: frase });
+    eventos.push({ dia: marcadores[i].dia, diaSemana: marcadores[i].diaSemana, motivo: frase });
   }
   return eventos;
 }
@@ -884,10 +927,14 @@ function construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nome
     contagemPorDiaMotivo[k] = (contagemPorDiaMotivo[k] || 0) + 1;
   }
   function ehFeriado(dia, motivo) {
+    // Exige tanto uma proporção alta (metade ou mais) quanto um número mínimo
+    // absoluto de pessoas (3) — com poucos pontos individuais no mês (ex: só
+    // 2 enviados), uma simples coincidência de datas entre 2 pessoas não deve
+    // virar "feriado da empresa" por engano.
     if (totalArquivosIndividuais < 2) return false;
     const k = dia + '|' + motivo;
     const contagem = contagemPorDiaMotivo[k] || 0;
-    return contagem >= Math.ceil(totalArquivosIndividuais / 2);
+    return contagem >= 3 && contagem >= Math.ceil(totalArquivosIndividuais / 2);
   }
   // 3. Monta ausências individuais (excluindo feriados), categorizadas, e
   // soma as horas de abono de dia inteiro (jornada padrão do colaborador ×
@@ -965,7 +1012,16 @@ function construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nome
     }
 
     const normaisMin = Math.min(diurnaMin, previstaMin);
-    const extrasMin = Math.max(0, diurnaMin - previstaMin);
+    // Extras: usa o "B.Crédito" oficial do espelho individual quando disponível —
+    // é o total de verdade de horas extras, dia a dia. A conta "Diurnas - Previstas"
+    // (usada como fallback pra quem só tem relatório agregado) é uma conta líquida
+    // que mistura dias de crédito com dias de débito, e pode divergir alguns
+    // minutos do B.Total oficial por arredondamento do próprio sistema de ponto —
+    // o que já causou um caso onde Extras e Faltas/Atrasos deram o mesmo valor por
+    // coincidência, escondendo que a pessoa tinha bastante crédito E bastante débito.
+    const extrasMin = (pontualidade && pontualidade.creditoMin !== null && pontualidade.creditoMin !== undefined)
+      ? pontualidade.creditoMin
+      : Math.max(0, diurnaMin - previstaMin);
 
     // Abonos: parcial (dias com Previstas reduzido) + dia inteiro (atestado,
     // licença, férias etc., já excluindo feriados detectados acima).

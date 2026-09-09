@@ -477,12 +477,16 @@
 
       <div class="card">
         <h2>Ranking por período</h2>
+        <p style="font-size:0.85rem; color:#5F5E5A; margin-top:-8px; margin-bottom:1rem;">
+          Ordenado por uma pontuação que soma <b>Falta média % × 10</b> mais <b>Ajustes × 2</b> — quanto maior a soma, mais no topo. Na prática, como Ajustes costuma ser um número bem maior que a Falta %, ele normalmente pesa mais na posição de cada um. Banco não entra nessa conta, é só informativo aqui.
+        </p>
         <div class="periodo-tabs" id="rankingPeriodoTabs">
           <div class="periodo-tab" data-n="1" onclick="mudarPeriodoRanking(1, this)">Mensal</div>
           <div class="periodo-tab active" data-n="3" onclick="mudarPeriodoRanking(3, this)">Trimestral</div>
           <div class="periodo-tab" data-n="6" onclick="mudarPeriodoRanking(6, this)">Semestral</div>
           <div class="periodo-tab" data-n="12" onclick="mudarPeriodoRanking(12, this)">Anual</div>
         </div>
+        <p id="rankingPeriodoSubtitulo" style="font-size:0.85rem; color:#5F5E5A; margin:0 0 1rem;"></p>
         <div class="aviso-cobertura hidden" id="avisoCobertura"></div>
         <table>
           <thead><tr><th>Colaborador</th><th class="num">Falta média %</th><th class="num">Ajustes (soma)</th><th class="num">Banco (saldo acumulado no fim do período)</th></tr></thead>
@@ -1540,12 +1544,20 @@ function computarRankingPeriodo(nMeses) {
   }
   const lista = Object.values(agregados).map(a => ({ ...a, faltaMedia: a.faltaSum / a.faltaCount }));
   lista.sort((a, b) => (b.faltaMedia * 10 + b.ajustes * 2) - (a.faltaMedia * 10 + a.ajustes * 2));
-  return { lista, mesesCobertos: mesesConsiderados.length };
+  return { lista, mesesCobertos: mesesConsiderados.length, meses: mesesConsiderados };
 }
 
 function renderRankingPeriodo() {
-  const { lista, mesesCobertos } = computarRankingPeriodo(periodoAtivo);
+  const { lista, mesesCobertos, meses } = computarRankingPeriodo(periodoAtivo);
   const aviso = document.getElementById('avisoCobertura');
+  const subtitulo = document.getElementById('rankingPeriodoSubtitulo');
+  if (meses.length) {
+    subtitulo.textContent = meses.length === 1
+      ? `Mês: ${formatarLabelMes(meses[0])}`
+      : `Meses considerados: ${meses.map(formatarLabelMes).join(', ')}`;
+  } else {
+    subtitulo.textContent = '';
+  }
   if (mesesCobertos < periodoAtivo) {
     aviso.textContent = `Só há ${mesesCobertos} mês(es) de histórico carregado — o ranking abaixo cobre apenas esse período, não os ${periodoAtivo} meses completos.`;
     aviso.classList.remove('hidden');

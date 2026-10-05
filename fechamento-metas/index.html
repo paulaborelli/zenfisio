@@ -720,6 +720,22 @@ function criarTiersVazio(campos) {
   ORDEM_NIVEIS_TIER.forEach(k => { obj[k] = {}; campos.forEach(c => obj[k][c] = null); });
   return obj;
 }
+// Atualiza o <tbody> de uma tabela de níveis SEM destruir o campo que a pessoa está
+// digitando: se o foco está num input dessa tabela, recriar o HTML a cada tecla faria o
+// campo perder o cursor (só dava pra digitar 1 caractere) e apagaria vírgulas ainda
+// incompletas (ex: "0," virava "0"). Nesse caso só o destaque do nível atingido é atualizado.
+function atualizarTbodyTiers(el, html) {
+  if (!el) return;
+  const ativo = (typeof document !== 'undefined') ? document.activeElement : null;
+  if (ativo && ativo.tagName === 'INPUT' && el.contains && el.contains(ativo)) {
+    const tmp = document.createElement('tbody');
+    tmp.innerHTML = html;
+    const atuais = el.querySelectorAll('tr'), novas = tmp.querySelectorAll('tr');
+    novas.forEach((tr, i) => { if (atuais[i]) atuais[i].className = tr.className; });
+    return;
+  }
+  el.innerHTML = html;
+}
 // Desenha uma tabela de níveis editável a partir do objeto de tiers (ou de um objeto vazio,
 // se ainda não foi lido nenhum PDF nem preenchido nada na mão). Bônus/Adicional sempre levam
 // "%" ao lado do campo; Meta só leva quando o KPI já mostrava "%" antes (ver metaEhPercentual).
@@ -771,7 +787,7 @@ function calcularNPS_PD() {
   if (!elResultado) return { nivel:'Nenhum', percTotal:0, pool:0 };
   if (!tiers) {
     elResultado.innerHTML = 'Aguardando leitura do PDF (acima)...' + linkPreencherManualmente('npsPD');
-    document.getElementById('tabela-npsPD').innerHTML = tabelaTiersEditavelHTML('npsPD', null, CONFIG_TIERS_KPI.npsPD.campos, null);
+    atualizarTbodyTiers(document.getElementById('tabela-npsPD'), tabelaTiersEditavelHTML('npsPD', null, CONFIG_TIERS_KPI.npsPD.campos, null));
     return { nivel:'Nenhum', percTotal:0, pool:0 };
   }
   const nota = parseNumeroBR(document.getElementById('input-npsPD-nota').value);
@@ -780,7 +796,7 @@ function calcularNPS_PD() {
   const percTotal = nivel ? tiers[nivel].bonus : tiers.padrao;
   const pool = mrrTotal * (percTotal/100);
   elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Nenhum nível atingido (NPS ${nota})`;
-  document.getElementById('tabela-npsPD').innerHTML = tabelaTiersEditavelHTML('npsPD', tiers, CONFIG_TIERS_KPI.npsPD.campos, nivel);
+  atualizarTbodyTiers(document.getElementById('tabela-npsPD'), tabelaTiersEditavelHTML('npsPD', tiers, CONFIG_TIERS_KPI.npsPD.campos, nivel));
   document.getElementById('pool-npsPD').textContent = fmtBRL(pool);
   let total = 0;
   equipesMkt.npsPD.forEach((p,i) => { const valor = valorEfetivo(p, pool*(p.percentual/100)); total += p.percentual; const inp = document.getElementById('valor-npsPD-'+i); if (inp) inp.value = fmtBRL(valor); });
@@ -793,7 +809,7 @@ function calcularHealthScore_PD() {
   if (!elResultado) return { nivel:'Nenhum', percTotal:0, pool:0 };
   if (!tiers) {
     elResultado.innerHTML = 'Aguardando leitura do PDF (acima)...' + linkPreencherManualmente('healthScorePD');
-    document.getElementById('tabela-healthScorePD').innerHTML = tabelaTiersEditavelHTML('healthScorePD', null, CONFIG_TIERS_KPI.healthScorePD.campos, null);
+    atualizarTbodyTiers(document.getElementById('tabela-healthScorePD'), tabelaTiersEditavelHTML('healthScorePD', null, CONFIG_TIERS_KPI.healthScorePD.campos, null));
     return { nivel:'Nenhum', percTotal:0, pool:0 };
   }
   const nota = parseNumeroBR(document.getElementById('input-healthScorePD-nota').value);
@@ -802,7 +818,7 @@ function calcularHealthScore_PD() {
   const percTotal = nivel ? tiers[nivel].bonus : tiers.padrao;
   const pool = mrrTotal * (percTotal/100);
   elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Nenhum nível atingido (Health Score ${nota})`;
-  document.getElementById('tabela-healthScorePD').innerHTML = tabelaTiersEditavelHTML('healthScorePD', tiers, CONFIG_TIERS_KPI.healthScorePD.campos, nivel);
+  atualizarTbodyTiers(document.getElementById('tabela-healthScorePD'), tabelaTiersEditavelHTML('healthScorePD', tiers, CONFIG_TIERS_KPI.healthScorePD.campos, nivel));
   document.getElementById('pool-healthScorePD').textContent = fmtBRL(pool);
   let total = 0;
   equipesMkt.healthScorePD.forEach((p,i) => { const valor = valorEfetivo(p, pool*(p.percentual/100)); total += p.percentual; const inp = document.getElementById('valor-healthScorePD-'+i); if (inp) inp.value = fmtBRL(valor); });
@@ -815,7 +831,7 @@ function calcularInfraestrutura() {
   if (!elResultado) return { nivel:'Nenhum', percTotal:0, pool:0 };
   if (!tiers) {
     elResultado.innerHTML = 'Aguardando leitura do PDF (acima)...' + linkPreencherManualmente('infraestrutura');
-    document.getElementById('tabela-infraestrutura').innerHTML = tabelaTiersEditavelHTML('infraestrutura', null, CONFIG_TIERS_KPI.infraestrutura.campos, null);
+    atualizarTbodyTiers(document.getElementById('tabela-infraestrutura'), tabelaTiersEditavelHTML('infraestrutura', null, CONFIG_TIERS_KPI.infraestrutura.campos, null));
     return { nivel:'Nenhum', percTotal:0, pool:0 };
   }
   const percEficiencia = parseNumeroBR(document.getElementById('input-infraestrutura-percentual').value);
@@ -824,7 +840,7 @@ function calcularInfraestrutura() {
   const percTotal = nivel ? tiers[nivel].bonus : tiers.padrao;
   const pool = mrrTotal * (percTotal/100);
   elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Nenhum nível atingido (${percEficiencia}%)`;
-  document.getElementById('tabela-infraestrutura').innerHTML = tabelaTiersEditavelHTML('infraestrutura', tiers, CONFIG_TIERS_KPI.infraestrutura.campos, nivel);
+  atualizarTbodyTiers(document.getElementById('tabela-infraestrutura'), tabelaTiersEditavelHTML('infraestrutura', tiers, CONFIG_TIERS_KPI.infraestrutura.campos, nivel));
   document.getElementById('pool-infraestrutura').textContent = fmtBRL(pool);
   let total = 0;
   equipesMkt.infraestrutura.forEach((p,i) => { const valor = valorEfetivo(p, pool*(p.percentual/100)); total += p.percentual; const inp = document.getElementById('valor-infraestrutura-'+i); if (inp) inp.value = fmtBRL(valor); });
@@ -1166,10 +1182,14 @@ async function processarPDFAreas(event) {
   try {
     const { texto: textoCompleto, ocr } = await extrairTextoArquivo(file);
     secoesPDFAreas = extrairSecoesPDFAreas(textoCompleto);
+    // Se o PDF não trouxer (ou a leitura não achar) a tabela de um KPI, mantém o que já estava
+    // preenchido na mão em vez de apagar — e anota o nome pra avisar na tela no final.
+    const naoLidos = [];
+    const manterSeFalhar = (nome, novo, atual) => { if (!novo) naoLidos.push(nome); return novo || atual; };
     const textoMkt = secoesPDFAreas['Marketing'] || '';
-    tiersMkt.cadastroTeste   = extrairKpiTiers(textoMkt, 'Novo cadastro para teste do ZenFisio', 'cadastros', false);
-    tiersMkt.extensaoTeste    = extrairKpiTiers(textoMkt, 'Novo teste do ZenFisio por mais 7 dias', 'cadastros', false);
-    tiersMkt.novosClientesMkt = extrairKpiTiers(textoMkt, 'Novos clientes: Equipe de Marketing', 'clientes', true);
+    tiersMkt.cadastroTeste   = manterSeFalhar('Cadastro p/ teste', extrairKpiTiers(textoMkt, 'Novo cadastro para teste do ZenFisio', 'cadastros', false), tiersMkt.cadastroTeste);
+    tiersMkt.extensaoTeste    = manterSeFalhar('Extensão de teste', extrairKpiTiers(textoMkt, 'Novo teste do ZenFisio por mais 7 dias', 'cadastros', false), tiersMkt.extensaoTeste);
+    tiersMkt.novosClientesMkt = manterSeFalhar('Novos clientes (Mkt)', extrairKpiTiers(textoMkt, 'Novos clientes: Equipe de Marketing', 'clientes', true), tiersMkt.novosClientesMkt);
     // Um PDF novo com tiers válidos tem prioridade sobre qualquer valor "protegido"
     // (valorManual) que tenha vindo de uma restauração de mês já salvo — senão, depois de
     // corrigir a leitura do PDF, o valor de cada pessoa continuava travado no 0 antigo.
@@ -1182,7 +1202,7 @@ async function processarPDFAreas(event) {
 
     // ── Vendas ──
     const textoVendas = secoesPDFAreas['Vendas'] || '';
-    tiersVendas.equipeComercial = extrairKpiTiers(textoVendas, 'Novos clientes: Equipe Comercial', 'clientes', true);
+    tiersVendas.equipeComercial = manterSeFalhar('Novos clientes (Equipe Comercial)', extrairKpiTiers(textoVendas, 'Novos clientes: Equipe Comercial', 'clientes', true), tiersVendas.equipeComercial);
     if (tiersVendas.equipeComercial) (equipesVendas.equipeComercial || []).forEach(p => { delete p.valorManual; delete p.valorRestaurado; });
 
     const mPerc = textoVendas.match(/Principal:\s*(\d+)%\s*do MRR adicionado\s*Principal:\s*(\d+)%\s*do MRR adicionado\s*Assistente:\s*(\d+)%\s*do MRR adicionado/i);
@@ -1198,6 +1218,7 @@ async function processarPDFAreas(event) {
     atualizarCamposPercIndividuais();
 
     const idxV3 = textoVendas.indexOf('Novos clientes: Meta Individual por vendedor');
+    let leuMetaIndividual = false;
     if (idxV3 !== -1) {
       const trechoV3 = textoVendas.slice(idxV3, idxV3 + 1200);
       const tiersV3valores = [...trechoV3.matchAll(/MRR:\s*R\$\s*([\d.,]+)/gi)].slice(0,4).map(m => parseFloat(m[1].replace(/\./g,'').replace(',', '.')));
@@ -1209,16 +1230,18 @@ async function processarPDFAreas(event) {
           ouro:     { meta: tiersV3valores[2], bonus: bonusV3[2] },
           diamante: { meta: tiersV3valores[3], bonus: bonusV3[3] }
         };
+        leuMetaIndividual = true;
       }
     }
+    if (!leuMetaIndividual) naoLidos.push('Meta individual (Vendas)');
     recalcularVendas();
 
     // ── CS e Suporte ──
     const textoCS = secoesPDFAreas['CS e Suporte'] || '';
-    tiersCS.upsellEquipe = extrairKpiGenerico(textoCS, 'UpSell: Equipe');
-    tiersCS.churn        = extrairKpiGenerico(textoCS, 'Churn (cancelamentos)');
-    tiersCS.nps          = extrairKpiGenerico(textoCS, 'NPS (Net Promoter Score)');
-    tiersCS.healthScore  = extrairKpiGenerico(textoCS, 'Health Score (saúde do cliente)');
+    tiersCS.upsellEquipe = manterSeFalhar('UpSell (CS)', extrairKpiGenerico(textoCS, 'UpSell: Equipe'), tiersCS.upsellEquipe);
+    tiersCS.churn        = manterSeFalhar('Churn', extrairKpiGenerico(textoCS, 'Churn (cancelamentos)'), tiersCS.churn);
+    tiersCS.nps          = manterSeFalhar('NPS (CS)', extrairKpiGenerico(textoCS, 'NPS (Net Promoter Score)'), tiersCS.nps);
+    tiersCS.healthScore  = manterSeFalhar('Health Score (CS)', extrairKpiGenerico(textoCS, 'Health Score (saúde do cliente)'), tiersCS.healthScore);
     limparValorManualDaEquipe('upsellEquipe', tiersCS.upsellEquipe);
     limparValorManualDaEquipe('churn', tiersCS.churn);
     limparValorManualDaEquipe('nps', tiersCS.nps);
@@ -1227,13 +1250,20 @@ async function processarPDFAreas(event) {
 
     // ── P&D ──
     const textoPD = secoesPDFAreas['P&D'] || '';
-    tiersPD.nps            = extrairKpiGenerico(textoPD, 'NPS (Net Promoter Score)');
-    tiersPD.healthScore    = extrairKpiGenerico(textoPD, 'Health Score (saúde do cliente)');
-    tiersPD.infraestrutura = extrairKpiGenerico(textoPD, 'Índice de Eficiência de Infraestrutura');
+    tiersPD.nps            = manterSeFalhar('NPS (P&D)', extrairKpiGenerico(textoPD, 'NPS (Net Promoter Score)'), tiersPD.nps);
+    tiersPD.healthScore    = manterSeFalhar('Health Score (P&D)', extrairKpiGenerico(textoPD, 'Health Score (saúde do cliente)'), tiersPD.healthScore);
+    tiersPD.infraestrutura = manterSeFalhar('Infraestrutura', extrairKpiGenerico(textoPD, 'Índice de Eficiência de Infraestrutura'), tiersPD.infraestrutura);
     limparValorManualDaEquipe('npsPD', tiersPD.nps);
     limparValorManualDaEquipe('healthScorePD', tiersPD.healthScore);
     limparValorManualDaEquipe('infraestrutura', tiersPD.infraestrutura);
     recalcularPD();
+
+    // Resumo honesto do que foi (ou não) identificado, KPI por KPI — assim fica claro, sem
+    // adivinhar, qual tabela precisa ser conferida/preenchida na mão.
+    const total = 12, faltou = naoLidos;
+    document.getElementById('pdf-areas-status').innerHTML = comAvisoOCR(
+      `Arquivo lido — ${total - faltou.length}/${total} tabelas de metas identificadas.` +
+      (faltou.length ? ` <strong>Não identificadas (preencha na mão na tabela do KPI):</strong> ${faltou.join(', ')}.` : ''), ocr);
   } catch(e) { document.getElementById('pdf-areas-status').textContent = 'Erro ao ler PDF: ' + e.message; }
 }
 
@@ -1301,7 +1331,7 @@ function calcularKpiCadastro(chave) {
   const elResultado = document.getElementById('resultado-' + chave);
   if (!tiers) {
     elResultado.innerHTML = 'Aguardando leitura do PDF...' + linkPreencherManualmente(chave);
-    document.getElementById('tabela-' + chave).innerHTML = tabelaTiersEditavelHTML(chave, null, CONFIG_TIERS_KPI[chave].campos, null);
+    atualizarTbodyTiers(document.getElementById('tabela-' + chave), tabelaTiersEditavelHTML(chave, null, CONFIG_TIERS_KPI[chave].campos, null));
     return { nivel:null, percTotal:0, pool:0 };
   }
   const cadastros = parseInt(document.getElementById('input-' + chave + '-cadastros').value) || 0;
@@ -1310,7 +1340,7 @@ function calcularKpiCadastro(chave) {
   const percTotal = nivel ? tiers[nivel].bonus : tiers.padrao;
   const pool = mrrBase * (percTotal/100);
   elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Abaixo do Bronze — bonificação padrão: ${percTotal}%`;
-  document.getElementById('tabela-' + chave).innerHTML = tabelaTiersEditavelHTML(chave, tiers, CONFIG_TIERS_KPI[chave].campos, nivel);
+  atualizarTbodyTiers(document.getElementById('tabela-' + chave), tabelaTiersEditavelHTML(chave, tiers, CONFIG_TIERS_KPI[chave].campos, nivel));
   document.getElementById('pool-' + chave).textContent = fmtBRL(pool);
   let total = 0;
   equipesMkt[chave].forEach((p,i) => { const valor = valorEfetivo(p, pool * (p.percentual/100)); total += p.percentual; const inp = document.getElementById('valor-'+chave+'-'+i); if (inp) inp.value = fmtBRL(valor); });
@@ -1322,7 +1352,7 @@ function calcularKpiNovosClientesMkt() {
   const elResultado = document.getElementById('resultado-novosClientesMkt');
   if (!tiers) {
     elResultado.innerHTML = 'Aguardando leitura do PDF...' + linkPreencherManualmente('novosClientesMkt');
-    document.getElementById('tabela-novosClientesMkt').innerHTML = tabelaTiersEditavelHTML('novosClientesMkt', null, CONFIG_TIERS_KPI.novosClientesMkt.campos, null);
+    atualizarTbodyTiers(document.getElementById('tabela-novosClientesMkt'), tabelaTiersEditavelHTML('novosClientesMkt', null, CONFIG_TIERS_KPI.novosClientesMkt.campos, null));
     return { nivel:null, percTotal:0, pool:0 };
   }
   const clientes = parseInt(document.getElementById('input-novosClientesMkt-clientes').value) || 0;
@@ -1333,7 +1363,7 @@ function calcularKpiNovosClientesMkt() {
   if (nivel) percTotal = tiers[nivel].bonus + (ticketMedio > 130 ? tiers[nivel].adicional : 0);
   const pool = mrrAdicionado * (percTotal/100);
   elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Clientes: ${clientes} — Ticket médio: ${fmtBRL(ticketMedio)} — Bônus total: ${percTotal}%` : `Nenhum nível atingido (${clientes} clientes)`;
-  document.getElementById('tabela-novosClientesMkt').innerHTML = tabelaTiersEditavelHTML('novosClientesMkt', tiers, CONFIG_TIERS_KPI.novosClientesMkt.campos, nivel);
+  atualizarTbodyTiers(document.getElementById('tabela-novosClientesMkt'), tabelaTiersEditavelHTML('novosClientesMkt', tiers, CONFIG_TIERS_KPI.novosClientesMkt.campos, nivel));
   document.getElementById('pool-novosClientesMkt').textContent = fmtBRL(pool);
   let total = 0;
   equipesMkt.novosClientesMkt.forEach((p,i) => { const valor = valorEfetivo(p, pool * (p.percentual/100)); total += p.percentual; const inp = document.getElementById('valor-novosClientesMkt-'+i); if (inp) inp.value = fmtBRL(valor); });
@@ -1394,7 +1424,7 @@ function calcularKpiEquipeComercial() {
   const elResultado = document.getElementById('resultado-equipeComercial');
   if (!tiers) {
     elResultado.innerHTML = 'Aguardando leitura do PDF (acima)...' + linkPreencherManualmente('equipeComercial');
-    document.getElementById('tabela-equipeComercial').innerHTML = tabelaTiersEditavelHTML('equipeComercial', null, CONFIG_TIERS_KPI.equipeComercial.campos, null);
+    atualizarTbodyTiers(document.getElementById('tabela-equipeComercial'), tabelaTiersEditavelHTML('equipeComercial', null, CONFIG_TIERS_KPI.equipeComercial.campos, null));
     return { nivel:null, percTotal:0, pool:0 };
   }
   const clientes = parseInt(document.getElementById('input-equipeComercial-clientes').value) || 0;
@@ -1406,7 +1436,7 @@ function calcularKpiEquipeComercial() {
   else percTotal = tiers.padrao;
   const pool = mrrAdicionado * (percTotal/100);
   elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Clientes: ${clientes} — Ticket médio: ${fmtBRL(ticketMedio)} — Bônus total: ${percTotal}%` : `Abaixo do Bronze — bonificação padrão: ${percTotal}%`;
-  document.getElementById('tabela-equipeComercial').innerHTML = tabelaTiersEditavelHTML('equipeComercial', tiers, CONFIG_TIERS_KPI.equipeComercial.campos, nivel);
+  atualizarTbodyTiers(document.getElementById('tabela-equipeComercial'), tabelaTiersEditavelHTML('equipeComercial', tiers, CONFIG_TIERS_KPI.equipeComercial.campos, nivel));
   document.getElementById('pool-equipeComercial').textContent = fmtBRL(pool);
   let total = 0;
   equipesVendas.equipeComercial.forEach((p,i) => { const valor = valorEfetivo(p, pool * (p.percentual/100)); total += p.percentual; const inp = document.getElementById('valor-equipeComercial-'+i); if (inp) inp.value = fmtBRL(valor); });
@@ -1524,10 +1554,10 @@ function calcularComissaoIndividual() {
   if (elStatusMI && elTabelaMI) {
     if (!tiersMI) {
       elStatusMI.innerHTML = 'Aguardando leitura do PDF de KPIs por áreas (acima).' + linkPreencherManualmente('metaIndividual');
-      elTabelaMI.innerHTML = tabelaTiersEditavelHTML('metaIndividual', null, CONFIG_TIERS_KPI.metaIndividual.campos, null);
+      atualizarTbodyTiers(elTabelaMI, tabelaTiersEditavelHTML('metaIndividual', null, CONFIG_TIERS_KPI.metaIndividual.campos, null));
     } else {
       elStatusMI.textContent = 'Carregado — usado para calcular o nível automático de cada vendedor(a) abaixo.';
-      elTabelaMI.innerHTML = tabelaTiersEditavelHTML('metaIndividual', tiersMI, CONFIG_TIERS_KPI.metaIndividual.campos, null);
+      atualizarTbodyTiers(elTabelaMI, tabelaTiersEditavelHTML('metaIndividual', tiersMI, CONFIG_TIERS_KPI.metaIndividual.campos, null));
     }
   }
   vendedoresIndividuais.forEach((v, i) => {
@@ -1998,7 +2028,7 @@ function calcularUpsellEquipe() {
   const elResultado = document.getElementById('resultado-upsellEquipe');
   if (!tiers) {
     elResultado.innerHTML = 'Aguardando leitura do PDF (acima)...' + linkPreencherManualmente('upsellEquipe');
-    document.getElementById('tabela-upsellEquipe').innerHTML = tabelaTiersEditavelHTML('upsellEquipe', null, CONFIG_TIERS_KPI.upsellEquipe.campos, null);
+    atualizarTbodyTiers(document.getElementById('tabela-upsellEquipe'), tabelaTiersEditavelHTML('upsellEquipe', null, CONFIG_TIERS_KPI.upsellEquipe.campos, null));
     return { nivel:'Nenhum', percTotal:0, pool:0 };
   }
   const crescimento = parseNumeroBR(document.getElementById('input-upsellEquipe-crescimento').value);
@@ -2007,7 +2037,7 @@ function calcularUpsellEquipe() {
   const percTotal = nivel ? tiers[nivel].bonus : tiers.padrao;
   const pool = mrrUpsell * (percTotal/100);
   elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Abaixo do Bronze — bonificação padrão: ${percTotal}%`;
-  document.getElementById('tabela-upsellEquipe').innerHTML = tabelaTiersEditavelHTML('upsellEquipe', tiers, CONFIG_TIERS_KPI.upsellEquipe.campos, nivel);
+  atualizarTbodyTiers(document.getElementById('tabela-upsellEquipe'), tabelaTiersEditavelHTML('upsellEquipe', tiers, CONFIG_TIERS_KPI.upsellEquipe.campos, nivel));
   document.getElementById('pool-upsellEquipe').textContent = fmtBRL(pool);
   let total = 0;
   equipesMkt.upsellEquipe.forEach((p,i) => { const valor = valorEfetivo(p, pool*(p.percentual/100)); total += p.percentual; const inp = document.getElementById('valor-upsellEquipe-'+i); if (inp) inp.value = fmtBRL(valor); });
@@ -2035,7 +2065,7 @@ function calcularChurn() {
   const elResultado = document.getElementById('resultado-churn');
   if (!tiers) {
     elResultado.innerHTML = 'Aguardando leitura do PDF (acima)...' + linkPreencherManualmente('churn');
-    document.getElementById('tabela-churn').innerHTML = tabelaTiersEditavelHTML('churn', null, CONFIG_TIERS_KPI.churn.campos, null);
+    atualizarTbodyTiers(document.getElementById('tabela-churn'), tabelaTiersEditavelHTML('churn', null, CONFIG_TIERS_KPI.churn.campos, null));
     return { nivel:'Nenhum', percTotal:0, pool:0 };
   }
   const percChurn = parseNumeroBR(document.getElementById('input-churn-percentual').value);
@@ -2047,7 +2077,7 @@ function calcularChurn() {
   const base = mrrTotal * (percTotal/100);
   const pool = Math.max(0, base - churnRS - downsellRS);
   elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Nenhum nível atingido (Churn ${percChurn}%)`;
-  document.getElementById('tabela-churn').innerHTML = tabelaTiersEditavelHTML('churn', tiers, CONFIG_TIERS_KPI.churn.campos, nivel);
+  atualizarTbodyTiers(document.getElementById('tabela-churn'), tabelaTiersEditavelHTML('churn', tiers, CONFIG_TIERS_KPI.churn.campos, nivel));
   document.getElementById('pool-churn').textContent = fmtBRL(pool);
   let total = 0;
   equipesMkt.churn.forEach((p,i) => { const valor = valorEfetivo(p, pool*(p.percentual/100)); total += p.percentual; const inp = document.getElementById('valor-churn-'+i); if (inp) inp.value = fmtBRL(valor); });
@@ -2060,7 +2090,7 @@ function calcularNPS() {
   const elResultado = document.getElementById('resultado-nps');
   if (!tiers) {
     elResultado.innerHTML = 'Aguardando leitura do PDF (acima)...' + linkPreencherManualmente('nps');
-    document.getElementById('tabela-nps').innerHTML = tabelaTiersEditavelHTML('nps', null, CONFIG_TIERS_KPI.nps.campos, null);
+    atualizarTbodyTiers(document.getElementById('tabela-nps'), tabelaTiersEditavelHTML('nps', null, CONFIG_TIERS_KPI.nps.campos, null));
     return { nivel:'Nenhum', percTotal:0, pool:0 };
   }
   const nota = parseNumeroBR(document.getElementById('input-nps-nota').value);
@@ -2069,7 +2099,7 @@ function calcularNPS() {
   const percTotal = nivel ? tiers[nivel].bonus : tiers.padrao;
   const pool = mrrTotal * (percTotal/100);
   elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Nenhum nível atingido (NPS ${nota})`;
-  document.getElementById('tabela-nps').innerHTML = tabelaTiersEditavelHTML('nps', tiers, CONFIG_TIERS_KPI.nps.campos, nivel);
+  atualizarTbodyTiers(document.getElementById('tabela-nps'), tabelaTiersEditavelHTML('nps', tiers, CONFIG_TIERS_KPI.nps.campos, nivel));
   document.getElementById('pool-nps').textContent = fmtBRL(pool);
   let total = 0;
   equipesMkt.nps.forEach((p,i) => { const valor = valorEfetivo(p, pool*(p.percentual/100)); total += p.percentual; const inp = document.getElementById('valor-nps-'+i); if (inp) inp.value = fmtBRL(valor); });
@@ -2082,7 +2112,7 @@ function calcularHealthScore() {
   const elResultado = document.getElementById('resultado-healthScore');
   if (!tiers) {
     elResultado.innerHTML = 'Aguardando leitura do PDF (acima)...' + linkPreencherManualmente('healthScore');
-    document.getElementById('tabela-healthScore').innerHTML = tabelaTiersEditavelHTML('healthScore', null, CONFIG_TIERS_KPI.healthScore.campos, null);
+    atualizarTbodyTiers(document.getElementById('tabela-healthScore'), tabelaTiersEditavelHTML('healthScore', null, CONFIG_TIERS_KPI.healthScore.campos, null));
     return { nivel:'Nenhum', percTotal:0, pool:0 };
   }
   const nota = parseNumeroBR(document.getElementById('input-healthScore-nota').value);
@@ -2091,7 +2121,7 @@ function calcularHealthScore() {
   const percTotal = nivel ? tiers[nivel].bonus : tiers.padrao;
   const pool = mrrTotal * (percTotal/100);
   elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Nenhum nível atingido (Health Score ${nota})`;
-  document.getElementById('tabela-healthScore').innerHTML = tabelaTiersEditavelHTML('healthScore', tiers, CONFIG_TIERS_KPI.healthScore.campos, nivel);
+  atualizarTbodyTiers(document.getElementById('tabela-healthScore'), tabelaTiersEditavelHTML('healthScore', tiers, CONFIG_TIERS_KPI.healthScore.campos, nivel));
   document.getElementById('pool-healthScore').textContent = fmtBRL(pool);
   let total = 0;
   equipesMkt.healthScore.forEach((p,i) => { const valor = valorEfetivo(p, pool*(p.percentual/100)); total += p.percentual; const inp = document.getElementById('valor-healthScore-'+i); if (inp) inp.value = fmtBRL(valor); });

@@ -1120,11 +1120,14 @@ function extrairSecoesPDFAreas(texto) {
   // O PDF traz o nome da área ANTES de "Metas e Bonificações de <mês>" (ex.: "Marketing:
   // Metas e Bonificações de Julho"), e no plural ("Bonificações", não "bonificação").
   // \S* depois de "Bonifica" cobre "ção"/"ções" sem depender do acento exato.
-  const regexArea = /(Marketing|Vendas|CS e Suporte|P&D):\s*Metas e Bonifica\S*\s*de\s*\S+/gi;
+  // Em setembro o título de CS veio só como "CS: Metas e Bonificações de Setembro" (em julho era
+  // "CS e Suporte: ..."), e a seção inteira de CS deixou de ser reconhecida — por isso aceitamos
+  // as duas formas e guardamos tudo sob o nome "CS e Suporte".
+  const regexArea = /(Marketing|Vendas|CS e Suporte|CS|P&D):\s*Metas e Bonifica\S*\s*de\s*\S+/gi;
   const matches = [...texto.matchAll(regexArea)].sort((a,b) => a.index - b.index);
   const secoes = {};
   matches.forEach((m, idx) => {
-    const nome = m[1];
+    const nome = /^CS/i.test(m[1]) ? 'CS e Suporte' : m[1];
     const inicio = m.index;
     const fim = idx + 1 < matches.length ? matches[idx+1].index : texto.length;
     secoes[nome] = (secoes[nome] || '') + texto.slice(inicio, fim) + ' ';

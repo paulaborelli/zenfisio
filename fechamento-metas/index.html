@@ -1134,6 +1134,31 @@ function extrairSecoesPDFAreas(texto) {
   });
   return secoes;
 }
+// Lê a divisão da equipe escrita no PDF, ex.: "Coordenador(a): Taiz (27,5%) Supervisor(a):
+// Viviane (22,5%) | Analista: Ana Paula (8,5%) Financeiro e Cobrança: Laura (6%) e Franciele (4%)".
+// Cada "(N%)" fecha uma pessoa; o nome é o texto logo antes dele, sem o cargo ("Coordenador(a):"),
+// sem o conector anterior ("e", "&", ",", "|") — assim funciona pra qualquer cargo/ordem/pessoa nova.
+function extrairEquipePDF(trecho) {
+  const lista = [];
+  const re = /\(\s*(\d+(?:[.,]\d+)?)\s*%\s*\)/g;
+  let ult = 0, m;
+  while ((m = re.exec(trecho)) !== null) {
+    const nome = trecho.slice(ult, m.index).split(/[:|,&]| e /).pop().trim();
+    ult = m.index + m[0].length;
+    if (nome) lista.push({ nome, percentual: parseFloat(m[1].replace(',', '.')) });
+  }
+  return lista;
+}
+// Pega o pedaço do texto entre o início (título/rótulo) e o primeiro dos marcadores de fim.
+function trechoEntre(texto, inicioRegexOuTexto, fimMarcadores, maxChars) {
+  let idx, tamInicio;
+  if (inicioRegexOuTexto instanceof RegExp) { const m = texto.match(inicioRegexOuTexto); if (!m) return ''; idx = m.index; tamInicio = m[0].length; }
+  else { idx = texto.indexOf(inicioRegexOuTexto); if (idx === -1) return ''; tamInicio = inicioRegexOuTexto.length; }
+  let t = texto.slice(idx + tamInicio, idx + tamInicio + (maxChars || 900));
+  let fim = t.length;
+  fimMarcadores.forEach(f => { const i = t.search(f); if (i !== -1 && i < fim) fim = i; });
+  return t.slice(0, fim);
+}
 function extrairKpiGenerico(texto, tituloKpi) {
   const idx0 = texto.indexOf(tituloKpi);
   if (idx0 === -1) return null;
@@ -1189,6 +1214,39 @@ async function processarPDFAreas(event) {
     // preenchido na mão em vez de apagar — e anota o nome pra avisar na tela no final.
     const naoLidos = [];
     const manterSeFalhar = (nome, novo, atual) => { if (!novo) naoLidos.push(nome); return novo || atual; };
+    // A divisão (%) de cada equipe SEMPRE vem do PDF (é o que vale); a lista padrão do código é só
+    // o ponto de partida. Só aplica se a soma der 100% — senão mantém o que estava e avisa.
+    const equipesAtualizadas = [], equipesProblema = [];
+    const usarEquipe = (rotulo, chaves, trecho) => {
+      const lista = extrairEquipePDF(trecho || '');
+      const soma = lista.reduce((t, p) => t + p.percentual, 0);
+      const somaTxt = String(+soma.toFixed(2)).replace('.', ',');
+      if (!lista.length || Math.abs(soma - 100) > 5) {
+        // Soma muito longe de 100% = quase certamente leitura incompleta: não aplica, mantém o que estava.
+        equipesProblema.push(`${rotulo} — NÃO aplicada (${lista.length ? 'a soma lida deu ' + somaTxt + '%' : 'divisão não encontrada'})`);
+        return;
+      }
+      // Soma levemente diferente de 100% = o próprio PDF está inconsistente. Aplica exatamente o que
+      // está no PDF (é a regra), mas avisa pra a pessoa corrigir a fonte ou ajustar na mão.
+      if (Math.abs(soma - 100) > 0.01) equipesProblema.push(`${rotulo} — aplicada como está no PDF, mas os percentuais do PDF somam ${somaTxt}% (não 100%)`);
+      let mudou = false;
+      chaves.forEach(ch => {
+        const atual = ch === 'equipeComercial' ? equipesVendas.equipeComercial : equipesMkt[ch];
+        const nova = lista.map(p => {
+          const o = { nome: p.nome, percentual: p.percentual };
+          const antigo = atual.find(a => a.nome === p.nome);
+          if (antigo && antigo.valorManual !== undefined) o.valorManual = antigo.valorManual;
+          if (antigo && antigo.valorRestaurado !== undefined) o.valorRestaurado = antigo.valorRestaurado;
+          return o;
+        });
+        const chave = arr => JSON.stringify(arr.map(a => [a.nome, a.percentual]));
+        if (chave(atual) !== chave(nova)) mudou = true;
+        if (ch === 'equipeComercial') { equipesVendas.equipeComercial = nova; renderEquipeVendasEquipe(); }
+        else { equipesMkt[ch] = nova; renderEquipeMkt(ch); }
+      });
+      if (mudou) equipesAtualizadas.push(rotulo);
+    };
+    const FIM_EQUIPE = [/Bonifica[cç][aã]o padr/i, /Bonifica[cç][aã]o adicional/i, /Meta Bronze/i];
     const textoMkt = secoesPDFAreas['Marketing'] || '';
     tiersMkt.cadastroTeste   = manterSeFalhar('Cadastro p/ teste', extrairKpiTiers(textoMkt, 'Novo cadastro para teste do ZenFisio', 'cadastros', false), tiersMkt.cadastroTeste);
     tiersMkt.extensaoTeste    = manterSeFalhar('Extensão de teste', extrairKpiTiers(textoMkt, 'Novo teste do ZenFisio por mais 7 dias', 'cadastros', false), tiersMkt.extensaoTeste);
@@ -1196,6 +1254,9 @@ async function processarPDFAreas(event) {
     // Um PDF novo com tiers válidos tem prioridade sobre qualquer valor "protegido"
     // (valorManual) que tenha vindo de uma restauração de mês já salvo — senão, depois de
     // corrigir a leitura do PDF, o valor de cada pessoa continuava travado no 0 antigo.
+    usarEquipe('Cadastro p/ teste', ['cadastroTeste'], trechoEntre(textoMkt, 'Novo cadastro para teste do ZenFisio', FIM_EQUIPE));
+    usarEquipe('Extensão de teste', ['extensaoTeste'], trechoEntre(textoMkt, 'Novo teste do ZenFisio por mais 7 dias', FIM_EQUIPE));
+    usarEquipe('Novos clientes (Mkt)', ['novosClientesMkt'], trechoEntre(textoMkt, 'Novos clientes: Equipe de Marketing', FIM_EQUIPE));
     limparValorManualDaEquipe('cadastroTeste', tiersMkt.cadastroTeste);
     limparValorManualDaEquipe('extensaoTeste', tiersMkt.extensaoTeste);
     limparValorManualDaEquipe('novosClientesMkt', tiersMkt.novosClientesMkt);
@@ -1206,6 +1267,7 @@ async function processarPDFAreas(event) {
     // ── Vendas ──
     const textoVendas = secoesPDFAreas['Vendas'] || '';
     tiersVendas.equipeComercial = manterSeFalhar('Novos clientes (Equipe Comercial)', extrairKpiTiers(textoVendas, 'Novos clientes: Equipe Comercial', 'clientes', true), tiersVendas.equipeComercial);
+    usarEquipe('Equipe Comercial (Vendas)', ['equipeComercial'], trechoEntre(textoVendas, 'Novos clientes: Equipe Comercial', FIM_EQUIPE));
     if (tiersVendas.equipeComercial) (equipesVendas.equipeComercial || []).forEach(p => { delete p.valorManual; delete p.valorRestaurado; });
 
     const mPerc = textoVendas.match(/Principal:\s*(\d+)%\s*do MRR adicionado\s*Principal:\s*(\d+)%\s*do MRR adicionado\s*Assistente:\s*(\d+)%\s*do MRR adicionado/i);
@@ -1245,6 +1307,9 @@ async function processarPDFAreas(event) {
     tiersCS.churn        = manterSeFalhar('Churn', extrairKpiGenerico(textoCS, 'Churn (cancelamentos)'), tiersCS.churn);
     tiersCS.nps          = manterSeFalhar('NPS (CS)', extrairKpiGenerico(textoCS, 'NPS (Net Promoter Score)'), tiersCS.nps);
     tiersCS.healthScore  = manterSeFalhar('Health Score (CS)', extrairKpiGenerico(textoCS, 'Health Score (saúde do cliente)'), tiersCS.healthScore);
+    usarEquipe('UpSell (CS)', ['upsellEquipe'], trechoEntre(textoCS, 'UpSell: Equipe', FIM_EQUIPE));
+    usarEquipe('Churn / NPS / Health Score (CS)', ['churn','nps','healthScore'],
+      trechoEntre(textoCS, /Bonifica[cç][aã]o proporcional da equipe de CS[^:]*:/i, [/Churn \(/i, /NPS \(/i, ...FIM_EQUIPE]));
     limparValorManualDaEquipe('upsellEquipe', tiersCS.upsellEquipe);
     limparValorManualDaEquipe('churn', tiersCS.churn);
     limparValorManualDaEquipe('nps', tiersCS.nps);
@@ -1256,6 +1321,8 @@ async function processarPDFAreas(event) {
     tiersPD.nps            = manterSeFalhar('NPS (P&D)', extrairKpiGenerico(textoPD, 'NPS (Net Promoter Score)'), tiersPD.nps);
     tiersPD.healthScore    = manterSeFalhar('Health Score (P&D)', extrairKpiGenerico(textoPD, 'Health Score (saúde do cliente)'), tiersPD.healthScore);
     tiersPD.infraestrutura = manterSeFalhar('Infraestrutura', extrairKpiGenerico(textoPD, 'Índice de Eficiência de Infraestrutura'), tiersPD.infraestrutura);
+    usarEquipe('P&D (NPS / Health Score / Infraestrutura)', ['npsPD','healthScorePD','infraestrutura'],
+      trechoEntre(textoPD, /Bonifica[cç][aã]o proporcional da equipe de P&D[^:]*:/i, [/NPS \(/i, /Health Score \(/i, ...FIM_EQUIPE]));
     limparValorManualDaEquipe('npsPD', tiersPD.nps);
     limparValorManualDaEquipe('healthScorePD', tiersPD.healthScore);
     limparValorManualDaEquipe('infraestrutura', tiersPD.infraestrutura);
@@ -1266,7 +1333,9 @@ async function processarPDFAreas(event) {
     const total = 12, faltou = naoLidos;
     document.getElementById('pdf-areas-status').innerHTML = comAvisoOCR(
       `Arquivo lido — ${total - faltou.length}/${total} tabelas de metas identificadas.` +
-      (faltou.length ? ` <strong>Não identificadas (preencha na mão na tabela do KPI):</strong> ${faltou.join(', ')}.` : ''), ocr);
+      (faltou.length ? ` <strong>Não identificadas (preencha na mão na tabela do KPI):</strong> ${faltou.join(', ')}.` : '') +
+      (equipesAtualizadas.length ? ` Divisão das equipes atualizada conforme o PDF: ${equipesAtualizadas.join('; ')}.` : ' Divisão das equipes conferida com o PDF — já estava igual.') +
+      (equipesProblema.length ? ` <strong>Atenção na divisão das equipes (confira):</strong> ${equipesProblema.join('; ')}.` : ''), ocr);
   } catch(e) { document.getElementById('pdf-areas-status').textContent = 'Erro ao ler PDF: ' + e.message; }
 }
 

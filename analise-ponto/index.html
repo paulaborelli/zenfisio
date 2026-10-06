@@ -945,6 +945,15 @@ function consolidarPorIntervalo(eventos) {
   return resultado;
 }
 
+// Feriados NACIONAIS reconhecidos pelo nome impresso no espelho (ex: "Independência
+// do Brasil", "Tiradentes"). São sempre feriado, mesmo com poucos espelhos no
+// lote — não dependem de aparecer pra várias pessoas. Feriados estaduais e
+// municipais ficam de fora de propósito: quando o expediente é só meio turno e
+// o outro é abonado, isso aparece como abono parcial (e deve contar como abono).
+function ehFeriadoNacionalPorNome(motivo) {
+  return /confraterniza[çc][ãa]o universal|ano novo|tiradentes|dia (mundial )?do trabalh|independ[êe]ncia|nossa senhora ap|\bfinados\b|proclama[çc][ãa]o da rep|consci[êe]ncia negra|\bnatal\b|paix[ãa]o de cristo|sexta-feira santa/i.test(motivo || '');
+}
+
 function construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nomes, pontualidadePorNome) {
   // --- Eventos de ausência vindos dos espelhos individuais (fonte mais confiável) ---
   // 1. Coleta todos os eventos de todos os colaboradores com ponto individual.
@@ -971,6 +980,7 @@ function construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nome
     // absoluto de pessoas (3) — com poucos pontos individuais no mês (ex: só
     // 2 enviados), uma simples coincidência de datas entre 2 pessoas não deve
     // virar "feriado da empresa" por engano.
+    if (ehFeriadoNacionalPorNome(motivo)) return true;
     if (totalArquivosIndividuais < 2) return false;
     const k = dia + '|' + motivo;
     const contagem = contagemPorDiaMotivo[k] || 0;
@@ -1010,7 +1020,7 @@ function construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nome
   // 4. Para quem NÃO tem ponto individual neste mês, mantém o método antigo
   // (cruzamento por nome com o relatório de Ausências agregado) como fallback.
   const nomesComIndividual = new Set(Object.keys(pontualidadePorNome));
-  const ausenciasAntigasDetalhes = (ausencias.detalhes || []).filter(d => !nomesComIndividual.has(chave(d.nome)));
+  const ausenciasAntigasDetalhes = (ausencias.detalhes || []).filter(d => !nomesComIndividual.has(chave(d.nome)) && !ehFeriadoNacionalPorNome(d.motivo));
   const ausenciasAntigasCategorias = {};
   for (const d of ausenciasAntigasDetalhes) {
     const categoria = categorizarMotivo(d.motivo);

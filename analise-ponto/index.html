@@ -374,6 +374,8 @@
         <div class="status-msg" id="statusIndividual">Nenhum ponto individual carregado ainda.</div>
       </div>
 
+      <div id="conferenciaImportacao" class="hidden"></div>
+
       <div class="confirma-periodo hidden" id="confirmaPeriodo">
         <label>Mês/ano detectado:</label>
         <select id="selMes"></select>
@@ -913,6 +915,36 @@ function parseIndividual(texto) {
 }
 
 // ---------- MONTAGEM DO RESUMO NORMALIZADO ----------
+// Verifica se diaAtual (formato "dd/mm") é exatamente 1 dia depois de
+// diaAnterior — usa um ano fixo bissexto só pra fazer a conta de datas
+// certa mesmo em virada de mês (ex: 31/07 -> 01/08).
+function diaSeguinte(diaAnteriorStr, diaAtualStr) {
+  const [d1, m1] = diaAnteriorStr.split('/').map(Number);
+  const [d2, m2] = diaAtualStr.split('/').map(Number);
+  const dt1 = new Date(2024, m1 - 1, d1);
+  const dt2 = new Date(2024, m2 - 1, d2);
+  const diffDias = Math.round((dt2 - dt1) / 86400000);
+  return diffDias === 1;
+}
+
+// Agrupa dias consecutivos da MESMA pessoa e do MESMO motivo numa linha só
+// ("início – fim"), em vez de uma linha por dia — pra férias/licenças longas
+// não virarem uma lista enorme de datas repetidas no detalhamento.
+function consolidarPorIntervalo(eventos) {
+  const resultado = [];
+  let atual = null;
+  for (const ev of eventos) {
+    if (atual && atual.nome === ev.nome && atual.motivo === ev.motivo && diaSeguinte(atual.fimData, ev.data)) {
+      atual.fimData = ev.data;
+    } else {
+      if (atual) resultado.push({ nome: atual.nome, motivo: atual.motivo, data: atual.inicioData === atual.fimData ? atual.inicioData : `${atual.inicioData} – ${atual.fimData}` });
+      atual = { nome: ev.nome, motivo: ev.motivo, inicioData: ev.data, fimData: ev.data };
+    }
+  }
+  if (atual) resultado.push({ nome: atual.nome, motivo: atual.motivo, data: atual.inicioData === atual.fimData ? atual.inicioData : `${atual.inicioData} – ${atual.fimData}` });
+  return resultado;
+}
+
 function construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nomes, pontualidadePorNome) {
   // --- Eventos de ausência vindos dos espelhos individuais (fonte mais confiável) ---
   // 1. Coleta todos os eventos de todos os colaboradores com ponto individual.
@@ -985,7 +1017,7 @@ function construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nome
     ausenciasAntigasCategorias[categoria] = (ausenciasAntigasCategorias[categoria] || 0) + 1;
   }
 
-  const ausenciasDetalhesFinal = [...ausenciasIndividuaisDetalhes, ...abonosParciaisDetalhes, ...ausenciasAntigasDetalhes];
+  const ausenciasDetalhesFinal = [...consolidarPorIntervalo(ausenciasIndividuaisDetalhes), ...abonosParciaisDetalhes, ...ausenciasAntigasDetalhes];
   const ausenciasCategoriasFinal = {};
   for (const [cat, n] of Object.entries(ausenciasIndividuaisCategorias)) ausenciasCategoriasFinal[cat] = (ausenciasCategoriasFinal[cat] || 0) + n;
   if (abonosParciaisDetalhes.length) ausenciasCategoriasFinal['Abono parcial'] = abonosParciaisDetalhes.length;
@@ -1056,6 +1088,121 @@ function construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nome
 }
 
 // ---------- PROCESSAMENTO ----------
+// ---------- CONFERÊNCIA DE IMPORTAÇÃO ----------
+// SOMENTE LEITURA: estas funções só olham o texto do espelho e o que o painel
+// já leu, e produzem avisos na tela. Elas NÃO alteram nenhum cálculo, nenhum
+// dado salvo no histórico e nenhuma função existente.
+let conferenciaImportacao = [];
+
+function escaparHtmlConf(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// Lê o "Período: 01/09/2026 a 30/09/2026" do cabeçalho do espelho.
+function extrairPeriodoEspelho(texto) {
+  const t = texto.replace(/\s+/g, ' ');
+  const m = t.match(/Per[ií]odo:\s*(\d{2})\/(\d{2})\/(\d{4})\s*a\s*(\d{2})\/(\d{2})\/(\d{4})/i);
+  if (!m) return null;
+  const ini = new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+  const fim = new Date(Number(m[6]), Number(m[5]) - 1, Number(m[4]));
+  const dias = Math.round((fim - ini) / 86400000) + 1;
+  return { mes: Number(m[2]), ano: Number(m[3]), inicio: `${m[1]}/${m[2]}/${m[3]}`, fim: `${m[4]}/${m[5]}/${m[6]}`, dias };
+}
+
+// Confere um espelho individual contra os totais impressos no próprio rodapé.
+// Devolve { arquivo, nome, periodo, avisos: [textos] }.
+function conferirEspelho(nomeArquivo, texto, resultado) {
+  const avisos = [];
+  const periodo = extrairPeriodoEspelho(texto);
+  if (!resultado) {
+    avisos.push('Arquivo não reconhecido como espelho individual (não achei o nome do colaborador ou a jornada). Ele NÃO entrou nos cálculos.');
+    return { arquivo: nomeArquivo, nome: null, periodo, avisos };
+  }
+  if (!periodo) avisos.push('Não encontrei o período (datas de início e fim) no cabeçalho do arquivo.');
+
+  if (resultado.saldoMin === null || resultado.saldoMin === undefined) {
+    avisos.push('Sem o campo "Saldo:" no rodapé — o Banco de horas deste colaborador não vem deste arquivo.');
+  }
+
+  // Coerência do próprio rodapé: B.Total deve ser B.Crédito + B.Débito.
+  if (resultado.bancoTotal && resultado.creditoMin !== null && resultado.debitoMin !== null) {
+    const totalRodape = paraMinutos(resultado.bancoTotal);
+    const soma = resultado.creditoMin + resultado.debitoMin;
+    if (Math.abs(totalRodape - soma) > 1) {
+      avisos.push(`O rodapé não fecha: B.Crédito (${formatarMinutos(resultado.creditoMin)}) + B.Débito (${formatarMinutos(resultado.debitoMin)}) deveria dar o B.Total (${formatarMinutos(totalRodape)}). Algum número pode ter sido lido errado.`);
+    }
+  }
+
+  // Parte da tabela de dias (sem o rodapé de totais).
+  let tabela = texto.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+  const fimTabela = tabela.search(/Previstas:\s*-?\d/i);
+  if (fimTabela > -1) tabela = tabela.slice(0, fimTabela);
+
+  // Soma dos débitos dia a dia (valores com sinal "-") deve bater com o B.Débito do rodapé.
+  if (resultado.debitoMin !== null && resultado.debitoMin !== undefined) {
+    // Só a tabela de dias (a partir da primeira data) e só valores negativos
+    // de verdade (hífen colado ao número e precedido de espaço) — assim o
+    // hífen do cabeçalho da jornada ("08:00-12:00") não é contado.
+    const iniTabela = tabela.search(/\d{2}\/\d{2}\s+(?:seg|ter|qua|qui|sex|s[áa]b|dom)\s/i);
+    const soTabela = iniTabela > -1 ? tabela.slice(iniTabela) : tabela;
+    const negativos = soTabela.match(/\s-\d{1,3}:\d{2}/g) || [];
+    const somaDebitosDias = negativos.reduce((a, t) => a + Math.abs(paraMinutos(t.trim())), 0);
+    if (Math.abs(somaDebitosDias - Math.abs(resultado.debitoMin)) > 1) {
+      avisos.push(`Os débitos dia a dia somam ${formatarMinutos(somaDebitosDias)}, mas o rodapé diz ${formatarMinutos(Math.abs(resultado.debitoMin))}. Alguma linha pode não ter sido lida.`);
+    }
+  }
+
+  // Quantidade de dias lidos deve ser a quantidade de dias do período.
+  if (periodo) {
+    const marcadores = tabela.match(/\d{2}\/\d{2}\s+(?:seg|ter|qua|qui|sex|s[áa]b|dom)\s/gi) || [];
+    if (marcadores.length !== periodo.dias) {
+      avisos.push(`Li ${marcadores.length} dias na tabela, mas o período (${periodo.inicio} a ${periodo.fim}) tem ${periodo.dias}. Algum dia pode ter ficado de fora.`);
+    }
+  }
+  return { arquivo: nomeArquivo, nome: resultado.nome, periodo, avisos };
+}
+
+// Mostra, perto do botão de salvar, o resultado da conferência dos espelhos
+// individuais. Só lê e exibe — não altera nenhum dado.
+function renderConferenciaImportacao() {
+  const el = document.getElementById('conferenciaImportacao');
+  if (!el) return;
+  if (!conferenciaImportacao.length) { el.classList.add('hidden'); el.innerHTML = ''; return; }
+  const mesSel = Number(document.getElementById('selMes').value);
+  const anoSel = Number(document.getElementById('selAno').value);
+  const pad = n => String(n).padStart(2, '0');
+  const itens = conferenciaImportacao.map(c => {
+    const avisos = c.avisos.slice();
+    if (c.periodo && mesSel && anoSel && (c.periodo.mes !== mesSel || c.periodo.ano !== anoSel)) {
+      avisos.unshift(`Este espelho é do período ${c.periodo.inicio} a ${c.periodo.fim}, mas você está salvando como ${pad(mesSel)}/${anoSel}.`);
+    }
+    return { arquivo: c.arquivo, nome: c.nome, periodo: c.periodo, avisos };
+  });
+  const comAviso = itens.filter(i => i.avisos.length);
+  const contagem = {};
+  itens.forEach(i => { if (i.periodo) { const k = pad(i.periodo.mes) + '/' + i.periodo.ano; contagem[k] = (contagem[k] || 0) + 1; } });
+  const periodos = Object.entries(contagem).map(([k, n]) => `${k} (${n} arquivo${n > 1 ? 's' : ''})`).join(', ') || 'não identificado';
+  const ok = comAviso.length === 0;
+  const estilo = ok
+    ? 'background:#EAF3DE; color:#27500A; border:1px solid #CFE3B8;'
+    : 'background:#FAEEDA; color:#854F0B; border:1px solid #F0D9AE;';
+  let html = `<div style="${estilo} border-radius:10px; padding:12px 16px; margin-bottom:1.25rem; font-size:0.85rem;">`;
+  html += `<div style="font-weight:600; margin-bottom:4px;">${ok ? '✓' : '⚠️'} Conferência dos pontos individuais: ${itens.length} arquivo(s) lido(s)${ok ? ', nenhuma divergência encontrada' : `, ${comAviso.length} com aviso`}</div>`;
+  html += `<div>Período(s) dos espelhos: ${escaparHtmlConf(periodos)}</div>`;
+  if (!ok) {
+    html += '<ul style="margin:8px 0 0; padding-left:18px;">';
+    comAviso.forEach(i => {
+      html += `<li style="margin-bottom:4px;"><b>${escaparHtmlConf(i.nome || i.arquivo)}</b>${i.nome ? ` <span style="opacity:.75;">(${escaparHtmlConf(i.arquivo)})</span>` : ''}<br>${i.avisos.map(escaparHtmlConf).join('<br>')}</li>`;
+    });
+    html += '</ul>';
+  }
+  html += '</div>';
+  el.innerHTML = html;
+  el.classList.remove('hidden');
+}
+document.getElementById('selMes')?.addEventListener('change', () => { try { renderConferenciaImportacao(); } catch (e) {} });
+document.getElementById('selAno')?.addEventListener('input', () => { try { renderConferenciaImportacao(); } catch (e) {} });
+
 async function processarArquivos() {
   const statusMsg = document.getElementById('statusMsg');
   document.getElementById('processBtn').disabled = true;
@@ -1079,6 +1226,7 @@ async function processarArquivos() {
   const ausencias = dados.ausencias ? parseAusencias(dados.ausencias, nomes) : { categorias: {}, detalhes: [] };
 
   const pontualidadePorNome = {};
+  conferenciaImportacao = [];
   if (arquivosIndividuais.length) {
     statusMsg.textContent = `Lendo ${arquivosIndividuais.length} ponto(s) individual(is)...`;
     for (const file of arquivosIndividuais) {
@@ -1086,8 +1234,10 @@ async function processarArquivos() {
         const texto = await extrairTexto(file);
         const resultado = parseIndividual(texto);
         if (resultado) pontualidadePorNome[chave(resultado.nome)] = resultado;
+        try { conferenciaImportacao.push(conferirEspelho(file.name, texto, resultado)); } catch (eConf) { console.warn('Conferência falhou', file.name, eConf); }
       } catch (e) {
         console.warn('Falha ao processar ponto individual', file.name, e);
+        conferenciaImportacao.push({ arquivo: file.name, nome: null, periodo: null, avisos: ['Não consegui ler este arquivo. Ele NÃO entrou nos cálculos.'] });
       }
     }
   }
@@ -1104,6 +1254,7 @@ async function processarArquivos() {
   document.getElementById('selAno').value = anoDetectado;
   document.getElementById('confirmaPeriodo').classList.remove('hidden');
   document.getElementById('salvarStatus').textContent = '';
+  try { renderConferenciaImportacao(); } catch (e) { console.warn('Conferência não pôde ser exibida', e); }
 
   statusMsg.textContent = `Pronto — ${Object.keys(dados).length} de 6 relatórios processados. Confira o mês antes de salvar.`;
   document.getElementById('processBtn').disabled = false;

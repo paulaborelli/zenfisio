@@ -401,7 +401,7 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
       <div class="card"><h2 class="acordeao-titulo" onclick="toggleAcordeao(this)">KPI 1 — UpSell: Equipe <span class="acordeao-seta">▾</span></h2><div class="acordeao-corpo" style="display:none;">
         <div class="field">
           <label>PDF "CS: UpSell"</label>
-          <input type="file" accept="application/pdf,image/png,image/jpeg" onchange="processarUpsellEquipePDF(event)"/><button type="button" class="btn-remover-arquivo" onclick="limparCampoArquivo(this, 'status-upsell-equipe-pdf', 'Preenche o campo "MRR adicionado com UpSell" abaixo.')" title="Remover arquivo">🗑️ Remover</button>
+          <input type="file" accept="application/pdf,image/png,image/jpeg" onchange="processarUpsellEquipePDF(event)"/><button type="button" class="btn-remover-arquivo" onclick="limparCampoArquivo(this, 'status-upsell-equipe-pdf', 'Preenche o campo &quot;MRR adicionado com UpSell&quot; abaixo.', 'input-upsellEquipe-mrr')" title="Remover arquivo">🗑️ Remover</button>
           <div class="hint" id="status-upsell-equipe-pdf">Preenche o campo "MRR adicionado com UpSell" abaixo.</div>
         </div>
         <div class="field-row">
@@ -430,12 +430,12 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
         <div class="field-row">
           <div class="field">
             <label>PDF "Churn (cancelamentos)"</label>
-            <input type="file" accept="application/pdf,image/png,image/jpeg" onchange="processarChurnPDF(event)"/><button type="button" class="btn-remover-arquivo" onclick="limparCampoArquivo(this, 'status-churn-pdf', 'Preenche o campo "Churn em R$" abaixo.')" title="Remover arquivo">🗑️ Remover</button>
+            <input type="file" accept="application/pdf,image/png,image/jpeg" onchange="processarChurnPDF(event)"/><button type="button" class="btn-remover-arquivo" onclick="limparCampoArquivo(this, 'status-churn-pdf', 'Preenche o campo &quot;Churn em R$&quot; abaixo.', 'input-churn-valor')" title="Remover arquivo">🗑️ Remover</button>
             <div class="hint" id="status-churn-pdf">Preenche o campo "Churn em R$" abaixo.</div>
           </div>
           <div class="field">
             <label>PDF "CS: DownSell"</label>
-            <input type="file" accept="application/pdf,image/png,image/jpeg" onchange="processarDownsellPDF(event)"/><button type="button" class="btn-remover-arquivo" onclick="limparCampoArquivo(this, 'status-downsell-pdf', 'Preenche o campo "DownSell em R$" abaixo.')" title="Remover arquivo">🗑️ Remover</button>
+            <input type="file" accept="application/pdf,image/png,image/jpeg" onchange="processarDownsellPDF(event)"/><button type="button" class="btn-remover-arquivo" onclick="limparCampoArquivo(this, 'status-downsell-pdf', 'Preenche o campo &quot;DownSell em R$&quot; abaixo.', 'input-churn-downsell')" title="Remover arquivo">🗑️ Remover</button>
             <div class="hint" id="status-downsell-pdf">Preenche o campo "DownSell em R$" abaixo.</div>
           </div>
         </div>
@@ -1806,11 +1806,23 @@ function extrairRealizadoTabelaTopo(texto, tipo) {
   if (!m) return null;
   return parseFloat(m[1].replace(/\./g,'').replace(',', '.'));
 }
-function limparCampoArquivo(btn, hintId, textoPadrao) {
+function limparCampoArquivo(btn, hintId, textoPadrao, campoId) {
   const input = btn.previousElementSibling;
   if (input && input.tagName === 'INPUT') input.value = '';
   const hint = document.getElementById(hintId);
   if (hint) hint.textContent = textoPadrao;
+  // Se o arquivo tinha preenchido um campo de valor (ex.: DownSell em R$) e esse campo ainda está
+  // exatamente como o arquivo deixou, esvazia também e recalcula — senão o número de um arquivo
+  // "removido" continuava valendo escondido. Se a pessoa já digitou outro valor por cima, esse
+  // valor dela é respeitado e NÃO é apagado.
+  if (campoId) {
+    const campo = document.getElementById(campoId);
+    if (campo && campo.dataset && campo.dataset.valorDoArquivo !== undefined && campo.value === campo.dataset.valorDoArquivo) {
+      campo.value = '';
+      if (typeof recalcularCS === 'function') recalcularCS();
+    }
+    if (campo && campo.dataset) delete campo.dataset.valorDoArquivo;
+  }
 }
 function fecharAcordeaoDoElemento(elId) {
   const el = document.getElementById(elId);
@@ -2012,7 +2024,7 @@ async function processarChurnPDF(event) {
   try {
     const { texto, ocr } = await extrairTextoArquivo(file);
     const total = parseTotalGeralPDF(texto);
-    if (total !== null) { document.getElementById('input-churn-valor').value = total.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); document.getElementById('status-churn-pdf').innerHTML = comAvisoOCR(`Arquivo lido — Total: ${fmtBRL(total)}`, ocr); recalcularCS(); }
+    if (total !== null) { document.getElementById('input-churn-valor').value = total.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); document.getElementById('input-churn-valor').dataset.valorDoArquivo = document.getElementById('input-churn-valor').value; document.getElementById('status-churn-pdf').innerHTML = comAvisoOCR(`Arquivo lido — Total: ${fmtBRL(total)}`, ocr); recalcularCS(); }
     else document.getElementById('status-churn-pdf').textContent = 'Não consegui encontrar o total no arquivo.';
   } catch(e) { document.getElementById('status-churn-pdf').textContent = 'Erro ao ler arquivo: ' + e.message; }
 }
@@ -2022,7 +2034,7 @@ async function processarDownsellPDF(event) {
   try {
     const { texto, ocr } = await extrairTextoArquivo(file);
     const total = parseTotalGeralPDF(texto);
-    if (total !== null) { document.getElementById('input-churn-downsell').value = total.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); document.getElementById('status-downsell-pdf').innerHTML = comAvisoOCR(`Arquivo lido — Total: ${fmtBRL(total)}`, ocr); recalcularCS(); }
+    if (total !== null) { document.getElementById('input-churn-downsell').value = total.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); document.getElementById('input-churn-downsell').dataset.valorDoArquivo = document.getElementById('input-churn-downsell').value; document.getElementById('status-downsell-pdf').innerHTML = comAvisoOCR(`Arquivo lido — Total: ${fmtBRL(total)}`, ocr); recalcularCS(); }
     else document.getElementById('status-downsell-pdf').textContent = 'Não consegui encontrar o total no arquivo.';
   } catch(e) { document.getElementById('status-downsell-pdf').textContent = 'Erro ao ler arquivo: ' + e.message; }
 }
@@ -2032,7 +2044,7 @@ async function processarUpsellEquipePDF(event) {
   try {
     const { texto, ocr } = await extrairTextoArquivo(file);
     const total = parseTotalGeralPDF(texto);
-    if (total !== null) { document.getElementById('input-upsellEquipe-mrr').value = total.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); document.getElementById('status-upsell-equipe-pdf').innerHTML = comAvisoOCR(`Arquivo lido — Total: ${fmtBRL(total)}`, ocr); recalcularCS(); }
+    if (total !== null) { document.getElementById('input-upsellEquipe-mrr').value = total.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); document.getElementById('input-upsellEquipe-mrr').dataset.valorDoArquivo = document.getElementById('input-upsellEquipe-mrr').value; document.getElementById('status-upsell-equipe-pdf').innerHTML = comAvisoOCR(`Arquivo lido — Total: ${fmtBRL(total)}`, ocr); recalcularCS(); }
     else document.getElementById('status-upsell-equipe-pdf').textContent = 'Não consegui encontrar o total no arquivo.';
   } catch(e) { document.getElementById('status-upsell-equipe-pdf').textContent = 'Erro ao ler PDF: ' + e.message; }
 }

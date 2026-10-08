@@ -65,6 +65,11 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
 .produto-table input[type=number], .produto-table input[type=text] { width: 100%; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; }
 .produto-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .produto-table td.check { text-align: center; }
+.tab-vend { table-layout: fixed; }
+.tab-vend th, .tab-vend td { padding: 8px 5px; }
+.tab-vend th:nth-child(1) { width: 17%; } .tab-vend th:nth-child(2) { width: 15%; } .tab-vend th:nth-child(3), .tab-vend th:nth-child(4), .tab-vend th:nth-child(5) { width: 8%; } .tab-vend th:nth-child(6) { width: 12%; } .tab-vend th:nth-child(7) { width: 15%; } .tab-vend th:nth-child(8) { width: 16%; } .tab-vend th:nth-child(9) { width: 5%; }
+.tab-vend select { width: 100%; font-size: 12px; }
+.tab-vend input[type=text] { padding: 6px 5px; }
 .produto-table input[type=checkbox] { width: 18px; height: 18px; }
 
 .resultado-nivel, .resultado-kpi { text-align: center; padding: 16px; border-radius: var(--radius-sm); margin-bottom: 16px; background: var(--accent-light); font-size: 14px; }
@@ -383,11 +388,15 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
         </table>
         <div class="hint" style="margin-bottom:16px;">O "Nível" de cada vendedor(a) na tabela abaixo é calculado a partir do PDF "Meta individual de venda" comparado com a tabela acima — mas fica com um seletor "Forçar nível" pra usar quando a leitura falhar ou vier incompleta.</div>
 
-        <table class="produto-table" id="tabela-vendedores">
-          <thead><tr><th>Vendedor(a)</th><th>Comissão base (R$)</th><th>Melhor do mês</th><th>Melhor 2 meses</th><th>Melhor 3 meses</th><th>Nível (automático)</th><th>Forçar nível</th><th>Valor final</th><th></th></tr></thead>
+        <table class="produto-table tab-vend" id="tabela-vendedores">
+          <thead><tr><th>Vendedor(a)</th><th>Comissão base (R$)</th><th title="Melhor do mês">Mês</th><th title="Melhor 2 meses seguidos">2 meses</th><th title="Melhor 3 meses seguidos">3 meses</th><th>Nível (auto)</th><th>Forçar nível</th><th title="Comissão base + bônus de nível + bônus de melhor vendedor(a). Não inclui Equipe Comercial nem Bônus geral — veja o resumo abaixo.">Comissão individual</th><th></th></tr></thead>
           <tbody id="tbody-vendedores"></tbody>
         </table>
         <button class="btn-add" onclick="adicionarVendedor()">+ Adicionar vendedor(a)</button>
+
+        <h3 style="margin:28px 0 6px;font-size:15px;">Resumo por vendedor(a) — tudo que cada pessoa recebe em Vendas</h3>
+        <div class="hint" style="margin-bottom:10px;">Cada parte aparece separada, e o <strong>Total</strong> é a soma delas. Só leitura — os valores são calculados a partir dos campos acima, do KPI "Novos clientes (Equipe Comercial)" e do Bônus geral do MRR.</div>
+        <div id="resumo-vendedores"></div>
       </div></div>
 
       <div class="card">
@@ -645,6 +654,12 @@ function parseValorBR(str) {
   if (!str) return 0;
   return parseFloat(String(str).replace(/\./g,'').replace(',', '.')) || 0;
 }
+// O pool de cada KPI é arredondado pro centavo ANTES de ser dividido entre as pessoas — igual à
+// planilha de referência ("... = R$ 2.965,58" e, a partir desse valor, R$ 177,93 pra 6%). Sem isso,
+// o pool guardava frações de centavo e algumas pessoas ficavam 1 centavo acima do valor da planilha.
+function arredondarCentavos(v) {
+  return Math.round((Number(v) + Number.EPSILON) * 100) / 100;
+}
 function fmtBRL(v) {
   if (v === null || v === undefined || isNaN(v)) return 'R$ 0,00';
   return 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -794,7 +809,7 @@ function calcularNPS_PD() {
   const mrrTotal = parseValorBR(document.getElementById('mrr-total-global').value);
   const nivel = calcularNivelAscendente(nota, tiers);
   const percTotal = nivel ? tiers[nivel].bonus : tiers.padrao;
-  const pool = mrrTotal * (percTotal/100);
+  const pool = arredondarCentavos(mrrTotal * (percTotal/100));
   elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Nenhum nível atingido (NPS ${nota})`;
   atualizarTbodyTiers(document.getElementById('tabela-npsPD'), tabelaTiersEditavelHTML('npsPD', tiers, CONFIG_TIERS_KPI.npsPD.campos, nivel));
   document.getElementById('pool-npsPD').textContent = fmtBRL(pool);
@@ -816,7 +831,7 @@ function calcularHealthScore_PD() {
   const mrrTotal = parseValorBR(document.getElementById('mrr-total-global').value);
   const nivel = calcularNivelAscendente(nota, tiers);
   const percTotal = nivel ? tiers[nivel].bonus : tiers.padrao;
-  const pool = mrrTotal * (percTotal/100);
+  const pool = arredondarCentavos(mrrTotal * (percTotal/100));
   elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Nenhum nível atingido (Health Score ${nota})`;
   atualizarTbodyTiers(document.getElementById('tabela-healthScorePD'), tabelaTiersEditavelHTML('healthScorePD', tiers, CONFIG_TIERS_KPI.healthScorePD.campos, nivel));
   document.getElementById('pool-healthScorePD').textContent = fmtBRL(pool);
@@ -838,7 +853,7 @@ function calcularInfraestrutura() {
   const mrrTotal = parseValorBR(document.getElementById('mrr-total-global').value);
   const nivel = calcularNivelAscendente(percEficiencia, tiers);
   const percTotal = nivel ? tiers[nivel].bonus : tiers.padrao;
-  const pool = mrrTotal * (percTotal/100);
+  const pool = arredondarCentavos(mrrTotal * (percTotal/100));
   elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Nenhum nível atingido (${percEficiencia}%)`;
   atualizarTbodyTiers(document.getElementById('tabela-infraestrutura'), tabelaTiersEditavelHTML('infraestrutura', tiers, CONFIG_TIERS_KPI.infraestrutura.campos, nivel));
   document.getElementById('pool-infraestrutura').textContent = fmtBRL(pool);
@@ -1003,6 +1018,9 @@ function determinarNivel(mrrValor) {
 // sem precisar da tabela de faixas) — permite mostrar/recalcular pool e valores mesmo
 // sem o PDF. Assim que um PDF novo é lido, isso é descartado e o cálculo normal assume.
 let mrrRestaurado = null;
+// Bônus geral por pessoa já calculado na aba MRR nesta sessão (null = ainda não calculado) —
+// usado só pra mostrar o total de cada vendedor(a) no resumo de Vendas.
+let valorPorPessoaGeralAtual = null;
 
 function recalcular() {
   if (!niveisExtraidos && !mrrRestaurado) return;
@@ -1022,6 +1040,8 @@ function recalcular() {
       document.getElementById('card-produto').style.display = 'none';
       document.getElementById('card-salvar').style.display = 'none';
       mrrRestaurado = null;
+      valorPorPessoaGeralAtual = 0;
+      if (typeof renderResumoVendedores === 'function') renderResumoVendedores();
       return;
     }
     resultadoDiv.className = 'resultado-nivel tem-nivel';
@@ -1045,6 +1065,8 @@ function recalcular() {
   const poolGeral = mrrValor * (percBonusGeral / 100);
   const numPessoas = equipeBonusGeral.length || 1;
   const valorPorPessoaGeral = poolGeral / numPessoas;
+  valorPorPessoaGeralAtual = valorPorPessoaGeral;
+  if (typeof renderResumoVendedores === 'function') renderResumoVendedores();
   document.getElementById('pool-geral').textContent = fmtBRL(poolGeral);
   document.getElementById('valor-por-pessoa-geral').textContent = fmtBRL(valorPorPessoaGeral);
   equipeBonusGeral.forEach((p, i) => {
@@ -1410,7 +1432,7 @@ function calcularKpiCadastro(chave) {
   const mrrBase = parseValorBR(document.getElementById('input-' + chave + '-mrr').value);
   const nivel = calcularNivelAscendente(cadastros, tiers);
   const percTotal = nivel ? tiers[nivel].bonus : tiers.padrao;
-  const pool = mrrBase * (percTotal/100);
+  const pool = arredondarCentavos(mrrBase * (percTotal/100));
   elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Abaixo do Bronze — bonificação padrão: ${percTotal}%`;
   atualizarTbodyTiers(document.getElementById('tabela-' + chave), tabelaTiersEditavelHTML(chave, tiers, CONFIG_TIERS_KPI[chave].campos, nivel));
   document.getElementById('pool-' + chave).textContent = fmtBRL(pool);
@@ -1433,7 +1455,7 @@ function calcularKpiNovosClientesMkt() {
   const nivel = calcularNivelAscendente(clientes, tiers);
   let percTotal = 0;
   if (nivel) percTotal = tiers[nivel].bonus + (ticketMedio > 130 ? tiers[nivel].adicional : 0);
-  const pool = mrrAdicionado * (percTotal/100);
+  const pool = arredondarCentavos(mrrAdicionado * (percTotal/100));
   elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Clientes: ${clientes} — Ticket médio: ${fmtBRL(ticketMedio)} — Bônus total: ${percTotal}%` : `Nenhum nível atingido (${clientes} clientes)`;
   atualizarTbodyTiers(document.getElementById('tabela-novosClientesMkt'), tabelaTiersEditavelHTML('novosClientesMkt', tiers, CONFIG_TIERS_KPI.novosClientesMkt.campos, nivel));
   document.getElementById('pool-novosClientesMkt').textContent = fmtBRL(pool);
@@ -1506,7 +1528,7 @@ function calcularKpiEquipeComercial() {
   let percTotal = 0;
   if (nivel) percTotal = tiers[nivel].bonus + (ticketMedio > 130 ? tiers[nivel].adicional : 0);
   else percTotal = tiers.padrao;
-  const pool = mrrAdicionado * (percTotal/100);
+  const pool = arredondarCentavos(mrrAdicionado * (percTotal/100));
   elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Clientes: ${clientes} — Ticket médio: ${fmtBRL(ticketMedio)} — Bônus total: ${percTotal}%` : `Abaixo do Bronze — bonificação padrão: ${percTotal}%`;
   atualizarTbodyTiers(document.getElementById('tabela-equipeComercial'), tabelaTiersEditavelHTML('equipeComercial', tiers, CONFIG_TIERS_KPI.equipeComercial.campos, nivel));
   document.getElementById('pool-equipeComercial').textContent = fmtBRL(pool);
@@ -1578,7 +1600,7 @@ function renderVendedores() {
   tbody.innerHTML = vendedoresIndividuais.map((v,i) => `
     <tr>
       <td><input type="text" value="${v.nome}" onchange="atualizarVendedor(${i},'nome',this.value)"/></td>
-      <td><input type="text" value="${v.comissaoBase || ''}" placeholder="Ex: 2.310,04" onchange="atualizarVendedor(${i},'comissaoBase',this.value)"/></td>
+      <td><input type="text" value="${v.comissaoBase ? fmtBRL(v.comissaoBase).replace('R$','').trim() : ''}" placeholder="Ex: 2.310,04" onchange="atualizarVendedor(${i},'comissaoBase',this.value)"/></td>
       <td class="check"><input type="checkbox" ${v.melhorMes?'checked':''} onchange="atualizarVendedor(${i},'melhorMes',this.checked)"/></td>
       <td class="check"><input type="checkbox" ${v.melhor2Meses?'checked':''} onchange="atualizarVendedor(${i},'melhor2Meses',this.checked)"/></td>
       <td class="check"><input type="checkbox" ${v.melhor3Meses?'checked':''} onchange="atualizarVendedor(${i},'melhor3Meses',this.checked)"/></td>
@@ -1589,7 +1611,7 @@ function renderVendedores() {
     </tr>`).join('');
 }
 function atualizarVendedor(i, campo, valor) {
-  if (campo === 'comissaoBase') vendedoresIndividuais[i][campo] = parseValorBR(valor);
+  if (campo === 'comissaoBase') { vendedoresIndividuais[i][campo] = parseValorBR(valor); vendedoresIndividuais[i].baseEstimada = false; }
   else vendedoresIndividuais[i][campo] = valor;
   recalcularVendas();
 }
@@ -1645,19 +1667,73 @@ function calcularComissaoIndividual() {
       const ordem = ['bronze','prata','ouro','diamante'];
       ordem.forEach((k, idx) => { if (v.tiersPercentuais[idx] >= 100) { nivel = k; } });
     }
-    let percExtra = 0;
-    if (nivel && tiersMI && tiersMI[nivel] && typeof tiersMI[nivel].bonus === 'number') percExtra += tiersMI[nivel].bonus;
-    if (v.melhorMes) percExtra += percIndividuais.melhorMes;
-    if (v.melhor2Meses) percExtra += percIndividuais.melhor2Meses;
-    if (v.melhor3Meses) percExtra += percIndividuais.melhor3Meses;
-    const valorFinalCalculado = v.comissaoBase * (1 + percExtra/100);
+    // Cada parte é arredondada pro centavo (como na planilha da Paula) e o valor final é a
+    // SOMA das partes arredondadas — assim o que aparece no resumo sempre fecha com o total.
+    let percNivel = 0, percMelhor = 0;
+    if (nivel && tiersMI && tiersMI[nivel] && typeof tiersMI[nivel].bonus === 'number') percNivel = tiersMI[nivel].bonus;
+    if (v.melhorMes) percMelhor += percIndividuais.melhorMes;
+    if (v.melhor2Meses) percMelhor += percIndividuais.melhor2Meses;
+    if (v.melhor3Meses) percMelhor += percIndividuais.melhor3Meses;
+    const percExtra = percNivel + percMelhor;
+    const baseCents = arredondarCentavos(v.comissaoBase || 0);
+    const valorNivel = arredondarCentavos((v.comissaoBase || 0) * percNivel / 100);
+    const valorMelhor = arredondarCentavos((v.comissaoBase || 0) * percMelhor / 100);
+    const valorFinalCalculado = arredondarCentavos(baseCents + valorNivel + valorMelhor);
     const valorFinal = valorEfetivo(v, valorFinalCalculado);
     v.nivel = nivel; v.percExtra = percExtra; v.valorFinal = valorFinal;
+    v.partes = { base: baseCents, percNivel, valorNivel, percMelhor, valorMelhor, calculado: valorFinalCalculado };
     const celNivel = document.getElementById('nivel-vend-' + i);
     const inpValor = document.getElementById('valor-vend-' + i);
     if (celNivel) celNivel.textContent = nivel ? (nivel + ' (+' + percExtra + '%)') : (percExtra > 0 ? ('—' + ' (+' + percExtra + '%)') : '—');
     if (inpValor) inpValor.value = fmtBRL(valorFinal);
   });
+  renderResumoVendedores();
+}
+
+// Resumo só-leitura: separa, pra cada vendedor(a), cada parte do que ela recebe em Vendas e
+// soma tudo. Não altera nenhum valor salvo — o que é gravado continua sendo o mesmo de antes
+// (comissão individual e Equipe Comercial são salvas em KPIs separados; o Bônus geral, no MRR).
+function renderResumoVendedores() {
+  const el = document.getElementById('resumo-vendedores');
+  if (!el) return;
+  const pctTxt = n => String(n).replace('.', ',') + '%';
+  const equipe = equipesVendas.equipeComercial || [];
+  const poolEq = (resultadosVendasAtual.equipeComercial && resultadosVendasAtual.equipeComercial.pool) || 0;
+  const NIVEIS = { bronze: 'Bronze', prata: 'Prata', ouro: 'Ouro', diamante: 'Diamante' };
+  let somaTotal = 0;
+  // Cada pessoa vira um "cartão" vertical (uma linha por parte, valor sempre à direita): nada
+  // fica cortado em tela estreita e dá pra conferir a soma de cima pra baixo.
+  const linha = (rotulo, detalhe, valor, forte) => `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:5px 0;${forte ? 'font-weight:700;border-top:1px solid var(--border);margin-top:4px;padding-top:8px;' : ''}"><span>${rotulo}${detalhe ? `<span class="hint" style="display:block;margin:0;font-weight:400;">${detalhe}</span>` : ''}</span><span style="white-space:nowrap;font-variant-numeric:tabular-nums;">${valor}</span></div>`;
+  const cinza = t => `<span style="color:#999;">${t}</span>`;
+  const cartoes = vendedoresIndividuais.map(v => {
+    const pt = v.partes || { base: 0, percNivel: 0, valorNivel: 0, percMelhor: 0, valorMelhor: 0 };
+    const travado = v.valorManual !== undefined && v.valorManual !== null;
+    const individual = Number(v.valorFinal) || 0;
+    const pEq = equipe.find(p => normalizarNomeMatch(p.nome) === normalizarNomeMatch(v.nome));
+    const valEq = pEq ? arredondarCentavos(valorEfetivo(pEq, poolEq * (pEq.percentual / 100))) : 0;
+    const noGeral = equipeBonusGeral.some(p => normalizarNomeMatch(p.nome) === normalizarNomeMatch(v.nome));
+    const geralOk = valorPorPessoaGeralAtual !== null && valorPorPessoaGeralAtual !== undefined;
+    const valGeral = (noGeral && geralOk) ? arredondarCentavos(valorPorPessoaGeralAtual) : 0;
+    const total = arredondarCentavos(individual + valEq + valGeral);
+    somaTotal += total;
+    let partes = '';
+    if (travado) {
+      partes += linha('Comissão individual', 'valor fixado/restaurado — não dá pra separar em partes', fmtBRL(individual), false);
+    } else {
+      partes += linha('Comissão base', v.baseEstimada ? '<span style="color:#b45309;">⚠ estimada pelo PDF — confira com a planilha</span>' : '', fmtBRL(pt.base), false);
+      const nomeNivel = v.nivel ? ' — ' + NIVEIS[v.nivel] : '';
+      partes += linha('+ Bônus de nível' + nomeNivel, pt.percNivel > 0 ? pctTxt(pt.percNivel) + ' da comissão base' : 'sem nível atingido', pt.percNivel > 0 ? fmtBRL(pt.valorNivel) : cinza('R$ 0,00'), false);
+      const quais = [v.melhorMes ? 'mês' : '', v.melhor2Meses ? '2 meses' : '', v.melhor3Meses ? '3 meses' : ''].filter(Boolean).join(' + ');
+      partes += linha('+ Melhor vendedor(a)' + (quais ? ' — ' + quais : ''), pt.percMelhor > 0 ? pctTxt(pt.percMelhor) + ' da comissão base' : 'não marcado', pt.percMelhor > 0 ? fmtBRL(pt.valorMelhor) : cinza('R$ 0,00'), false);
+      partes += linha('= Comissão individual', '', fmtBRL(individual), true);
+    }
+    partes += linha('+ Equipe Comercial', pEq ? pctTxt(pEq.percentual) + ' do pool de ' + fmtBRL(poolEq) : 'não está na equipe', pEq ? fmtBRL(valEq) : cinza('R$ 0,00'), false);
+    partes += linha('+ Bônus geral (MRR)', !noGeral ? 'não está na lista do bônus geral' : (geralOk ? '' : 'calcule primeiro na aba MRR'), !noGeral ? cinza('R$ 0,00') : (geralOk ? fmtBRL(valGeral) : cinza('—')), false);
+    partes += `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-top:8px;padding:10px 12px;background:#eef3ec;border-radius:8px;font-weight:700;"><span>TOTAL em Vendas</span><span style="font-size:17px;white-space:nowrap;font-variant-numeric:tabular-nums;">${fmtBRL(total)}</span></div>`;
+    return `<div style="border:1px solid var(--border);border-radius:10px;padding:14px 16px;background:#fff;"><div style="font-weight:700;font-size:15px;margin-bottom:6px;">${v.nome}</div>${partes}</div>`;
+  }).join('');
+  el.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;">${cartoes}</div>
+    <div style="margin-top:12px;text-align:right;font-size:14px;"><strong>Soma dos totais de Vendas: ${fmtBRL(somaTotal)}</strong></div>`;
 }
 
 // ── LEITURA DE ARQUIVOS (PDF/imagem), COM OCR DE RESERVA ──────────────────
@@ -1967,7 +2043,7 @@ async function processarComissaoComercialPDF(event) {
     if (Object.keys(dadosProntos).length > 0) {
       vendedoresIndividuais.forEach(v => {
         const d = dadosProntos[normalizarNomeMatch(v.nome)];
-        if (d) { v.comissaoBase = d.valor; delete v.valorManual; count++; }
+        if (d) { v.comissaoBase = d.valor; v.baseEstimada = false; delete v.valorManual; count++; }
       });
     } else {
       // Fallback pra quando o arquivo anexado é a versão mais simples ("Comercial: Novos
@@ -1977,13 +2053,15 @@ async function processarComissaoComercialPDF(event) {
       vendedoresIndividuais.forEach(v => {
         const d = dadosBrutos[normalizarNomeMatch(v.nome)];
         if (d) {
-          v.comissaoBase = d.mrrPrincipal * (percIndividuais.solo / 100) + d.mrrAssistente * (percIndividuais.assistente / 100);
+          v.comissaoBase = arredondarCentavos(d.mrrPrincipal * (percIndividuais.solo / 100) + d.mrrAssistente * (percIndividuais.assistente / 100));
+          v.baseEstimada = true;
           delete v.valorManual;
           count++;
         }
       });
     }
-    document.getElementById('status-comissao-comercial').innerHTML = comAvisoOCR(`Arquivo lido — ${count} vendedor(a) preenchido(s) automaticamente.`, ocr);
+    const avisoEstimada = vendedoresIndividuais.some(v => v.baseEstimada) ? '<br><span style="color:#b45309;">⚠ Este é o PDF "Comercial: Novos clientes" (só MRR Principal/Assistente) — ele NÃO traz a comissão pronta, então a comissão base abaixo é uma ESTIMATIVA (35% do MRR Principal + 10% do Assistente) e pode sair maior que o real quando houve venda com assistente (a principal ganha 25% nessa venda). Para o valor exato, anexe aqui o PDF <strong>"Comercial: Comissão individual em vendas para Novos Clientes"</strong> (o que tem a coluna "Total Valor").</span>' : '';
+    document.getElementById('status-comissao-comercial').innerHTML = comAvisoOCR(`Arquivo lido — ${count} vendedor(a) preenchido(s) automaticamente.`, ocr) + avisoEstimada;
     renderVendedores(); recalcularVendas();
   } catch(e) { document.getElementById('status-comissao-comercial').textContent = 'Erro ao ler arquivo: ' + e.message; }
 }
@@ -2066,7 +2144,7 @@ async function salvarVendas(recarregarHistorico) {
     {
       nomeKpi: 'Novos clientes (Equipe Comercial)',
       nivel: rEquipe.nivel, percTotal: rEquipe.percTotal, pool: rEquipe.pool,
-      equipe: equipesVendas.equipeComercial.map(p => ({ nome: p.nome, percentual: p.percentual, valor: valorEfetivo(p, (rEquipe.pool||0) * (p.percentual/100)) }))
+      equipe: equipesVendas.equipeComercial.map(p => ({ nome: p.nome, percentual: p.percentual, valor: arredondarCentavos(valorEfetivo(p, (rEquipe.pool||0) * (p.percentual/100))) }))
     },
     {
       nomeKpi: 'Comissão Individual por Vendedor',
@@ -2119,7 +2197,7 @@ function calcularUpsellEquipe() {
   const mrrUpsell = parseValorBR(document.getElementById('input-upsellEquipe-mrr').value);
   const nivel = calcularNivelAscendente(crescimento, tiers);
   const percTotal = nivel ? tiers[nivel].bonus : tiers.padrao;
-  const pool = mrrUpsell * (percTotal/100);
+  const pool = arredondarCentavos(mrrUpsell * (percTotal/100));
   elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Abaixo do Bronze — bonificação padrão: ${percTotal}%`;
   atualizarTbodyTiers(document.getElementById('tabela-upsellEquipe'), tabelaTiersEditavelHTML('upsellEquipe', tiers, CONFIG_TIERS_KPI.upsellEquipe.campos, nivel));
   document.getElementById('pool-upsellEquipe').textContent = fmtBRL(pool);
@@ -2159,7 +2237,7 @@ function calcularChurn() {
   const nivel = calcularNivelDescendente(percChurn, tiers);
   const percTotal = nivel ? tiers[nivel].bonus : tiers.padrao;
   const base = mrrTotal * (percTotal/100);
-  const pool = Math.max(0, base - churnRS - downsellRS);
+  const pool = arredondarCentavos(Math.max(0, base - churnRS - downsellRS));
   elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Nenhum nível atingido (Churn ${percChurn}%)`;
   atualizarTbodyTiers(document.getElementById('tabela-churn'), tabelaTiersEditavelHTML('churn', tiers, CONFIG_TIERS_KPI.churn.campos, nivel));
   document.getElementById('pool-churn').textContent = fmtBRL(pool);
@@ -2181,7 +2259,7 @@ function calcularNPS() {
   const mrrTotal = parseValorBR(document.getElementById('mrr-total-global').value);
   const nivel = calcularNivelAscendente(nota, tiers);
   const percTotal = nivel ? tiers[nivel].bonus : tiers.padrao;
-  const pool = mrrTotal * (percTotal/100);
+  const pool = arredondarCentavos(mrrTotal * (percTotal/100));
   elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Nenhum nível atingido (NPS ${nota})`;
   atualizarTbodyTiers(document.getElementById('tabela-nps'), tabelaTiersEditavelHTML('nps', tiers, CONFIG_TIERS_KPI.nps.campos, nivel));
   document.getElementById('pool-nps').textContent = fmtBRL(pool);
@@ -2203,7 +2281,7 @@ function calcularHealthScore() {
   const mrrTotal = parseValorBR(document.getElementById('mrr-total-global').value);
   const nivel = calcularNivelAscendente(nota, tiers);
   const percTotal = nivel ? tiers[nivel].bonus : tiers.padrao;
-  const pool = mrrTotal * (percTotal/100);
+  const pool = arredondarCentavos(mrrTotal * (percTotal/100));
   elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Nenhum nível atingido (Health Score ${nota})`;
   atualizarTbodyTiers(document.getElementById('tabela-healthScore'), tabelaTiersEditavelHTML('healthScore', tiers, CONFIG_TIERS_KPI.healthScore.campos, nivel));
   document.getElementById('pool-healthScore').textContent = fmtBRL(pool);

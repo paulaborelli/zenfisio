@@ -273,6 +273,58 @@
   .rec-id { display: none !important; }
   .count-badge { display: none !important; }
   @media print { .no-print { display: none !important; } }
+
+  /* ── Editor de texto formatado ── */
+  .rte { border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface2); transition: border-color 0.15s, box-shadow 0.15s; }
+  .rte:focus-within { border-color: var(--border-focus); background: #fff; box-shadow: 0 0 0 3px rgba(74,124,89,0.1); }
+  .rte-toolbar { display: flex; flex-wrap: wrap; gap: 3px; padding: 6px; border-bottom: 1px solid var(--border); background: #fff; border-radius: var(--radius-sm) var(--radius-sm) 0 0; position: sticky; top: 0; z-index: 5; }
+  .rte-btn { font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text-muted); background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 4px 9px; cursor: pointer; line-height: 1.3; min-width: 30px; }
+  .rte-btn:hover { background: var(--surface2); border-color: var(--border); color: var(--text); }
+  .rte-btn.on { background: var(--accent-light); border-color: var(--accent); color: var(--accent-text); }
+  .rte-sep { width: 1px; background: var(--border); margin: 3px 4px; }
+  .rte-editor { min-height: 160px; max-height: 560px; overflow-y: auto; padding: 12px 14px; font-size: 14px; line-height: 1.65; color: var(--text); outline: none; }
+  .rte-editor.curto { min-height: 90px; }
+  .rte-editor:empty::before { content: attr(data-placeholder); color: var(--text-hint); pointer-events: none; }
+
+  /* Texto formatado (editor, histórico, impressão) */
+  .rico p, .rte-editor p { margin: 0 0 10px; }
+  .rico p:last-child, .rte-editor p:last-child { margin-bottom: 0; }
+  .rico h3, .rte-editor h3 { font-size: 15px; font-weight: 700; color: var(--accent-text); margin: 16px 0 6px; }
+  .rico h3:first-child, .rte-editor h3:first-child { margin-top: 0; }
+  .rico ul, .rico ol, .rte-editor ul, .rte-editor ol { margin: 4px 0 10px 22px; }
+  .rico li, .rte-editor li { margin-bottom: 4px; }
+  .rico li p, .rte-editor li p { margin: 0; }
+  .rico strong, .rico b, .rte-editor strong, .rte-editor b { font-weight: 700; }
+  .rico a, .rte-editor a { color: var(--accent-text); text-decoration: underline; word-break: break-all; }
+
+  /* ── Anexos e links ── */
+  .link-add { display: grid; grid-template-columns: 1fr 1.6fr auto; gap: 8px; }
+  .link-add input { font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--text); background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 13px; outline: none; width: 100%; }
+  .link-add input:focus { border-color: var(--border-focus); background: #fff; box-shadow: 0 0 0 3px rgba(74,124,89,0.1); }
+  .link-add .btn { padding: 9px 16px; white-space: nowrap; }
+  .field label.dropzone { display: block; border: 1.5px dashed #C2C9BA; border-radius: var(--radius-sm); background: var(--surface2); padding: 1.1rem; text-align: center; font-size: 13px; color: var(--text-muted); cursor: pointer; transition: all 0.12s; font-weight: 400; }
+  .field label.dropzone:hover, .field label.dropzone.over { border-color: var(--accent); background: var(--accent-light); color: var(--accent-text); }
+  .anexo-lista { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+  .anexo-lista:empty { display: none; }
+  .anexo-item { display: flex; align-items: center; gap: 10px; background: #fff; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 12px; font-size: 13px; }
+  .anexo-item .ico { font-size: 16px; flex-shrink: 0; }
+  .anexo-item .info { flex: 1; min-width: 0; }
+  .anexo-item .nome { font-weight: 500; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .anexo-item .sub { font-size: 11px; color: var(--text-hint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .anexo-item a { color: var(--accent-text); }
+  .anexo-item button { background: none; border: none; color: var(--text-hint); font-size: 17px; cursor: pointer; padding: 0 4px; border-radius: 4px; }
+  .anexo-item button:hover { color: #943030; background: #FEF2F2; }
+  .anexo-thumb { width: 44px; height: 44px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); flex-shrink: 0; }
+
+  /* Mensagem de envio */
+  .msg-envio { display: none; margin-top: 12px; padding: 10px 14px; border-radius: var(--radius-sm); font-size: 13px; line-height: 1.5; }
+  .msg-envio.ok { display: block; background: var(--accent-light); color: var(--accent-text); border: 1px solid #b9d3c0; }
+  .msg-envio.erro { display: block; background: #fdf0ee; color: #9b3a2e; border: 1px solid #e8b4ae; }
+  .msg-envio.info { display: block; background: #fff8e6; color: #7a5b00; border: 1px solid #f0dca0; }
+
+  @media (max-width: 560px) {
+    .link-add { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
@@ -372,8 +424,8 @@
     <div class="section-label">Motivo do feedback</div>
     <div class="field">
       <label>Por que este feedback está sendo realizado?</label>
-      <textarea id="motivo" class="tall" placeholder="Descreva o contexto que motivou este feedback: situações observadas, comportamentos, resultados ou período avaliado..."></textarea>
-      <span class="field-hint">Seja específico — exemplos concretos tornam o feedback mais claro e útil.</span>
+      <div class="rte"><div class="rte-toolbar"></div><div class="rte-editor" id="motivo" contenteditable="true" data-placeholder="Descreva o contexto que motivou este feedback: situações observadas, comportamentos, resultados ou período avaliado..."></div></div>
+      <span class="field-hint">Seja específico — exemplos concretos tornam o feedback mais claro e útil. Use a barra acima para negrito, títulos e listas; ao colar do Google Docs, a formatação é mantida.</span>
     </div>
   </div>
 
@@ -382,8 +434,31 @@
     <div class="section-label">O que ficou acertado</div>
     <div class="field">
       <label>Pontos positivos, conquistas e acordos desta conversa</label>
-      <textarea id="acertado" class="tall" placeholder="Descreva os pontos fortes observados, os resultados alcançados e os combinados definidos entre as partes..."></textarea>
+      <div class="rte"><div class="rte-toolbar"></div><div class="rte-editor" id="acertado" contenteditable="true" data-placeholder="Descreva os pontos fortes observados, os resultados alcançados e os combinados definidos entre as partes..."></div></div>
       <span class="field-hint">Inclua tanto reconhecimentos quanto próximos passos acordados.</span>
+    </div>
+  </div>
+
+  <!-- Anexos e links -->
+  <div class="card">
+    <div class="section-label">Anexos e links</div>
+
+    <div class="field">
+      <label>Link do Google Drive (ou outro link)</label>
+      <div class="link-add">
+        <input type="text" id="link-titulo" placeholder="Nome (ex: Ata completa no Drive)">
+        <input type="url" id="link-url" placeholder="https://drive.google.com/..." onkeydown="if(event.key==='Enter'){event.preventDefault();adicionarLink();}">
+        <button class="btn btn-ghost" type="button" onclick="adicionarLink()">+ Adicionar</button>
+      </div>
+      <span class="field-hint">Só abre para quem tem acesso ao arquivo no Drive — se outra pessoa precisar ver, compartilhe com ela no próprio Drive.</span>
+      <div id="lista-links" class="anexo-lista"></div>
+    </div>
+
+    <div class="field">
+      <label>Arquivos (PDF ou imagem)</label>
+      <label class="dropzone" id="dropzone" for="inp-arquivos">📎 Clique para escolher ou arraste os arquivos aqui<br><span style="font-size:11px;color:var(--text-hint);">PDF, JPG ou PNG · até 10 MB cada · salvos no Drive · só quem tem acesso à pasta consegue abrir</span></label>
+      <input type="file" id="inp-arquivos" multiple accept="application/pdf,image/png,image/jpeg,image/webp,image/gif" style="display:none">
+      <div id="lista-arquivos" class="anexo-lista"></div>
     </div>
   </div>
 
@@ -402,18 +477,19 @@
 
     <div class="field">
       <label>Observação final</label>
-      <textarea id="obs-final" placeholder="Qualquer nota adicional do responsável pelo feedback ou comentário do colaborador..."></textarea>
+      <div class="rte"><div class="rte-toolbar"></div><div class="rte-editor curto" id="obs-final" contenteditable="true" data-placeholder="Qualquer nota adicional do responsável pelo feedback ou comentário do colaborador..."></div></div>
     </div>
   </div>
 
   <!-- Footer -->
   <div class="form-footer">
     <div class="btn-group">
-      <button class="btn btn-ghost" onclick="limpar()">Limpar</button>
+      <button class="btn btn-ghost" onclick="limparTudo()">Limpar</button>
       <button class="btn btn-ghost" onclick="window.print()">Imprimir / PDF</button>
     </div>
     <button class="btn btn-primary" onclick="salvar()">Salvar no histórico ↓</button>
   </div>
+  <div class="msg-envio" id="msg-envio"></div>
 
   <!-- Histórico -->
   <div class="historico-section">
@@ -486,56 +562,424 @@
 
   const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbydGp7T9oQtr5Ii8uY08CiwCBNNd6L9rC0nYegtwzoI-otVQFZSXOKc8XzW5esGyAelVA/exec';
 
-  function salvar() {
+  // ════════════════════════════════════════════════════════
+  //  TEXTO FORMATADO — utilitários
+  // ════════════════════════════════════════════════════════
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  const RE_URL = /(https?:\/\/[^\s<]+[^\s<.,;:!?)\]'"])/g;
+
+  function linkificarTexto(textoEscapado) {
+    return textoEscapado.replace(RE_URL, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+  }
+
+  // Texto simples → HTML (parágrafos, quebras de linha, links clicáveis)
+  function textoParaHtml(txt) {
+    const t = String(txt || '').replace(/\r\n?/g, '\n').trim();
+    if (!t) return '';
+    return t.split(/\n{2,}/).map(par => '<p>' + linkificarTexto(esc(par)).replace(/\n/g, '<br>') + '</p>').join('');
+  }
+
+  function ehHtml(v) {
+    return /<(p|br|b|strong|i|em|u|ul|ol|li|h3|h4|a|div)\b[^>]*>/i.test(String(v || ''));
+  }
+
+  // Limpa HTML (colado do Google Docs, Word, e-mail ou gerado pelo editor)
+  // mantendo só: parágrafos, títulos, negrito, itálico, sublinhado, listas e links.
+  function limparHtml(html) {
+    const doc = new DOMParser().parseFromString('<div id="raiz">' + (html || '') + '</div>', 'text/html');
+    const out = document.createElement('div');
+    const IGNORAR = ['script','style','meta','link','title','head','iframe','object','embed','svg','img','video','audio','button','input','select','textarea','noscript'];
+
+    function dentroDe(el, tags) {
+      for (let n = el; n && n !== out; n = n.parentNode) if (tags.includes(n.tagName)) return true;
+      return false;
+    }
+
+    function walk(node, parent) {
+      Array.from(node.childNodes).forEach(ch => {
+        if (ch.nodeType === 3) { parent.appendChild(document.createTextNode(ch.textContent)); return; }
+        if (ch.nodeType !== 1) return;
+        const tag = ch.tagName.toLowerCase();
+        if (IGNORAR.includes(tag)) return;
+
+        const st = (ch.getAttribute('style') || '').toLowerCase();
+        const negrito   = /font-weight\s*:\s*(bold|bolder|[6-9]00)/.test(st);
+        const semNegr   = /font-weight\s*:\s*(normal|lighter|[1-4]00)/.test(st);
+        const italico   = /font-style\s*:\s*italic/.test(st);
+        const sublinh   = /text-decoration[^;]*underline/.test(st);
+
+        let nova = null;
+        if (tag === 'b' || tag === 'strong') nova = semNegr ? null : 'strong';
+        else if (tag === 'i' || tag === 'em') nova = 'em';
+        else if (tag === 'u') nova = 'u';
+        else if (/^h[1-6]$/.test(tag)) nova = 'h3';
+        else if (tag === 'ul' || tag === 'ol' || tag === 'li') nova = tag;
+        else if (['p','div','blockquote','section','article','tr','dd','dt'].includes(tag)) nova = 'p';
+        else if (tag === 'br') { parent.appendChild(document.createElement('br')); return; }
+        else if (tag === 'a') {
+          const href = (ch.getAttribute('href') || '').trim();
+          if (/^(https?:|mailto:)/i.test(href) && !dentroDe(parent, ['A'])) nova = 'a';
+        }
+
+        // Parágrafo dentro de parágrafo/título/item: não aninha, só quebra a linha
+        if (nova === 'p' && dentroDe(parent, ['P','H3','LI'])) {
+          nova = null;
+          if (parent.lastChild && parent.lastChild.nodeName !== 'BR') parent.appendChild(document.createElement('br'));
+        }
+
+        let alvo = parent;
+        if (nova) {
+          const el = document.createElement(nova);
+          if (nova === 'a') { el.href = ch.getAttribute('href').trim(); el.target = '_blank'; el.rel = 'noopener'; }
+          parent.appendChild(el);
+          alvo = el;
+        }
+        // Formatação que vem por estilo (ex.: Google Docs usa <span style="font-weight:700">)
+        if (negrito && nova !== 'strong' && nova !== 'h3' && !dentroDe(alvo, ['STRONG','H3'])) { const s = document.createElement('strong'); alvo.appendChild(s); alvo = s; }
+        if (italico && nova !== 'em' && !dentroDe(alvo, ['EM'])) { const s = document.createElement('em'); alvo.appendChild(s); alvo = s; }
+        if (sublinh && nova !== 'u' && nova !== 'a' && !dentroDe(alvo, ['U','A'])) { const s = document.createElement('u'); alvo.appendChild(s); alvo = s; }
+
+        walk(ch, alvo);
+        if (tag === 'td' || tag === 'th') alvo.appendChild(document.createTextNode(' '));
+      });
+    }
+    walk(doc.getElementById('raiz'), out);
+
+    // Texto solto no nível de cima → dentro de parágrafos
+    const final = document.createElement('div');
+    let p = null;
+    Array.from(out.childNodes).forEach(n => {
+      const bloco = n.nodeType === 1 && ['P','H3','UL','OL'].includes(n.nodeName);
+      if (bloco) { p = null; final.appendChild(n); return; }
+      if (n.nodeName === 'LI') { const ul = document.createElement('ul'); ul.appendChild(n); final.appendChild(ul); p = null; return; }
+      if (!p) { p = document.createElement('p'); final.appendChild(p); }
+      p.appendChild(n);
+    });
+
+    // Links digitados como texto viram clicáveis
+    const walker = document.createTreeWalker(final, NodeFilter.SHOW_TEXT);
+    const textos = [];
+    while (walker.nextNode()) textos.push(walker.currentNode);
+    textos.forEach(t => {
+      if (!RE_URL.test(t.textContent)) { RE_URL.lastIndex = 0; return; }
+      RE_URL.lastIndex = 0;
+      for (let n = t.parentNode; n && n !== final; n = n.parentNode) if (n.nodeName === 'A') return;
+      const span = document.createElement('span');
+      span.innerHTML = linkificarTexto(esc(t.textContent));
+      while (span.firstChild) t.parentNode.insertBefore(span.firstChild, t);
+      t.remove();
+    });
+
+    // Remove marcações vazias e <br> sobrando no fim dos parágrafos
+    final.querySelectorAll('strong,em,u,a').forEach(e => { if (!e.textContent.trim() && !e.querySelector('br')) e.replaceWith(...e.childNodes); });
+    final.querySelectorAll('p,h3,li').forEach(e => {
+      while (e.lastChild && e.lastChild.nodeName === 'BR' && e.childNodes.length > 1) e.lastChild.remove();
+    });
+    final.querySelectorAll('h3,li,ul,ol').forEach(e => { if (!e.textContent.trim()) e.remove(); });
+    // Parágrafos vazios consecutivos viram um só
+    final.querySelectorAll('p').forEach(e => {
+      const vazio = !e.textContent.trim();
+      const prev = e.previousElementSibling;
+      if (vazio && (!prev || (prev.nodeName === 'P' && !prev.textContent.trim()))) e.remove();
+    });
+    while (final.lastElementChild && final.lastElementChild.nodeName === 'P' && !final.lastElementChild.textContent.trim()) final.lastElementChild.remove();
+
+    return final.innerHTML;
+  }
+
+  // Valor salvo (HTML novo ou texto antigo) → HTML seguro para exibir
+  function conteudoParaHtml(v) {
+    if (v == null || String(v).trim() === '') return '—';
+    return ehHtml(v) ? limparHtml(String(v)) : textoParaHtml(String(v));
+  }
+
+  // ════════════════════════════════════════════════════════
+  //  EDITOR (barra de ferramentas)
+  // ════════════════════════════════════════════════════════
+  const RTE_BOTOES = [
+    ['bold', '<b>N</b>', 'Negrito (Ctrl+B)'],
+    ['italic', '<i>I</i>', 'Itálico (Ctrl+I)'],
+    ['underline', '<u>S</u>', 'Sublinhado (Ctrl+U)'],
+    ['|'],
+    ['h3', '<b>T</b> Título', 'Título de seção (ex.: "Pontos de discussão")'],
+    ['p', '¶ Texto', 'Voltar para texto normal'],
+    ['|'],
+    ['insertUnorderedList', '• Lista', 'Lista com marcadores'],
+    ['insertOrderedList', '1. Lista', 'Lista numerada'],
+    ['|'],
+    ['link', '🔗 Link', 'Transformar o trecho selecionado em link'],
+    ['removeFormat', '✕ Limpar', 'Remover a formatação do trecho selecionado'],
+  ];
+
+  function rteValor(id) {
+    const el = document.getElementById(id);
+    if (!el.textContent.trim()) return '';
+    return limparHtml(el.innerHTML);
+  }
+
+  function rteLimpar(id) { document.getElementById(id).innerHTML = ''; }
+
+  function iniciarEditores() {
+    try { document.execCommand('defaultParagraphSeparator', false, 'p'); } catch (e) {}
+    document.querySelectorAll('.rte').forEach(wrap => {
+      const ed = wrap.querySelector('.rte-editor');
+      const bar = wrap.querySelector('.rte-toolbar');
+      bar.innerHTML = RTE_BOTOES.map(b => b[0] === '|'
+        ? '<span class="rte-sep"></span>'
+        : `<button type="button" class="rte-btn" data-cmd="${b[0]}" title="${b[2]}">${b[1]}</button>`).join('');
+
+      bar.addEventListener('mousedown', e => { if (e.target.closest('.rte-btn')) e.preventDefault(); });
+      bar.addEventListener('click', e => {
+        const btn = e.target.closest('.rte-btn'); if (!btn) return;
+        ed.focus();
+        const cmd = btn.dataset.cmd;
+        if (cmd === 'h3' || cmd === 'p') {
+          document.execCommand('formatBlock', false, cmd);
+        } else if (cmd === 'link') {
+          const sel = window.getSelection();
+          let url = prompt('Cole o endereço do link (ex.: link do Google Drive):', 'https://');
+          if (!url || url === 'https://') return;
+          url = url.trim();
+          if (!/^(https?:|mailto:)/i.test(url)) url = 'https://' + url;
+          if (sel && !sel.isCollapsed) document.execCommand('createLink', false, url);
+          else document.execCommand('insertHTML', false, `<a href="${esc(url)}" target="_blank" rel="noopener">${esc(url)}</a>&nbsp;`);
+        } else if (cmd === 'removeFormat') {
+          document.execCommand('removeFormat');
+          document.execCommand('unlink');
+        } else {
+          document.execCommand(cmd);
+        }
+        atualizarBotoesRte();
+      });
+
+      // Colar: mantém negrito/listas/parágrafos, descarta o resto (cores, fontes, tamanhos)
+      ed.addEventListener('paste', e => {
+        e.preventDefault();
+        const cd = e.clipboardData || window.clipboardData;
+        const html = cd.getData('text/html');
+        const txt = cd.getData('text/plain');
+        const limpo = html ? limparHtml(html) : textoParaHtml(txt);
+        document.execCommand('insertHTML', false, limpo || esc(txt));
+      });
+
+      // Ctrl+clique abre o link
+      ed.addEventListener('click', e => {
+        const a = e.target.closest('a');
+        if (a && (e.ctrlKey || e.metaKey)) window.open(a.href, '_blank', 'noopener');
+      });
+    });
+    document.addEventListener('selectionchange', atualizarBotoesRte);
+  }
+
+  function atualizarBotoesRte() {
+    const sel = window.getSelection();
+    const ed = sel && sel.anchorNode && (sel.anchorNode.nodeType === 1 ? sel.anchorNode : sel.anchorNode.parentElement)?.closest('.rte-editor');
+    document.querySelectorAll('.rte').forEach(wrap => {
+      const ativo = ed && wrap.contains(ed);
+      wrap.querySelectorAll('.rte-btn').forEach(b => {
+        let on = false;
+        if (ativo) {
+          const c = b.dataset.cmd;
+          try {
+            if (['bold','italic','underline','insertUnorderedList','insertOrderedList'].includes(c)) on = document.queryCommandState(c);
+            else if (c === 'h3') on = /h3/i.test(document.queryCommandValue('formatBlock'));
+          } catch (e) {}
+        }
+        b.classList.toggle('on', !!on);
+      });
+    });
+  }
+
+  // ════════════════════════════════════════════════════════
+  //  ANEXOS E LINKS
+  // ════════════════════════════════════════════════════════
+  const MAX_ARQ = 10 * 1024 * 1024;
+  const MAX_TOTAL = 25 * 1024 * 1024;
+  let linksSel = [];
+  let arquivosSel = [];
+
+  function fmtTamanho(b) {
+    return b > 1024 * 1024 ? (b / 1024 / 1024).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB';
+  }
+
+  function adicionarLink() {
+    const tEl = document.getElementById('link-titulo');
+    const uEl = document.getElementById('link-url');
+    let url = uEl.value.trim();
+    if (!url) { uEl.focus(); return false; }
+    if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+    try { new URL(url); } catch (e) { alert('Esse endereço não parece um link válido.'); uEl.focus(); return false; }
+    let titulo = tEl.value.trim();
+    if (!titulo) titulo = /drive\.google|docs\.google/i.test(url) ? 'Documento no Google Drive' : 'Link';
+    linksSel.push({ titulo, url });
+    tEl.value = ''; uEl.value = '';
+    renderAnexosForm();
+    return true;
+  }
+
+  function removerLink(i) { linksSel.splice(i, 1); renderAnexosForm(); }
+  function removerArquivo(i) { arquivosSel.splice(i, 1); renderAnexosForm(); }
+
+  function adicionarArquivos(lista) {
+    const erros = [];
+    Array.from(lista || []).forEach(f => {
+      const okTipo = f.type === 'application/pdf' || /^image\//.test(f.type);
+      const total = arquivosSel.reduce((s, a) => s + a.size, 0) + f.size;
+      if (!okTipo) erros.push(`"${f.name}": só PDF ou imagem.`);
+      else if (f.size > MAX_ARQ) erros.push(`"${f.name}" tem ${fmtTamanho(f.size)} (máximo 10 MB). Coloque no Drive e anexe o link.`);
+      else if (total > MAX_TOTAL) erros.push(`"${f.name}": o total de anexos passaria de 25 MB.`);
+      else arquivosSel.push(f);
+    });
+    if (erros.length) alert(erros.join('\n'));
+    renderAnexosForm();
+  }
+
+  function renderAnexosForm() {
+    document.getElementById('lista-links').innerHTML = linksSel.map((l, i) => `
+      <div class="anexo-item">
+        <span class="ico">🔗</span>
+        <div class="info"><div class="nome">${esc(l.titulo)}</div><div class="sub"><a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.url)}</a></div></div>
+        <button type="button" onclick="removerLink(${i})" title="Remover">×</button>
+      </div>`).join('');
+
+    const lista = document.getElementById('lista-arquivos');
+    lista.innerHTML = arquivosSel.map((f, i) => `
+      <div class="anexo-item">
+        ${/^image\//.test(f.type) ? `<img class="anexo-thumb" data-idx="${i}" alt="">` : '<span class="ico">📄</span>'}
+        <div class="info"><div class="nome">${esc(f.name)}</div><div class="sub">${f.type === 'application/pdf' ? 'PDF' : 'Imagem'} · ${fmtTamanho(f.size)}</div></div>
+        <button type="button" onclick="removerArquivo(${i})" title="Remover">×</button>
+      </div>`).join('');
+    lista.querySelectorAll('img.anexo-thumb').forEach(img => {
+      const f = arquivosSel[+img.dataset.idx];
+      const url = URL.createObjectURL(f);
+      img.src = url; img.onload = () => URL.revokeObjectURL(url);
+    });
+  }
+
+  function lerBase64(f) {
+    return new Promise((res, rej) => {
+      const fr = new FileReader();
+      fr.onload = () => res({ nome: f.name, tipo: f.type, base64: String(fr.result).split(',')[1] });
+      fr.onerror = () => rej(new Error('Não consegui ler o arquivo "' + f.name + '".'));
+      fr.readAsDataURL(f);
+    });
+  }
+
+  // "Nome | url" (uma por linha) → [{titulo, url}]
+  function parseListaLinks(v) {
+    return String(v || '').split('\n').map(l => l.trim()).filter(Boolean).map(l => {
+      const i = l.lastIndexOf(' | ');
+      return i >= 0 ? { titulo: l.slice(0, i).trim(), url: l.slice(i + 3).trim() } : { titulo: l, url: l };
+    }).filter(x => /^https?:\/\//i.test(x.url));
+  }
+
+  function idDrive(url) {
+    const m = String(url).match(/\/d\/([\w-]{20,})/) || String(url).match(/[?&]id=([\w-]{20,})/);
+    return m ? m[1] : null;
+  }
+
+  function htmlAnexosLinks(r) {
+    const links = parseListaLinks(r['Links']);
+    const anexos = parseListaLinks(r['Anexos']);
+    if (!links.length && !anexos.length) return '';
+    const itens = links.map(l => `<li style="margin-bottom:6px;">🔗 <a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.titulo)}</a></li>`)
+      .concat(anexos.map(a => {
+        const img = /\.(png|jpe?g|gif|webp)$/i.test(a.titulo) && idDrive(a.url);
+        return `<li style="margin-bottom:6px;">📎 <a href="${esc(a.url)}" target="_blank" rel="noopener">${esc(a.titulo)}</a>${img
+          ? `<br><img src="https://drive.google.com/thumbnail?id=${img}&sz=w800" alt="" style="max-width:100%;max-height:360px;margin-top:6px;border:1px solid #DDE0D8;border-radius:6px;" onerror="this.remove()">` : ''}</li>`;
+      })).join('');
+    return `<ul class="rico" style="list-style:none;margin:0;padding:0;">${itens}</ul>`;
+  }
+
+  // ════════════════════════════════════════════════════════
+  //  SALVAR
+  // ════════════════════════════════════════════════════════
+  function mostrarMsg(tipo, html) {
+    const m = document.getElementById('msg-envio');
+    m.className = 'msg-envio ' + tipo;
+    m.innerHTML = html;
+  }
+
+  async function salvar() {
     const nome = document.getElementById('colaborador').value.trim();
     const data = document.getElementById('data').value;
     if (!nome || !data) { alert('Preencha ao menos o nome do colaborador e a data.'); return; }
 
-    const r = {
-      tipo: 'feedback',
-      id: gerarId(),
-      data,
-      proximo: '',
-      tipo_feedback: document.getElementById('tipo').value || '—',
-      colaborador: nome,
-      cargo: document.getElementById('cargo').value,
-      responsavel: document.getElementById('responsavel').value,
-      formato: document.getElementById('formato').value,
-      motivo: document.getElementById('motivo').value,
-      acertado: document.getElementById('acertado').value,
-      ciencia: cienciaVal || '—',
-      obsFinal: document.getElementById('obs-final').value,
-    };
-
-    registros.unshift(r);
-    localStorage.setItem('zenfisio_fb', JSON.stringify(registros));
-    renderHistorico();
+    // Link digitado mas sem clicar em "+ Adicionar" → entra também
+    if (document.getElementById('link-url').value.trim() && !adicionarLink()) return;
 
     const btnSalvar = document.querySelector('.btn-primary');
-    btnSalvar.textContent = 'Enviando...';
     btnSalvar.disabled = true;
+    btnSalvar.textContent = arquivosSel.length ? 'Enviando anexos...' : 'Enviando...';
+    mostrarMsg('info', arquivosSel.length
+      ? `Enviando o registro e ${arquivosSel.length} arquivo(s) para o Drive — pode levar alguns segundos, não feche a página.`
+      : 'Enviando o registro...');
 
-    fetch(SCRIPT_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(r)
-    }).then(() => {
+    try {
+      const anexos = await Promise.all(arquivosSel.map(lerBase64));
+      const r = {
+        tipo: 'feedback',
+        id: gerarId(),
+        data,
+        proximo: '',
+        tipo_feedback: document.getElementById('tipo').value || '—',
+        colaborador: nome,
+        cargo: document.getElementById('cargo').value,
+        responsavel: document.getElementById('responsavel').value,
+        formato: document.getElementById('formato').value,
+        motivo: rteValor('motivo'),
+        acertado: rteValor('acertado'),
+        ciencia: cienciaVal || '—',
+        obsFinal: rteValor('obs-final'),
+        links: linksSel.slice(),
+        anexos,
+      };
+
+      let json;
+      try {
+        // text/plain evita o bloqueio de CORS do Apps Script e permite ler a resposta
+        const resp = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(r),
+        });
+        json = await resp.json();
+      } catch (eRede) {
+        throw new Error('SEM_CONFIRMACAO');
+      }
+      if (!json || !json.ok) throw new Error((json && json.erro) || 'O servidor não confirmou o salvamento.');
+
+      // Cópia local (sem o conteúdo dos arquivos, que é pesado)
+      try {
+        registros.unshift(Object.assign({}, r, { anexos: anexos.map(a => a.nome) }));
+        localStorage.setItem('zenfisio_fb', JSON.stringify(registros.slice(0, 50)));
+      } catch (e) {}
+      renderHistorico();
+
+      mostrarMsg('ok', `✓ Feedback de <b>${esc(nome)}</b> salvo na planilha${anexos.length ? ` com ${anexos.length} arquivo(s) no Drive` : ''}. O e-mail com o PDF foi enviado para o RH.`);
       btnSalvar.textContent = 'Salvo ✓';
       btnSalvar.style.background = '#2D5438';
+      limpar();
+      document.getElementById('rec-id').textContent = gerarId();
+      if (todosFeedbacks.length) carregarPlanilha();
       setTimeout(() => {
         btnSalvar.textContent = 'Salvar no histórico ↓';
         btnSalvar.style.background = '';
         btnSalvar.disabled = false;
-      }, 3000);
-    }).catch(() => {
+      }, 2500);
+    } catch (e) {
       btnSalvar.textContent = 'Salvar no histórico ↓';
       btnSalvar.disabled = false;
-    });
-
-    limpar();
-    document.getElementById('rec-id').textContent = gerarId();
-    document.querySelector('.historico-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (e.message === 'SEM_CONFIRMACAO') {
+        mostrarMsg('erro', '⚠️ Não consegui confirmar se o registro foi salvo (conexão). <b>O formulário NÃO foi apagado.</b> Antes de enviar de novo, clique em "Carregar registros" abaixo e veja se ele já aparece — assim não fica duplicado.');
+      } else {
+        mostrarMsg('erro', '⚠️ Não foi salvo: ' + esc(e.message) + '<br><b>O formulário NÃO foi apagado</b> — corrija e tente novamente.');
+      }
+    }
   }
 
   function renderHistorico() {
@@ -579,11 +1023,21 @@
   }
 
   function limpar() {
-    ['colaborador','cargo','responsavel','motivo','acertado','obs-final'].forEach(id => document.getElementById(id).value = '');
+    ['colaborador','cargo','responsavel','link-titulo','link-url'].forEach(id => document.getElementById(id).value = '');
+    ['motivo','acertado','obs-final'].forEach(rteLimpar);
     ['tipo','formato'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('data').valueAsDate = new Date();
     document.querySelectorAll('.science-btn').forEach(b => b.classList.remove('on'));
     cienciaVal = '';
+    linksSel = []; arquivosSel = [];
+    document.getElementById('inp-arquivos').value = '';
+    renderAnexosForm();
+  }
+
+  function limparTudo() {
+    if (!confirm('Apagar tudo o que foi preenchido no formulário?')) return;
+    limpar();
+    mostrarMsg('', '');
   }
 
   function exportar() {
@@ -614,6 +1068,15 @@
   }
 
   renderHistorico();
+  iniciarEditores();
+
+  document.getElementById('inp-arquivos').addEventListener('change', e => { adicionarArquivos(e.target.files); e.target.value = ''; });
+  (function () {
+    const dz = document.getElementById('dropzone');
+    ['dragenter','dragover'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add('over'); }));
+    ['dragleave','drop'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove('over'); }));
+    dz.addEventListener('drop', e => adicionarArquivos(e.dataTransfer.files));
+  })();
 
   // ── PAINEL PLANILHA ──────────────────────────────────────
   const SCRIPT_URL_FB = 'https://script.google.com/macros/s/AKfycbydGp7T9oQtr5Ii8uY08CiwCBNNd6L9rC0nYegtwzoI-otVQFZSXOKc8XzW5esGyAelVA/exec';
@@ -671,10 +1134,10 @@
         onmouseover="this.style.borderColor='#4A7C59';this.style.boxShadow='0 2px 8px rgba(74,124,89,0.1)'"
         onmouseout="this.style.borderColor='#DDE0D8';this.style.boxShadow='none'">
         <div>
-          <div style="font-weight:700;font-size:0.9rem;color:#1C201A;">${nome}</div>
-          <div style="font-size:0.8rem;color:#5E6659;margin-top:2px;">Resp.: ${resp} · ${dataFmt}</div>
+          <div style="font-weight:700;font-size:0.9rem;color:#1C201A;">${esc(nome)}${(r['Links'] || r['Anexos']) ? ' <span title="Tem anexos ou links" style="font-weight:400;">📎</span>' : ''}</div>
+          <div style="font-size:0.8rem;color:#5E6659;margin-top:2px;">Resp.: ${esc(resp)} · ${dataFmt}</div>
         </div>
-        <span style="font-size:0.72rem;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap;${tipoBg}">${tipo || 'feedback'}</span>
+        <span style="font-size:0.72rem;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap;${tipoBg}">${esc(tipo || 'feedback')}</span>
       </div>`;
     }).join('');
   }
@@ -683,20 +1146,23 @@
     feedbackAtual = todosFeedbacks[idx];
     const r = feedbackAtual;
     document.getElementById('modal-fb-titulo').textContent = (r['Colaborador'] || 'Feedback') + ' — ' + formatarDataFb(r['Data']);
-    const campos = [
+    const simples = [
       ['Colaborador', r['Colaborador']], ['Data', formatarDataFb(r['Data'])],
       ['Cargo', r['Cargo']], ['Responsável', r['Responsável']],
       ['Tipo de Feedback', r['Tipo']], ['Formato', r['Formato']],
-      ['Motivo do Feedback', r['Motivo']],
-      ['O que ficou acertado', r['O que ficou acertado'] || r['Acertado']],
-      ['Ciência do Colaborador', r['Ciência'] || r['Ciencia']],
-      ['Observações Finais', r['Obs. Final'] || r['Obs Final'] || r['obsFinal']],
     ];
-    document.getElementById('modal-fb-body').innerHTML = campos.map(([l,v]) => `
-      <div style="margin-bottom:1rem;">
-        <div style="font-size:0.75rem;font-weight:600;color:#9AA394;margin-bottom:3px;text-transform:uppercase;letter-spacing:0.05em;">${l}</div>
-        <div style="font-size:0.9rem;color:#1C201A;line-height:1.5;">${v || '—'}</div>
-      </div>`).join('');
+    const rotulo = l => `<div style="font-size:0.75rem;font-weight:600;color:#9AA394;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.05em;">${l}</div>`;
+    const bloco = (l, html) => `<div style="margin-bottom:1.25rem;">${rotulo(l)}<div class="rico" style="font-size:0.92rem;color:#1C201A;line-height:1.65;">${html}</div></div>`;
+    const anexos = htmlAnexosLinks(r);
+    document.getElementById('modal-fb-body').innerHTML =
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 1.25rem;">' +
+      simples.map(([l, v]) => `<div style="margin-bottom:1rem;">${rotulo(l)}<div style="font-size:0.9rem;color:#1C201A;">${esc(v || '—')}</div></div>`).join('') +
+      '</div>' +
+      bloco('Motivo do Feedback', conteudoParaHtml(r['Motivo'])) +
+      bloco('O que ficou acertado', conteudoParaHtml(r['O que ficou acertado'] || r['Acertado'])) +
+      (anexos ? bloco('Anexos e links', anexos) : '') +
+      bloco('Ciência do Colaborador', esc(r['Ciência'] || r['Ciencia'] || '—')) +
+      bloco('Observações Finais', conteudoParaHtml(r['Obs. Final'] || r['Obs Final'] || r['obsFinal']));
     document.getElementById('modal-fb').style.display = 'flex';
     document.body.style.overflow = 'hidden';
   }
@@ -713,16 +1179,18 @@
 
   function imprimirFeedback() {
     const r = feedbackAtual; if (!r) return;
-    const nome    = r['Colaborador'] || '—';
+    const nome    = esc(r['Colaborador'] || '—');
     const data    = formatarDataFb(r['Data']);
-    const cargo   = r['Cargo'] || '—';
-    const resp    = r['Responsável'] || '—';
-    const tipo    = r['Tipo'] || '—';
-    const formato = r['Formato'] || '—';
-    const motivo  = r['Motivo'] || '—';
-    const acertado= r['O que ficou acertado'] || r['Acertado'] || '—';
-    const ciencia = r['Ciência'] || r['Ciencia'] || '—';
-    const obs     = r['Obs. Final'] || r['Obs Final'] || r['obsFinal'] || '';
+    const cargo   = esc(r['Cargo'] || '—');
+    const resp    = esc(r['Responsável'] || '—');
+    const tipo    = esc(r['Tipo'] || '—');
+    const formato = esc(r['Formato'] || '—');
+    const motivo  = conteudoParaHtml(r['Motivo']);
+    const acertado= conteudoParaHtml(r['O que ficou acertado'] || r['Acertado']);
+    const ciencia = esc(r['Ciência'] || r['Ciencia'] || '—');
+    const anexosLinks = htmlAnexosLinks(r);
+    const obsBruto = r['Obs. Final'] || r['Obs Final'] || r['obsFinal'] || '';
+    const obs     = obsBruto ? conteudoParaHtml(obsBruto) : '';
 
     const tipoBadgeColor = tipo === 'positivo' ? '#2e7d32' : tipo === 'construtivo' ? '#9b3a2e' : '#4A7C59';
     const tipoBadgeBg    = tipo === 'positivo' ? '#e3f5e1' : tipo === 'construtivo' ? '#fdf0ee' : '#EAF2EC';
@@ -746,7 +1214,17 @@
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
   .field-label { font-size: 0.78rem; font-weight: 600; color: #9AA394; margin-bottom: 4px; }
   .field-value { font-size: 0.9rem; color: #1C201A; line-height: 1.6; }
-  .field-value.long { white-space: pre-wrap; }
+  .rico { font-size: 0.9rem; color: #1C201A; line-height: 1.65; }
+  .rico p { margin: 0 0 10px; }
+  .rico p:last-child { margin-bottom: 0; }
+  .rico h3 { font-size: 0.98rem; font-weight: 700; color: #2D5438; margin: 16px 0 6px; }
+  .rico h3:first-child { margin-top: 0; }
+  .rico ul, .rico ol { margin: 4px 0 10px 22px; }
+  .rico li { margin-bottom: 4px; }
+  .rico li p { margin: 0; }
+  .rico strong, .rico b { font-weight: 700; }
+  .rico a { color: #2D5438; text-decoration: underline; word-break: break-all; }
+  .card.longo { break-inside: auto; }
   .badge { display: inline-block; padding: 3px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; }
   .full { grid-column: 1 / -1; }
   @media print {
@@ -796,17 +1274,22 @@
     </div>
   </div>
 
-  <div class="card">
+  <div class="card longo">
     <div class="section-label">Motivo do Feedback</div>
     <div class="field-label">Por que este feedback está sendo realizado?</div>
-    <div class="field-value long">${motivo}</div>
+    <div class="rico">${motivo}</div>
   </div>
 
-  <div class="card">
+  <div class="card longo">
     <div class="section-label">O que ficou acertado</div>
     <div class="field-label">Pontos positivos, conquistas e acordos desta conversa</div>
-    <div class="field-value long">${acertado}</div>
+    <div class="rico">${acertado}</div>
   </div>
+
+  ${anexosLinks ? `<div class="card">
+    <div class="section-label">Anexos e links</div>
+    ${anexosLinks}
+  </div>` : ''}
 
   <div class="card">
     <div class="section-label">Ciência do Colaborador</div>
@@ -815,7 +1298,7 @@
 
   ${obs ? `<div class="card">
     <div class="section-label">Observações Finais</div>
-    <div class="field-value long">${obs}</div>
+    <div class="rico">${obs}</div>
   </div>` : ''}
 
 </body>

@@ -660,10 +660,217 @@ function categorizarMotivo(motivo) {
   return 'Outros';
 }
 
+// ===================== LAYOUT NOVO DO SISTEMA DE PONTO (a partir de out/2026) =====================
+// Cada leitor abaixo só é usado quando reconhece o layout novo; o layout antigo segue pelo caminho de sempre.
+
+function tmin(t) { return (!t || t === '-') ? 0 : paraMinutos(t); }
+
+// Nomes: o mesmo colaborador pode vir com grafias diferentes entre relatórios (ex: GONCALVES x GONÇALVES).
+function canonNome(s) {
+  return String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/\s+/g, ' ').trim();
+}
+function melhorGrafiaNome(variantes) {
+  let melhor = variantes[0], melhorScore = -1;
+  for (const v of variantes) {
+    const sc = (v.normalize('NFD').match(/[\u0300-\u036f]/g) || []).length;
+    if (sc > melhorScore) { melhor = v; melhorScore = sc; }
+  }
+  return melhor;
+}
+// Junta as grafias de um mesmo nome (ignorando acento/caixa) numa só — a mais acentuada, que é a usada no histórico.
+// Quando todas as grafias já são iguais, não muda nada.
+function unificarNomes(fontes) {
+  const variantes = {};
+  const ver = nome => { if (!nome) return; const up = String(nome).toUpperCase().replace(/\s+/g, ' ').trim(); (variantes[canonNome(up)] = variantes[canonNome(up)] || []).push(up); };
+  for (const lista of fontes.listas) lista.forEach(ver);
+  const mapa = {};
+  for (const [c, v] of Object.entries(variantes)) mapa[c] = melhorGrafiaNome(v);
+  const nomeFinal = nome => mapa[canonNome(nome)] || nome;
+  const renomearDict = d => { const out = {}; for (const [k, v] of Object.entries(d)) out[nomeFinal(k)] = v; return out; };
+  return { nomeFinal, renomearDict, mapa };
+}
+
+// ---------- Espelho individual (layout novo) ----------
+const DIAS_ESPELHO_NOVO_RE = /^(Seg|Ter|Qua|Qui|Sex|S[áa]b|Dom),(\d{2}\/\d{2})\s+(?:(?:Seg|Ter|Qua|Qui|Sex|S[áa]b|Dom),\d{2}\/\d{2}\s+)?(.*)$/i;
+function ehLayoutEspelhoNovo(texto) {
+  return /^(?:Seg|Ter|Qua|Qui|Sex|S[áa]b|Dom),\d{2}\/\d{2}\s/mi.test(texto);
+}
+
+function parseIndividualNovo(texto) {
+  const nomeMatch = texto.match(/Colaborador:\s*([^\n]+)/);
+  const nome = nomeMatch ? nomeMatch[1].replace(/\s+/g, ' ').trim() : null;
+  const jornada = parseJornada(texto);
+  if (!nome || !jornada) return null;
+
+  let diasAtraso = 0, minutosAtrasoTotal = 0, diasSaidaAntecipada = 0, minutosSaidaTotal = 0, diasCompletos = 0;
+  let previstasSoma = 0, diurnasSoma = 0, creditoSoma = 0, debitoSoma = 0, faltasSoma = 0, diasLidos = 0;
+  let abonoParcialMin = 0;
+  const abonoParcialDias = [], eventos = [], linhasIgnoradas = [];
+
+  for (const linhaRaw of texto.split('\n')) {
+    const linha = linhaRaw.trim().replace(/\s+/g, ' ');
+    const m = linha.match(DIAS_ESPELHO_NOVO_RE);
+    if (!m) continue;
+    const diaSemana = m[1].toLowerCase();
+    const dia = m[2];
+    const tokens = m[3].split(' ').filter(Boolean);
+    const nums = tokens.slice(-6);
+    if (tokens.length < 6 || !nums.every(t => t === '-' || /^-?\d{1,3}:\d{2}$/.test(t))) { linhasIgnoradas.push(dia); continue; }
+    diasLidos++;
+    const prev = tmin(nums[0]), diu = tmin(nums[1]), falt = tmin(nums[3]), cred = tmin(nums[4]), deb = tmin(nums[5]);
+    previstasSoma += prev; diurnasSoma += diu; creditoSoma += cred; debitoSoma += Math.abs(deb); faltasSoma += falt;
+
+    // Segmentos do dia: abonos ("Abono:08:00-12:00"), rótulos ("Feriado:Nome") e períodos trabalhados ("08:02 - 12:06").
+    let resto = tokens.slice(0, -6).join(' ');
+    const abonos = [];
+    resto = resto.replace(/Abono:\s*(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/gi, (_, a, b) => { abonos.push(paraMinutosDoDia(b) - paraMinutosDoDia(a)); return ' '; });
+    const rotulos = [];
+    resto = resto.replace(/([A-Za-zÀ-ÿ]+)\s*:\s*([^|]*?)(?=\s*\||\s*$)/g, (_, r, d) => { rotulos.push({ rotulo: r, detalhe: d.trim() }); return ' '; });
+    const periodos = [];
+    resto = resto.replace(/(\d{1,2}:\d{2})[~*^]?\s*-\s*(\d{1,2}:\d{2})[~*^]?/g, (_, a, b) => { periodos.push({ ini: paraMinutosDoDia(a), fim: paraMinutosDoDia(b) }); return ' '; });
+    const sobra = resto.replace(/[|\-\s]+/g, ' ').trim();
+
+    // Atraso / saída antecipada: só em dia com jornada prevista e com os dois períodos trabalhados.
+    if (prev > 0 && periodos.length >= 2) {
+      diasCompletos++;
+      const entradaReal = periodos[0].ini, saidaReal = periodos[periodos.length - 1].fim;
+      if (entradaReal > jornada.entrada) { diasAtraso++; minutosAtrasoTotal += (entradaReal - jornada.entrada); }
+      if (saidaReal < jornada.saida) { diasSaidaAntecipada++; minutosSaidaTotal += (jornada.saida - saidaReal); }
+    }
+
+    const abonoDia = abonos.reduce((a, b) => a + b, 0);
+    if (abonoDia > 0) {
+      if (periodos.length > 0) { abonoParcialMin += abonoDia; abonoParcialDias.push({ dia, minutos: abonoDia }); }
+      else eventos.push({ dia, diaSemana, motivo: 'Abono', tipo: 'Abono', categoria: 'Abono', minutos: abonoDia });
+    }
+    for (const r of rotulos) {
+      if (/^feriado$/i.test(r.rotulo)) eventos.push({ dia, diaSemana, motivo: r.detalhe || 'Feriado', tipo: 'Feriado' });
+      else {
+        const generico = !r.detalhe || /n[ãa]o informado/i.test(r.detalhe);
+        eventos.push({ dia, diaSemana, motivo: generico ? r.rotulo : `${r.rotulo} – ${r.detalhe}`, tipo: r.rotulo });
+      }
+    }
+    if (!rotulos.length && !abonos.length && /[A-Za-zÀ-ÿ]{3,}/.test(sobra) && (prev === 0 || periodos.length === 0)) {
+      eventos.push({ dia, diaSemana, motivo: sobra, tipo: 'Outro' });
+    }
+  }
+
+  // Linha "Total:" (o pdf.js entrega cada valor duas vezes: "159:43 159:43 29:25 29:25 ...").
+  let diurnasStr = null, creditoMin = null, debitoMin = null, faltasTotalMin = null;
+  const mTotal = texto.match(/^Total:\s*(.+)$/m);
+  if (mTotal) {
+    let t = mTotal[1].trim().split(/\s+/);
+    if (t.length === 10 && t.every((x, i) => i % 2 === 0 || x === t[i - 1])) t = t.filter((_, i) => i % 2 === 0);
+    if (t.length === 5) { diurnasStr = t[0]; faltasTotalMin = tmin(t[2]); creditoMin = tmin(t[3]); debitoMin = tmin(t[4]); }
+  }
+  const mSaldo = texto.match(/Balan[çc]o do banco de horas no per[ií]odo:\s*([+-]?\d{1,3}:\d{2});\s*Saldo total do banco de horas:\s*([+-]?\d{1,3}:\d{2})/i);
+  const bancoTotal = mSaldo ? mSaldo[1].replace('+', '') : null;
+  const saldoMin = mSaldo ? paraMinutos(mSaldo[2]) : null;
+
+  return {
+    layout: 'novo', nome, diasAtraso, minutosAtrasoTotal, diasSaidaAntecipada, minutosSaidaTotal, diasCompletos,
+    previstas: formatarMinutos(previstasSoma),
+    diurnas: diurnasStr || formatarMinutos(diurnasSoma),
+    bancoTotal, debitoMin, creditoMin, saldoMin,
+    faltasMin: faltasTotalMin,
+    jornadaPadraoMin: jornada.padraoMin || null,
+    abonoParcialMin, abonoParcialDias, eventos,
+    diasLidos, linhasIgnoradas,
+    somas: { diurnas: diurnasSoma, credito: creditoSoma, debito: debitoSoma, faltas: faltasSoma }
+  };
+}
+
+// ---------- Ponto Sintético (layout novo: 7 colunas — Previstas Diurnas Intervalo Faltas Créd.0% Debito Balanço) ----------
+function parseSinteticoNovo(texto) {
+  const T = '(-|[+-]?\\d{1,4}:\\d{2})';
+  const re = new RegExp(`^(.+?)\\s+${T}\\s+${T}\\s+${T}\\s+${T}\\s+${T}\\s+${T}\\s+${T}\\s*$`);
+  const resultado = {};
+  for (const linhaRaw of texto.split('\n')) {
+    const linha = linhaRaw.trim().replace(/\s+/g, ' ');
+    const m = linha.match(re);
+    if (!m) continue;
+    const nome = m[1].trim();
+    if (/^total$/i.test(nome) || nome.toUpperCase().includes('COLABORADOR') || nome.length < 3) continue;
+    resultado[nome] = {
+      previstas: m[2], diurnas: m[3],
+      bancoTotal: null,                 // o "Balanço" daqui é do MÊS, não o saldo acumulado — o acumulado vem do Saldo Geral
+      balancoMes: m[8],
+      creditoMin: tmin(m[6]), debitoMin: tmin(m[7]), faltasMin: tmin(m[5])
+    };
+  }
+  return resultado;
+}
+
+// ---------- Ajustes (layout novo): conta as linhas de intervenção; a palavra "Justificativa" quebra no meio ----------
+function parseAjustesNovo(texto) {
+  const partes = texto.split(/Colaborador:\s*/i).slice(1);
+  const resultado = {};
+  for (const parte of partes) {
+    const nomeOriginal = parte.split('\n')[0].replace(/\s+/g, ' ').trim();
+    if (!nomeOriginal) continue;
+    const idxBanco = parte.search(/^BANCO DE HORAS\s*$/m);
+    const soMarcacoes = idxBanco > -1 ? parte.slice(0, idxBanco) : parte;
+    const total = (soMarcacoes.match(/^\d{2}\/\d{2}\s+\d{1,2}:\d{2}\b/gm) || []).length;
+    const rodape = parte.replace(/\s+/g, ' ').match(/(\d+) interven[çc][õo]es? em marca[çc][õo]es/i);
+    const k = chave(nomeOriginal);
+    if (!resultado[k]) resultado[k] = { nome: nomeOriginal, total: 0, rodape: 0 };
+    resultado[k].total += total;
+    if (rodape) resultado[k].rodape += Number(rodape[1]);
+  }
+  return resultado;
+}
+
+// ---------- Ausências (layout novo: Colaborador | Departamento | Tipo | Motivo | Data [horário] | Duração) ----------
+// O espelho novo só diz "Abono:08:00-12:00" (sem o motivo). O motivo (Atestado Médico, Consulta...) está no
+// relatório de Ausências — aqui juntamos os dois pela pessoa e pelo dia, só para exibir o motivo.
+function enriquecerAbonosComAusencias(pontualidadePorNome, detalhes) {
+  const porNomeDia = {};
+  for (const d of detalhes || []) {
+    if (d.tipo !== 'Abono' || !d.dataBase) continue;
+    const k = canonNome(d.nome) + '|' + d.dataBase.slice(0, 5);
+    (porNomeDia[k] = porNomeDia[k] || []).push(d);
+  }
+  const motivos = lista => [...new Set(lista.map(x => String(x.motivoOriginal || '').replace(/^Abono\s+/i, '').trim()).filter(Boolean))].join(' / ');
+  for (const p of Object.values(pontualidadePorNome)) {
+    const ck = canonNome(p.nome);
+    for (const ev of (p.eventos || [])) {
+      if (ev.tipo !== 'Abono') continue;
+      const lista = porNomeDia[ck + '|' + ev.dia];
+      if (lista) { ev.motivo = motivos(lista) || ev.motivo; ev.categoria = lista[0].categoria || ev.categoria; }
+    }
+    for (const d of (p.abonoParcialDias || [])) {
+      const lista = porNomeDia[ck + '|' + d.dia];
+      if (lista) d.motivo = motivos(lista);
+    }
+  }
+}
+
+function parseAusenciasNovo(texto) {
+  const t = texto.replace(/\n/g, ' ').replace(/\s+/g, ' ');
+  const re = /((?:[A-ZÀ-ÖØ-Ý']{2,} )+)([A-ZÀ-Ý][a-zà-ÿ]+(?: [A-ZÀ-Ý][a-zà-ÿ]+)?) (Férias|Falta|Afastamento|Abono|Feriado) (.+?) (\d{2}\/\d{2}\/\d{4}(?: a \d{2}\/\d{2}\/\d{4})?)(?: (\d{2}:\d{2}-\d{2}:\d{2}))? (\d+)(?= |$)/g;
+  const detalhes = [], categorias = {}, todas = [];
+  let m;
+  while ((m = re.exec(t)) !== null) {
+    const nome = m[1].trim(), tipo = m[3], motivoBruto = m[4].trim(), data = m[5], horario = m[6] || null;
+    todas.push({ nome, tipo });
+    if (tipo === 'Feriado') continue; // feriado não é ausência pessoal
+    const generico = /^n[ãa]o informado motivo/i.test(motivoBruto);
+    let categoria, motivo;
+    if (tipo === 'Férias') { categoria = 'Férias'; motivo = 'Férias'; }
+    else if (tipo === 'Falta') { categoria = 'Falta'; motivo = generico ? 'Falta' : `Falta – ${motivoBruto}`; }
+    else if (tipo === 'Afastamento') { categoria = /antecipa/i.test(motivoBruto) ? 'Antecipação de férias' : 'Afastamento'; motivo = `Afastamento – ${motivoBruto}`; }
+    else { const c = categorizarMotivo(motivoBruto); categoria = (c === 'Outros' || c === 'Feriado / abono') ? 'Abono' : c; motivo = `Abono – ${motivoBruto}`; }
+    categorias[categoria] = (categorias[categoria] || 0) + 1;
+    detalhes.push({ nome, tipo, motivo, categoria, motivoOriginal: motivoBruto, data: horario ? `${data} ${horario}` : data, dataBase: data, horario });
+  }
+  const totalDeclarado = (t.match(/total (\d+) aus[êe]ncias/i) || [])[1];
+  return { categorias, detalhes, lidas: todas.length, totalDeclarado: totalDeclarado ? Number(totalDeclarado) : null, layout: 'novo' };
+}
+
 function parseAbsenteismo(texto) {
   const linhas = texto.split('\n');
   const resultado = {};
-  const re = new RegExp(`^(${NOME_RE})\\s+(${HHMM_RE})\\s+(${HHMM_RE})\\s+(${HHMM_RE})\\s+([\\d,]+)\\s*$`);
+  const re = new RegExp(`^(${NOME_RE})\\s+(${HHMM_RE})\\s+(${HHMM_RE})\\s+(${HHMM_RE})\\s+([\\d,]+)%?\\s*$`);
   for (const linha of linhas) {
     const m = linha.trim().match(re);
     if (m) resultado[m[1].trim()] = { faltaPct: parseFloat(m[5].replace(',', '.')), faltaHoras: m[4] };
@@ -671,6 +878,7 @@ function parseAbsenteismo(texto) {
   return resultado;
 }
 function parseSintetico(texto) {
+  if (/Balan[çc]o/.test(texto) && /Cr[ée]d\.?0%/i.test(texto)) return parseSinteticoNovo(texto); // layout novo
   const linhas = texto.split('\n');
   const resultado = {};
   for (const linhaRaw of linhas) {
@@ -688,14 +896,15 @@ function parseSintetico(texto) {
 function parseSaldo(texto) {
   const linhas = texto.split('\n');
   const resultado = {};
-  const re = new RegExp(`^(${NOME_RE})\\s+(${HHMM_RE})\\s+(.+)$`);
+  const re = new RegExp(`^(${NOME_RE})\\s+(\\+?${HHMM_RE})\\s+(.+)$`);
   for (const linha of linhas) {
     const m = linha.trim().match(re);
-    if (m) resultado[m[1].trim()] = { saldo: m[2] };
+    if (m && !/^SALDO TOTAL/i.test(m[1].trim())) resultado[m[1].trim()] = { saldo: m[2].replace('+', '') };
   }
   return resultado;
 }
 function parseAjustes(texto) {
+  if (/Data da\s*marca[çc][ãa]o/i.test(texto) && /Interven[çc][ãa]o/i.test(texto)) return parseAjustesNovo(texto); // layout novo
   const partes = texto.split(/Colaborador:\s*/i).slice(1);
   const resultado = {};
   for (const parte of partes) {
@@ -709,6 +918,7 @@ function parseAjustes(texto) {
   return resultado;
 }
 function parseAusencias(texto, nomesConhecidos) {
+  if (/Departamento\s+Tipo\s+Motivo/.test(texto)) return parseAusenciasNovo(texto); // layout novo
   const nomesOrdenados = [...nomesConhecidos].sort((a, b) => b.length - a.length);
   const textoUnico = texto.replace(/\n/g, ' ').replace(/\s+/g, ' ');
   const categorias = {};
@@ -859,6 +1069,7 @@ function parseEventosDia(texto) {
 }
 
 function parseIndividual(texto) {
+  if (ehLayoutEspelhoNovo(texto)) return parseIndividualNovo(texto); // layout novo
   const nomeMatch = texto.match(/Colaborador:\s*([^\n]+?)\s*(?:CPF:|Crach[áa]:|$)/);
   const nome = nomeMatch ? nomeMatch[1].trim() : null;
   const jornada = parseJornada(texto);
@@ -962,7 +1173,7 @@ function construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nome
     const p = pontualidadePorNome[nomeChave];
     if (p.eventos) {
       for (const ev of p.eventos) {
-        todosEventos.push({ nomeChave, nomeExibicao: p.nome, dia: ev.dia, diaSemana: ev.diaSemana, motivo: ev.motivo });
+        todosEventos.push({ nomeChave, nomeExibicao: p.nome, dia: ev.dia, diaSemana: ev.diaSemana, motivo: ev.motivo, tipo: ev.tipo, minutos: ev.minutos, categoria: ev.categoria });
       }
     }
   }
@@ -993,8 +1204,8 @@ function construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nome
   const ausenciasIndividuaisDetalhes = [];
   const abonoDiaInteiroPorNome = {};
   for (const ev of todosEventos) {
-    if (ehFeriado(ev.dia, ev.motivo)) continue;
-    const categoria = categorizarMotivo(ev.motivo);
+    if (ev.tipo === 'Feriado' || ehFeriado(ev.dia, ev.motivo)) continue; // no layout novo o próprio espelho marca "Feriado:"
+    const categoria = ev.categoria || categorizarMotivo(ev.motivo);
     ausenciasIndividuaisCategorias[categoria] = (ausenciasIndividuaisCategorias[categoria] || 0) + 1;
     ausenciasIndividuaisDetalhes.push({ nome: ev.nomeExibicao, motivo: ev.motivo, data: ev.dia });
     // Sábado/domingo não têm jornada prevista mesmo sem licença/férias — não
@@ -1003,7 +1214,7 @@ function construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nome
     const ehFimDeSemana = ev.diaSemana === 'sáb' || ev.diaSemana === 'sab' || ev.diaSemana === 'dom';
     if (!ehFimDeSemana) {
       const jornadaMin = (pontualidadePorNome[ev.nomeChave] && pontualidadePorNome[ev.nomeChave].jornadaPadraoMin) || 0;
-      abonoDiaInteiroPorNome[ev.nomeChave] = (abonoDiaInteiroPorNome[ev.nomeChave] || 0) + jornadaMin;
+      abonoDiaInteiroPorNome[ev.nomeChave] = (abonoDiaInteiroPorNome[ev.nomeChave] || 0) + ((ev.minutos !== undefined && ev.minutos !== null) ? ev.minutos : jornadaMin);
     }
   }
   // Abono parcial (dia trabalhado com Previstas reduzido) — entra na lista de
@@ -1013,17 +1224,18 @@ function construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nome
     const p = pontualidadePorNome[nomeChave];
     if (!p.abonoParcialDias) continue;
     for (const d of p.abonoParcialDias) {
-      abonosParciaisDetalhes.push({ nome: p.nome, motivo: `Abono parcial (${formatarMinutos(d.minutos)})`, data: d.dia });
+      abonosParciaisDetalhes.push({ nome: p.nome, motivo: `Abono parcial (${formatarMinutos(d.minutos)})${d.motivo ? ' – ' + d.motivo : ''}`, data: d.dia });
     }
   }
 
   // 4. Para quem NÃO tem ponto individual neste mês, mantém o método antigo
   // (cruzamento por nome com o relatório de Ausências agregado) como fallback.
   const nomesComIndividual = new Set(Object.keys(pontualidadePorNome));
-  const ausenciasAntigasDetalhes = (ausencias.detalhes || []).filter(d => !nomesComIndividual.has(chave(d.nome)) && !ehFeriadoNacionalPorNome(d.motivo));
+  const ausenciasAntigasDetalhes = (ausencias.detalhes || []).filter(d => !nomesComIndividual.has(chave(d.nome)) && !ehFeriadoNacionalPorNome(d.motivo))
+    .map(d => (d.categoria ? { nome: d.nome, motivo: d.motivo, data: d.data, categoria: d.categoria } : d));
   const ausenciasAntigasCategorias = {};
   for (const d of ausenciasAntigasDetalhes) {
-    const categoria = categorizarMotivo(d.motivo);
+    const categoria = d.categoria || categorizarMotivo(d.motivo);
     ausenciasAntigasCategorias[categoria] = (ausenciasAntigasCategorias[categoria] || 0) + 1;
   }
 
@@ -1038,8 +1250,10 @@ function construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nome
     const ajustesN = ajustes[n]?.total || 0;
     const pontualidade = (pontualidadePorNome && pontualidadePorNome[n]) ? pontualidadePorNome[n] : null;
 
-    let bancoDisponivel = !!(sintetico[n] || saldo[n]);
-    let bancoMin = sintetico[n] ? paraMinutos(sintetico[n].bancoTotal) : (saldo[n] ? paraMinutos(saldo[n].saldo) : null);
+    // Layout novo: o Sintético só traz o "Balanço" do MÊS (bancoTotal = null) — o saldo acumulado vem do Saldo Geral.
+    const sinComBanco = (sintetico[n] && sintetico[n].bancoTotal) ? sintetico[n] : null;
+    let bancoDisponivel = !!(sinComBanco || saldo[n]);
+    let bancoMin = sinComBanco ? paraMinutos(sinComBanco.bancoTotal) : (saldo[n] ? paraMinutos(saldo[n].saldo) : null);
     let previstaMin = sintetico[n] ? paraMinutos(sintetico[n].previstas) : 0;
     let diurnaMin = sintetico[n] ? paraMinutos(sintetico[n].diurnas) : 0;
 
@@ -1057,6 +1271,9 @@ function construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nome
     // próprio espelho — ele já desconta abonos/justificativas dia a dia.
     // Sem ponto individual, mantém o valor do relatório agregado de Absenteísmo.
     let faltaMin = absenteismo[n] ? paraMinutos(absenteismo[n].faltaHoras) : 0;
+    if (sintetico[n] && sintetico[n].debitoMin !== undefined && sintetico[n].debitoMin !== null) {
+      faltaMin = Math.max(0, -sintetico[n].debitoMin); // layout novo
+    }
     if (pontualidade && pontualidade.debitoMin !== null && pontualidade.debitoMin !== undefined) {
       faltaMin = Math.max(0, -pontualidade.debitoMin);
     }
@@ -1071,7 +1288,9 @@ function construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nome
     // coincidência, escondendo que a pessoa tinha bastante crédito E bastante débito.
     const extrasMin = (pontualidade && pontualidade.creditoMin !== null && pontualidade.creditoMin !== undefined)
       ? pontualidade.creditoMin
-      : Math.max(0, diurnaMin - previstaMin);
+      : ((sintetico[n] && sintetico[n].creditoMin !== undefined && sintetico[n].creditoMin !== null)
+          ? sintetico[n].creditoMin // layout novo: mesmo B.Crédito do espelho
+          : Math.max(0, diurnaMin - previstaMin));
 
     // Abonos: parcial (dias com Previstas reduzido) + dia inteiro (atestado,
     // licença, férias etc., já excluindo feriados detectados acima).
@@ -1103,6 +1322,7 @@ function construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nome
 // já leu, e produzem avisos na tela. Elas NÃO alteram nenhum cálculo, nenhum
 // dado salvo no histórico e nenhuma função existente.
 let conferenciaImportacao = [];
+let conferenciaAgregados = [];
 
 function escaparHtmlConf(s) {
   return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -1111,7 +1331,7 @@ function escaparHtmlConf(s) {
 // Lê o "Período: 01/09/2026 a 30/09/2026" do cabeçalho do espelho.
 function extrairPeriodoEspelho(texto) {
   const t = texto.replace(/\s+/g, ' ');
-  const m = t.match(/Per[ií]odo:\s*(\d{2})\/(\d{2})\/(\d{4})\s*a\s*(\d{2})\/(\d{2})\/(\d{4})/i);
+  const m = t.match(/Per[ií]odo:\s*(\d{2})\/(\d{2})\/(\d{4})\s*(?:a|-|até)\s*(\d{2})\/(\d{2})\/(\d{4})/i);
   if (!m) return null;
   const ini = new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
   const fim = new Date(Number(m[6]), Number(m[5]) - 1, Number(m[4]));
@@ -1119,9 +1339,40 @@ function extrairPeriodoEspelho(texto) {
   return { mes: Number(m[2]), ano: Number(m[3]), inicio: `${m[1]}/${m[2]}/${m[3]}`, fim: `${m[4]}/${m[5]}/${m[6]}`, dias };
 }
 
-// Confere um espelho individual contra os totais impressos no próprio rodapé.
-// Devolve { arquivo, nome, periodo, avisos: [textos] }.
-function conferirEspelho(nomeArquivo, texto, resultado) {
+// Confere se cada relatório agregado foi realmente lido (foi isto que faltou quando o sistema de ponto mudou o layout).
+function conferirRelatoriosAgregados(dados, lidos) {
+  const avisos = [];
+  const rotulo = { absenteismo: 'Absenteísmo', sintetico: 'Ponto Sintético', saldo: 'Saldo Geral', ajustes: 'Ajustes', ausencias: 'Ausências' };
+  const contagens = {};
+  for (const k of ['absenteismo', 'sintetico', 'saldo']) {
+    if (!dados[k]) continue;
+    const n = Object.keys(lidos[k] || {}).length;
+    contagens[k] = n;
+    if (n === 0) avisos.push(`${rotulo[k]}: não consegui ler nenhum colaborador deste relatório — o layout pode ter mudado. O que depende dele ficará em branco ou errado.`);
+  }
+  const lidosOk = Object.entries(contagens).filter(([, n]) => n > 0);
+  if (lidosOk.length > 1) {
+    const max = Math.max(...lidosOk.map(([, n]) => n));
+    lidosOk.forEach(([k, n]) => { if (max - n >= 3 && n < max * 0.8) avisos.push(`${rotulo[k]}: li ${n} colaborador(es), mas outro relatório do mesmo mês tem ${max}. Alguém pode ter ficado de fora.`); });
+  }
+  if (dados.ajustes) {
+    const aj = Object.values(lidos.ajustes || {});
+    if (aj.length === 0) avisos.push('Ajustes: não consegui ler nenhum colaborador deste relatório — o layout pode ter mudado.');
+    const dif = aj.filter(a => a.rodape && a.rodape !== a.total);
+    if (dif.length) avisos.push(`Ajustes: a contagem de ${dif.length} colaborador(es) não bate com o "N intervenções" do próprio relatório (${dif.slice(0, 3).map(a => a.nome).join(', ')}${dif.length > 3 ? '…' : ''}).`);
+  }
+  if (dados.ausencias) {
+    const a = lidos.ausencias;
+    if (a && a.totalDeclarado !== null && a.totalDeclarado !== undefined && a.lidas !== a.totalDeclarado) {
+      avisos.push(`Ausências: o relatório declara ${a.totalDeclarado} ausências no período, mas li ${a.lidas}. Alguma linha pode ter ficado de fora.`);
+    }
+  }
+  return avisos;
+}
+
+// Confere um espelho individual contra os totais impressos no próprio rodapé e, quando possível,
+// contra os relatórios agregados do mesmo mês. Devolve { arquivo, nome, periodo, avisos: [textos] }.
+function conferirEspelho(nomeArquivo, texto, resultado, agregados) {
   const avisos = [];
   const periodo = extrairPeriodoEspelho(texto);
   if (!resultado) {
@@ -1131,53 +1382,95 @@ function conferirEspelho(nomeArquivo, texto, resultado) {
   if (!periodo) avisos.push('Não encontrei o período (datas de início e fim) no cabeçalho do arquivo.');
 
   if (resultado.saldoMin === null || resultado.saldoMin === undefined) {
-    avisos.push('Sem o campo "Saldo:" no rodapé — o Banco de horas deste colaborador não vem deste arquivo.');
+    avisos.push('Sem o campo "Saldo" no rodapé — o Banco de horas deste colaborador não vem deste arquivo.');
   }
 
-  // Coerência do próprio rodapé: B.Total deve ser B.Crédito + B.Débito.
-  if (resultado.bancoTotal && resultado.creditoMin !== null && resultado.debitoMin !== null) {
-    const totalRodape = paraMinutos(resultado.bancoTotal);
-    const soma = resultado.creditoMin + resultado.debitoMin;
-    if (Math.abs(totalRodape - soma) > 1) {
-      avisos.push(`O rodapé não fecha: B.Crédito (${formatarMinutos(resultado.creditoMin)}) + B.Débito (${formatarMinutos(resultado.debitoMin)}) deveria dar o B.Total (${formatarMinutos(totalRodape)}). Algum número pode ter sido lido errado.`);
+  if (resultado.layout === 'novo') {
+    const s = resultado.somas || {};
+    const fmt = formatarMinutos;
+    const difere = (a, b) => Math.abs(a - b) > 1;
+    if (resultado.creditoMin === null || resultado.debitoMin === null) {
+      avisos.push('Não achei a linha "Total:" do espelho — Extras e Faltas/Atrasos deste colaborador não vêm do total oficial.');
+    } else {
+      if (difere(s.credito, resultado.creditoMin)) avisos.push(`Os créditos dia a dia somam ${fmt(s.credito)}, mas a linha Total diz ${fmt(resultado.creditoMin)}. Alguma linha pode não ter sido lida.`);
+      if (difere(s.debito, Math.abs(resultado.debitoMin))) avisos.push(`Os débitos dia a dia somam ${fmt(s.debito)}, mas a linha Total diz ${fmt(Math.abs(resultado.debitoMin))}. Alguma linha pode não ter sido lida.`);
+      if (resultado.bancoTotal && difere(paraMinutos(resultado.bancoTotal), resultado.creditoMin + resultado.debitoMin)) {
+        avisos.push(`O total não fecha: Crédito (${fmt(resultado.creditoMin)}) + Débito (${fmt(resultado.debitoMin)}) deveria dar o Balanço (${resultado.bancoTotal}).`);
+      }
+    }
+    if (resultado.diurnas && difere(s.diurnas, paraMinutos(resultado.diurnas))) {
+      avisos.push(`As horas diurnas dia a dia somam ${fmt(s.diurnas)}, mas o Total diz ${resultado.diurnas}. Alguma linha pode não ter sido lida.`);
+    }
+    if (resultado.faltasMin) {
+      avisos.push(`A coluna "Faltas" do espelho tem ${fmt(resultado.faltasMin)}. Esse valor NÃO é somado em Faltas/Atrasos (que usa só o Débito) — confira se ele já não está dentro do Débito.`);
+    }
+    if (resultado.linhasIgnoradas && resultado.linhasIgnoradas.length) {
+      avisos.push(`Não consegui ler as linhas dos dias: ${resultado.linhasIgnoradas.join(', ')}.`);
+    }
+    if (periodo && resultado.diasLidos !== periodo.dias) {
+      avisos.push(`Li ${resultado.diasLidos} dias na tabela, mas o período (${periodo.inicio} a ${periodo.fim}) tem ${periodo.dias}. Algum dia pode ter ficado de fora.`);
+    }
+  } else {
+    // ----- layout antigo (sem alteração) -----
+    // Coerência do próprio rodapé: B.Total deve ser B.Crédito + B.Débito.
+    if (resultado.bancoTotal && resultado.creditoMin !== null && resultado.debitoMin !== null) {
+      const totalRodape = paraMinutos(resultado.bancoTotal);
+      const soma = resultado.creditoMin + resultado.debitoMin;
+      if (Math.abs(totalRodape - soma) > 1) {
+        avisos.push(`O rodapé não fecha: B.Crédito (${formatarMinutos(resultado.creditoMin)}) + B.Débito (${formatarMinutos(resultado.debitoMin)}) deveria dar o B.Total (${formatarMinutos(totalRodape)}). Algum número pode ter sido lido errado.`);
+      }
+    }
+    // Parte da tabela de dias (sem o rodapé de totais).
+    let tabela = texto.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+    const fimTabela = tabela.search(/Previstas:\s*-?\d/i);
+    if (fimTabela > -1) tabela = tabela.slice(0, fimTabela);
+    // Soma dos débitos dia a dia (valores com sinal "-") deve bater com o B.Débito do rodapé.
+    if (resultado.debitoMin !== null && resultado.debitoMin !== undefined) {
+      // Só a tabela de dias (a partir da primeira data) e só valores negativos
+      // de verdade (hífen colado ao número e precedido de espaço) — assim o
+      // hífen do cabeçalho da jornada ("08:00-12:00") não é contado.
+      const iniTabela = tabela.search(/\d{2}\/\d{2}\s+(?:seg|ter|qua|qui|sex|s[áa]b|dom)\s/i);
+      const soTabela = iniTabela > -1 ? tabela.slice(iniTabela) : tabela;
+      const negativos = soTabela.match(/\s-\d{1,3}:\d{2}/g) || [];
+      const somaDebitosDias = negativos.reduce((a, t) => a + Math.abs(paraMinutos(t.trim())), 0);
+      if (Math.abs(somaDebitosDias - Math.abs(resultado.debitoMin)) > 1) {
+        avisos.push(`Os débitos dia a dia somam ${formatarMinutos(somaDebitosDias)}, mas o rodapé diz ${formatarMinutos(Math.abs(resultado.debitoMin))}. Alguma linha pode não ter sido lida.`);
+      }
+    }
+    // Quantidade de dias lidos deve ser a quantidade de dias do período.
+    if (periodo) {
+      const marcadores = tabela.match(/\d{2}\/\d{2}\s+(?:seg|ter|qua|qui|sex|s[áa]b|dom)\s/gi) || [];
+      if (marcadores.length !== periodo.dias) {
+        avisos.push(`Li ${marcadores.length} dias na tabela, mas o período (${periodo.inicio} a ${periodo.fim}) tem ${periodo.dias}. Algum dia pode ter ficado de fora.`);
+      }
     }
   }
 
-  // Parte da tabela de dias (sem o rodapé de totais).
-  let tabela = texto.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
-  const fimTabela = tabela.search(/Previstas:\s*-?\d/i);
-  if (fimTabela > -1) tabela = tabela.slice(0, fimTabela);
-
-  // Soma dos débitos dia a dia (valores com sinal "-") deve bater com o B.Débito do rodapé.
-  if (resultado.debitoMin !== null && resultado.debitoMin !== undefined) {
-    // Só a tabela de dias (a partir da primeira data) e só valores negativos
-    // de verdade (hífen colado ao número e precedido de espaço) — assim o
-    // hífen do cabeçalho da jornada ("08:00-12:00") não é contado.
-    const iniTabela = tabela.search(/\d{2}\/\d{2}\s+(?:seg|ter|qua|qui|sex|s[áa]b|dom)\s/i);
-    const soTabela = iniTabela > -1 ? tabela.slice(iniTabela) : tabela;
-    const negativos = soTabela.match(/\s-\d{1,3}:\d{2}/g) || [];
-    const somaDebitosDias = negativos.reduce((a, t) => a + Math.abs(paraMinutos(t.trim())), 0);
-    if (Math.abs(somaDebitosDias - Math.abs(resultado.debitoMin)) > 1) {
-      avisos.push(`Os débitos dia a dia somam ${formatarMinutos(somaDebitosDias)}, mas o rodapé diz ${formatarMinutos(Math.abs(resultado.debitoMin))}. Alguma linha pode não ter sido lida.`);
+  // ----- cruzamento com os relatórios agregados do mesmo mês -----
+  if (agregados) {
+    const achar = dict => { const c = canonNome(resultado.nome); return Object.keys(dict || {}).find(k => canonNome(k) === c); };
+    const kSal = achar(agregados.saldo);
+    if (kSal && resultado.saldoMin !== null && resultado.saldoMin !== undefined) {
+      const ref = paraMinutos(agregados.saldo[kSal].saldo);
+      if (ref !== resultado.saldoMin) avisos.push(`O Saldo do espelho (${formatarMinutos(resultado.saldoMin)}) é diferente do Saldo Geral (${formatarMinutos(ref)}). Confira se os arquivos são do mesmo mês.`);
     }
-  }
-
-  // Quantidade de dias lidos deve ser a quantidade de dias do período.
-  if (periodo) {
-    const marcadores = tabela.match(/\d{2}\/\d{2}\s+(?:seg|ter|qua|qui|sex|s[áa]b|dom)\s/gi) || [];
-    if (marcadores.length !== periodo.dias) {
-      avisos.push(`Li ${marcadores.length} dias na tabela, mas o período (${periodo.inicio} a ${periodo.fim}) tem ${periodo.dias}. Algum dia pode ter ficado de fora.`);
+    const kSin = achar(agregados.sintetico);
+    if (kSin && resultado.layout === 'novo') {
+      const ag = agregados.sintetico[kSin];
+      if (resultado.diurnas && ag.diurnas && paraMinutos(resultado.diurnas) !== paraMinutos(ag.diurnas)) avisos.push(`As horas diurnas do espelho (${resultado.diurnas}) são diferentes do Ponto Sintético (${ag.diurnas}).`);
+      if (resultado.creditoMin !== null && ag.creditoMin !== undefined && resultado.creditoMin !== ag.creditoMin) avisos.push(`O crédito do espelho (${formatarMinutos(resultado.creditoMin)}) é diferente do Ponto Sintético (${formatarMinutos(ag.creditoMin)}).`);
+      if (resultado.debitoMin !== null && ag.debitoMin !== undefined && resultado.debitoMin !== ag.debitoMin) avisos.push(`O débito do espelho (${formatarMinutos(resultado.debitoMin)}) é diferente do Ponto Sintético (${formatarMinutos(ag.debitoMin)}).`);
     }
   }
   return { arquivo: nomeArquivo, nome: resultado.nome, periodo, avisos };
 }
 
-// Mostra, perto do botão de salvar, o resultado da conferência dos espelhos
+// Mostra, perto do botão de salvar, o resultado da conferência dos relatórios e dos espelhos
 // individuais. Só lê e exibe — não altera nenhum dado.
 function renderConferenciaImportacao() {
   const el = document.getElementById('conferenciaImportacao');
   if (!el) return;
-  if (!conferenciaImportacao.length) { el.classList.add('hidden'); el.innerHTML = ''; return; }
+  if (!conferenciaImportacao.length && !conferenciaAgregados.length) { el.classList.add('hidden'); el.innerHTML = ''; return; }
   const mesSel = Number(document.getElementById('selMes').value);
   const anoSel = Number(document.getElementById('selAno').value);
   const pad = n => String(n).padStart(2, '0');
@@ -1192,19 +1485,26 @@ function renderConferenciaImportacao() {
   const contagem = {};
   itens.forEach(i => { if (i.periodo) { const k = pad(i.periodo.mes) + '/' + i.periodo.ano; contagem[k] = (contagem[k] || 0) + 1; } });
   const periodos = Object.entries(contagem).map(([k, n]) => `${k} (${n} arquivo${n > 1 ? 's' : ''})`).join(', ') || 'não identificado';
-  const ok = comAviso.length === 0;
+  const ok = comAviso.length === 0 && conferenciaAgregados.length === 0;
   const estilo = ok
     ? 'background:#EAF3DE; color:#27500A; border:1px solid #CFE3B8;'
     : 'background:#FAEEDA; color:#854F0B; border:1px solid #F0D9AE;';
   let html = `<div style="${estilo} border-radius:10px; padding:12px 16px; margin-bottom:1.25rem; font-size:0.85rem;">`;
-  html += `<div style="font-weight:600; margin-bottom:4px;">${ok ? '✓' : '⚠️'} Conferência dos pontos individuais: ${itens.length} arquivo(s) lido(s)${ok ? ', nenhuma divergência encontrada' : `, ${comAviso.length} com aviso`}</div>`;
-  html += `<div>Período(s) dos espelhos: ${escaparHtmlConf(periodos)}</div>`;
-  if (!ok) {
-    html += '<ul style="margin:8px 0 0; padding-left:18px;">';
-    comAviso.forEach(i => {
-      html += `<li style="margin-bottom:4px;"><b>${escaparHtmlConf(i.nome || i.arquivo)}</b>${i.nome ? ` <span style="opacity:.75;">(${escaparHtmlConf(i.arquivo)})</span>` : ''}<br>${i.avisos.map(escaparHtmlConf).join('<br>')}</li>`;
-    });
+  if (conferenciaAgregados.length) {
+    html += `<div style="font-weight:600; margin-bottom:4px;">⚠️ Conferência dos relatórios do mês</div><ul style="margin:0 0 10px; padding-left:18px;">`;
+    conferenciaAgregados.forEach(a => { html += `<li style="margin-bottom:3px;">${escaparHtmlConf(a)}</li>`; });
     html += '</ul>';
+  }
+  if (itens.length) {
+    html += `<div style="font-weight:600; margin-bottom:4px;">${comAviso.length === 0 ? '✓' : '⚠️'} Conferência dos pontos individuais: ${itens.length} arquivo(s) lido(s)${comAviso.length === 0 ? ', nenhuma divergência encontrada' : `, ${comAviso.length} com aviso`}</div>`;
+    html += `<div>Período(s) dos espelhos: ${escaparHtmlConf(periodos)}</div>`;
+    if (comAviso.length) {
+      html += '<ul style="margin:8px 0 0; padding-left:18px;">';
+      comAviso.forEach(i => {
+        html += `<li style="margin-bottom:4px;"><b>${escaparHtmlConf(i.nome || i.arquivo)}</b>${i.nome ? ` <span style="opacity:.75;">(${escaparHtmlConf(i.arquivo)})</span>` : ''}<br>${i.avisos.map(escaparHtmlConf).join('<br>')}</li>`;
+      });
+      html += '</ul>';
+    }
   }
   html += '</div>';
   el.innerHTML = html;
@@ -1228,15 +1528,17 @@ async function processarArquivos() {
 
   statusMsg.textContent = 'Processando dados...';
 
-  const absenteismo = dados.absenteismo ? parseAbsenteismo(dados.absenteismo) : {};
-  const sintetico = dados.sintetico ? parseSintetico(dados.sintetico) : {};
-  const saldo = dados.saldo ? parseSaldo(dados.saldo) : {};
-  const ajustes = dados.ajustes ? parseAjustes(dados.ajustes) : {};
+  let absenteismo = dados.absenteismo ? parseAbsenteismo(dados.absenteismo) : {};
+  let sintetico = dados.sintetico ? parseSintetico(dados.sintetico) : {};
+  let saldo = dados.saldo ? parseSaldo(dados.saldo) : {};
+  let ajustes = dados.ajustes ? parseAjustes(dados.ajustes) : {};
   const nomes = [...new Set([...Object.keys(absenteismo), ...Object.keys(sintetico), ...Object.keys(saldo)])];
   const ausencias = dados.ausencias ? parseAusencias(dados.ausencias, nomes) : { categorias: {}, detalhes: [] };
 
   const pontualidadePorNome = {};
   conferenciaImportacao = [];
+  conferenciaAgregados = [];
+  const espelhosLidos = [];
   if (arquivosIndividuais.length) {
     statusMsg.textContent = `Lendo ${arquivosIndividuais.length} ponto(s) individual(is)...`;
     for (const file of arquivosIndividuais) {
@@ -1244,7 +1546,7 @@ async function processarArquivos() {
         const texto = await extrairTexto(file);
         const resultado = parseIndividual(texto);
         if (resultado) pontualidadePorNome[chave(resultado.nome)] = resultado;
-        try { conferenciaImportacao.push(conferirEspelho(file.name, texto, resultado)); } catch (eConf) { console.warn('Conferência falhou', file.name, eConf); }
+        espelhosLidos.push({ nome: file.name, texto, resultado });
       } catch (e) {
         console.warn('Falha ao processar ponto individual', file.name, e);
         conferenciaImportacao.push({ arquivo: file.name, nome: null, periodo: null, avisos: ['Não consegui ler este arquivo. Ele NÃO entrou nos cálculos.'] });
@@ -1252,7 +1554,28 @@ async function processarArquivos() {
     }
   }
 
-  resumoPendente = construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nomes, pontualidadePorNome);
+  // Unifica grafias do mesmo nome entre relatórios (ex: GONCALVES x GONÇALVES) — quando já são iguais, não muda nada.
+  let nomesFinal = nomes;
+  try {
+    const uni = unificarNomes({ listas: [Object.keys(saldo), Object.keys(sintetico), Object.keys(absenteismo), Object.values(ajustes).map(a => a.nome), (ausencias.detalhes || []).map(d => d.nome), Object.values(pontualidadePorNome).map(p => p.nome)] });
+    const absN = uni.renomearDict(absenteismo), sinN = uni.renomearDict(sintetico), salN = uni.renomearDict(saldo);
+    const ajN = {}; for (const [k, v] of Object.entries(ajustes)) ajN[uni.nomeFinal(k)] = v;
+    const pnN = {}; for (const p of Object.values(pontualidadePorNome)) { const nf = uni.nomeFinal(p.nome); if (chave(p.nome) !== nf) p.nome = nf; pnN[nf] = p; }
+    (ausencias.detalhes || []).forEach(d => { d.nome = uni.nomeFinal(d.nome); });
+    absenteismo = absN; sintetico = sinN; saldo = salN; ajustes = ajN;
+    Object.keys(pontualidadePorNome).forEach(k => delete pontualidadePorNome[k]);
+    Object.assign(pontualidadePorNome, pnN);
+    nomesFinal = [...new Set([...Object.keys(absenteismo), ...Object.keys(sintetico), ...Object.keys(saldo)])];
+  } catch (eUni) { console.warn('Unificação de nomes falhou — seguindo com os nomes como vieram', eUni); }
+  try { enriquecerAbonosComAusencias(pontualidadePorNome, ausencias.detalhes); } catch (eEnr) { console.warn('Motivos dos abonos não puderam ser ligados', eEnr); }
+
+  // Conferência (somente leitura): relatórios agregados e espelhos individuais.
+  try { conferenciaAgregados = conferirRelatoriosAgregados(dados, { absenteismo, sintetico, saldo, ajustes, ausencias }); } catch (eCa) { console.warn('Conferência dos relatórios falhou', eCa); }
+  for (const l of espelhosLidos) {
+    try { conferenciaImportacao.push(conferirEspelho(l.nome, l.texto, l.resultado, { sintetico, saldo })); } catch (eConf) { console.warn('Conferência falhou', l.nome, eConf); }
+  }
+
+  resumoPendente = construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nomesFinal, pontualidadePorNome);
 
   const mesDetectado = detectarMesAno(dados);
   const hoje = new Date();

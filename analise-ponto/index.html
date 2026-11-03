@@ -746,11 +746,11 @@ function parseIndividualNovo(texto) {
     for (const r of rotulos) {
       if (/^feriado$/i.test(r.rotulo)) eventos.push({ dia, diaSemana, motivo: r.detalhe || 'Feriado', tipo: 'Feriado' });
       else {
-        const generico = !r.detalhe || /n[ãa]o informado/i.test(r.detalhe);
+        const generico = !r.detalhe || /n[ãa]o informado/i.test(r.detalhe) || /^\d{2}\/\d{2}\s*-\s*\d{2}\/\d{2}(\/\d{2,4})?$/.test(r.detalhe);
         eventos.push({ dia, diaSemana, motivo: generico ? r.rotulo : `${r.rotulo} – ${r.detalhe}`, tipo: r.rotulo });
       }
     }
-    if (!rotulos.length && !abonos.length && /[A-Za-zÀ-ÿ]{3,}/.test(sobra) && (prev === 0 || periodos.length === 0)) {
+    if (!rotulos.length && !abonos.length && /[A-Za-zÀ-ÿ]{3,}/.test(sobra) && prev === 0) { // com jornada prevista (ex: "Aus. Comp.") é falta, lançada no Débito — não é abono
       eventos.push({ dia, diaSemana, motivo: sobra, tipo: 'Outro' });
     }
   }
@@ -1447,6 +1447,13 @@ function conferirEspelho(nomeArquivo, texto, resultado, agregados) {
   }
 
   // ----- cruzamento com os relatórios agregados do mesmo mês -----
+  if (agregados && resultado.layout === 'novo' && Array.isArray(agregados.ausenciasDetalhes)) {
+    const c = canonNome(resultado.nome);
+    const doRelatorio = agregados.ausenciasDetalhes.filter(d => d.tipo === 'Abono' && d.horario && canonNome(d.nome) === c);
+    const minRel = doRelatorio.reduce((a, d) => { const [i, f] = d.horario.split('-'); return a + (paraMinutosDoDia(f) - paraMinutosDoDia(i)); }, 0);
+    const minEsp = (resultado.abonoParcialMin || 0) + (resultado.eventos || []).filter(e => e.tipo === 'Abono').reduce((a, e) => a + (e.minutos || 0), 0);
+    if (minRel !== minEsp) avisos.push(`Os abonos do espelho somam ${formatarMinutos(minEsp)}, mas o relatório de Ausências registra ${formatarMinutos(minRel)} de abono para esta pessoa.`);
+  }
   if (agregados) {
     const achar = dict => { const c = canonNome(resultado.nome); return Object.keys(dict || {}).find(k => canonNome(k) === c); };
     const kSal = achar(agregados.saldo);
@@ -1572,7 +1579,7 @@ async function processarArquivos() {
   // Conferência (somente leitura): relatórios agregados e espelhos individuais.
   try { conferenciaAgregados = conferirRelatoriosAgregados(dados, { absenteismo, sintetico, saldo, ajustes, ausencias }); } catch (eCa) { console.warn('Conferência dos relatórios falhou', eCa); }
   for (const l of espelhosLidos) {
-    try { conferenciaImportacao.push(conferirEspelho(l.nome, l.texto, l.resultado, { sintetico, saldo })); } catch (eConf) { console.warn('Conferência falhou', l.nome, eConf); }
+    try { conferenciaImportacao.push(conferirEspelho(l.nome, l.texto, l.resultado, { sintetico, saldo, ausenciasDetalhes: ausencias.detalhes })); } catch (eConf) { console.warn('Conferência falhou', l.nome, eConf); }
   }
 
   resumoPendente = construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nomesFinal, pontualidadePorNome);

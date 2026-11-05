@@ -194,7 +194,8 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
       </div>
       <div class="field">
         <label>MRR total do mês (R$) — usado em CS e P&amp;D</label>
-        <input type="text" id="mrr-total-global" placeholder="Ex: 619.036,50" oninput="recalcularCS(); recalcularPD();"/>
+        <input type="text" id="mrr-total-global" placeholder="Ex: 619.036,50" oninput="guardarMrrTotalDoMes(); recalcularCS(); recalcularPD();"/>
+        <div class="hint" id="aviso-mrr-total" style="display:none;"></div>
       </div>
       <div id="aviso-edicao-mes" class="status-msg ok" style="display:none; margin-top:12px;">
         📝 Editando um mês já salvo — os percentuais e valores de cada pessoa (em todas as áreas) foram recuperados automaticamente e ficam protegidos, mesmo sem reprocessar PDF nenhum. Se quiser mudar o nível/% de algum KPI específico (Marketing, Vendas, CS, P&amp;D ou MRR), reenvie o PDF daquela área — isso substitui o cálculo recuperado pelo novo. Depois é só salvar normalmente.
@@ -273,7 +274,7 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
         <div class="field" style="margin-bottom:16px;max-width:360px;"><label>Valor total do bônus — manual (R$, opcional)</label><input type="text" id="pool-produto-manual" placeholder="Em branco = cálculo automático" oninput="recalcular()"/><div class="hint">Se preencher, substitui o pool calculado (dividido pelos % de cada pessoa). Também dá pra digitar o valor de cada pessoa na tabela abaixo.</div></div>
         <div class="loading-inline" id="produto-loading">Carregando colaboradores...</div>
         <table class="produto-table" id="tabela-produto" style="display:none;">
-          <thead><tr><th>Colaborador</th><th>% do bônus</th><th>Valor</th></tr></thead><tbody id="tbody-produto"></tbody>
+          <thead><tr><th>Colaborador</th><th>% do bônus</th><th>Valor</th><th></th></tr></thead><tbody id="tbody-produto"></tbody>
         </table>
         <div class="total-linha" id="total-linha-produto" style="display:none;"><span>Total: <strong id="total-percentual-produto">0%</strong></span><span class="badge" id="badge-total-produto">—</span></div>
       </div>
@@ -653,6 +654,54 @@ function sair() {
   document.getElementById('login-user').value = '';
   document.getElementById('login-pass').value = '';
 }
+// ── MRR total do mês (campo do topo): usado pelo pool de Churn, NPS e Health Score (CS) e dos 3 KPIs de P&D ──
+// Esse campo é digitado à mão e NÃO é gravado na planilha. Pra não voltar vazio (pool R$ 0,00) ao
+// reabrir um mês com "Editar mês", ele é lembrado neste navegador (por mês) e, se não houver cópia
+// aqui, estimado a partir do pool/% já salvos de NPS/Health Score/P&D.
+function mrrTotalGlobalValor() { return parseValorBR(document.getElementById('mrr-total-global').value); }
+function chaveMrrTotalMes(mes) { return 'fm_mrrtotal::' + String(mes || '').trim().toLowerCase(); }
+function guardarMrrTotalDoMes() {
+  const av = document.getElementById('aviso-mrr-total'); if (av) av.style.display = 'none';
+  try {
+    const mes = document.getElementById('mes-referencia-global').value.trim();
+    const v = document.getElementById('mrr-total-global').value.trim();
+    if (mes && v) localStorage.setItem(chaveMrrTotalMes(mes), v);
+  } catch (e) {}
+}
+function avisoMrrTotalVazio() {
+  return mrrTotalGlobalValor() > 0 ? '' : '<br><span style="color:#b45309;">⚠ Preencha o "MRR total do mês" no topo da página — sem ele o pool fica R$ 0,00.</span>';
+}
+// Devolve um texto de erro se algum KPI da área (baseado no MRR total) está com % de bônus mas pool zerado
+// por falta do MRR total — nesse caso salvar gravaria R$ 0,00 por cima de valores já salvos.
+function erroMrrTotalVazio(resultados, chaves) {
+  if (mrrTotalGlobalValor() > 0) return '';
+  const problema = chaves.some(k => resultados[k] && resultados[k].percTotal > 0 && !(resultados[k].pool > 0));
+  return problema ? 'Preencha o "MRR total do mês" no topo da página antes de salvar — sem ele os pools (e o valor de cada pessoa) ficariam R$ 0,00.' : '';
+}
+function restaurarMrrTotal(mes) {
+  const campo = document.getElementById('mrr-total-global');
+  const aviso = document.getElementById('aviso-mrr-total');
+  if (!campo || campo.value.trim() !== '') return;
+  const mostrar = (html) => { if (aviso) { aviso.innerHTML = html; aviso.style.display = 'block'; } };
+  try {
+    const salvo = localStorage.getItem(chaveMrrTotalMes(mes));
+    if (salvo && parseValorBR(salvo) > 0) { campo.value = salvo; mostrar('MRR total recuperado do que você digitou neste navegador — confira se é o do mês.'); return; }
+  } catch (e) {}
+  // Estimativa: pool = MRR total × %  →  MRR total = pool ÷ %. Usa o KPI de maior % (menor erro de arredondamento).
+  const fontes = [['cs', 'NPS'], ['cs', 'Health Score'], ['pd', 'NPS (P&D)'], ['pd', 'Health Score (P&D)'], ['pd', 'Índice de Eficiência de Infraestrutura']];
+  let melhor = null;
+  fontes.forEach(([area, nomeKpi]) => {
+    const reg = (todosHistoricos[area]?.registros || []).find(r => r.mesReferencia === mes && r.nomeKpi === nomeKpi);
+    if (!reg) return;
+    const perc = Number(reg.percTotal) || 0, pool = Number(reg.pool) || 0;
+    if (perc > 0 && pool > 0 && (!melhor || perc > melhor.perc)) melhor = { perc, pool, nomeKpi };
+  });
+  if (melhor) {
+    const est = arredondarCentavos(melhor.pool / (melhor.perc / 100));
+    campo.value = fmtNumeroBR(est);
+    mostrar('⚠ MRR total <strong>estimado</strong> a partir do pool já salvo de "' + melhor.nomeKpi + '" (' + fmtBRL(melhor.pool) + ' ÷ ' + String(melhor.perc).replace('.', ',') + '%). Confira com a sua planilha e corrija se precisar.');
+  }
+}
 function parseValorBR(str) {
   if (!str) return 0;
   // Aceita também texto já formatado ("R$ 1.234,56"): ignora tudo que não for dígito, ponto, vírgula ou sinal.
@@ -814,7 +863,7 @@ function calcularNPS_PD() {
   const nivel = calcularNivelAscendente(nota, tiers);
   const percTotal = nivel ? tiers[nivel].bonus : tiers.padrao;
   const pool = arredondarCentavos(mrrTotal * (percTotal/100));
-  elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Nenhum nível atingido (NPS ${nota})`;
+  elResultado.innerHTML = (nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Nenhum nível atingido (NPS ${nota})`) + avisoMrrTotalVazio();
   atualizarTbodyTiers(document.getElementById('tabela-npsPD'), tabelaTiersEditavelHTML('npsPD', tiers, CONFIG_TIERS_KPI.npsPD.campos, nivel));
   document.getElementById('pool-npsPD').textContent = fmtBRL(pool);
   let total = 0;
@@ -836,7 +885,7 @@ function calcularHealthScore_PD() {
   const nivel = calcularNivelAscendente(nota, tiers);
   const percTotal = nivel ? tiers[nivel].bonus : tiers.padrao;
   const pool = arredondarCentavos(mrrTotal * (percTotal/100));
-  elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Nenhum nível atingido (Health Score ${nota})`;
+  elResultado.innerHTML = (nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Nenhum nível atingido (Health Score ${nota})`) + avisoMrrTotalVazio();
   atualizarTbodyTiers(document.getElementById('tabela-healthScorePD'), tabelaTiersEditavelHTML('healthScorePD', tiers, CONFIG_TIERS_KPI.healthScorePD.campos, nivel));
   document.getElementById('pool-healthScorePD').textContent = fmtBRL(pool);
   let total = 0;
@@ -858,7 +907,7 @@ function calcularInfraestrutura() {
   const nivel = calcularNivelAscendente(percEficiencia, tiers);
   const percTotal = nivel ? tiers[nivel].bonus : tiers.padrao;
   const pool = arredondarCentavos(mrrTotal * (percTotal/100));
-  elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Nenhum nível atingido (${percEficiencia}%)`;
+  elResultado.innerHTML = (nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Nenhum nível atingido (${percEficiencia}%)`) + avisoMrrTotalVazio();
   atualizarTbodyTiers(document.getElementById('tabela-infraestrutura'), tabelaTiersEditavelHTML('infraestrutura', tiers, CONFIG_TIERS_KPI.infraestrutura.campos, nivel));
   document.getElementById('pool-infraestrutura').textContent = fmtBRL(pool);
   let total = 0;
@@ -877,6 +926,9 @@ async function salvarPD(recarregarHistorico) {
   const statusDiv = document.getElementById('status-salvar-pd');
   const btn = document.getElementById('btn-salvar-pd');
   if (!mesReferencia) { statusDiv.className = 'status-msg erro'; statusDiv.textContent = 'Preencha o mês/ano de referência no topo da página.'; return; }
+  const erroMrr = erroMrrTotalVazio(resultadosPDAtual, ['npsPD','healthScorePD','infraestrutura']);
+  if (erroMrr) { statusDiv.className = 'status-msg erro'; statusDiv.textContent = erroMrr; return; }
+  guardarMrrTotalDoMes();
   const nomesEquipe = { npsPD: 'NPS (P&D)', healthScorePD: 'Health Score (P&D)', infraestrutura: 'Índice de Eficiência de Infraestrutura' };
   const kpisPayload = ['npsPD','healthScorePD','infraestrutura'].map(chave => {
     const r = resultadosPDAtual[chave] || { nivel:'Nenhum', percTotal:0, pool:0 };
@@ -908,10 +960,25 @@ async function carregarColaboradoresProduto() {
 }
 function renderTabelaProduto() {
   const tbody = document.getElementById('tbody-produto');
-  tbody.innerHTML = colaboradoresProduto.map((c, i) => `<tr><td>${c.nome}</td><td><input type="number" step="0.01" min="0" max="100" value="${c.percentual}" onchange="atualizarPercentual(${i}, this.value)"/></td><td><input type="text" class="num" id="valor-produto-${i}" value="${valorExibicaoInicial(c)}" title="Editável — deixe em branco pra voltar ao cálculo automático" onchange="atualizarValorManualProduto(${i}, this.value)"/></td></tr>`).join('');
+  tbody.innerHTML = colaboradoresProduto.map((c, i) => `<tr><td>${c.nome}</td><td><input type="number" step="0.01" min="0" max="100" value="${c.percentual}" onchange="atualizarPercentual(${i}, this.value)"/></td><td><input type="text" class="num" id="valor-produto-${i}" value="${valorExibicaoInicial(c)}" title="Editável — deixe em branco pra voltar ao cálculo automático" onchange="atualizarValorManualProduto(${i}, this.value)"/></td><td><button class="btn-remover" title="Tirar esta pessoa da divisão do bônus de Produto" onclick="removerColaboradorProduto(${i})">✕</button></td></tr>`).join('');
   document.getElementById('tabela-produto').style.display = 'table';
   document.getElementById('total-linha-produto').style.display = 'flex';
   recalcular();
+}
+// Tira uma pessoa da divisão do bônus de Produto (ex.: quem saiu da equipe). Se os % estavam divididos
+// por igual (padrão), redistribui por igual entre quem ficou; se foram ajustados à mão, mantém os % e o
+// selo "Deveria somar 100%" avisa pra conferir. A lista vem do cadastro de colaboradores de cada login —
+// numa nova sessão quem ainda estiver cadastrado em Produto volta a aparecer.
+function removerColaboradorProduto(i) {
+  if (!colaboradoresProduto[i]) return;
+  const percs = colaboradoresProduto.map(c => c.percentual);
+  const eramIguais = percs.every(x => Math.abs(x - percs[0]) < 0.02);
+  colaboradoresProduto.splice(i, 1);
+  if (eramIguais && colaboradoresProduto.length) {
+    const parte = +(100 / colaboradoresProduto.length).toFixed(2);
+    colaboradoresProduto.forEach(c => c.percentual = parte);
+  }
+  renderTabelaProduto();
 }
 function atualizarPercentual(i, valor) { colaboradoresProduto[i].percentual = parseFloat(valor) || 0; recalcular(); }
 function atualizarValorManualProduto(i, valorTexto) {
@@ -2270,7 +2337,7 @@ function calcularChurn() {
   const percTotal = nivel ? tiers[nivel].bonus : tiers.padrao;
   const base = mrrTotal * (percTotal/100);
   const pool = arredondarCentavos(Math.max(0, base - churnRS - downsellRS));
-  elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Nenhum nível atingido (Churn ${percChurn}%)`;
+  elResultado.innerHTML = (nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Nenhum nível atingido (Churn ${percChurn}%)`) + avisoMrrTotalVazio();
   atualizarTbodyTiers(document.getElementById('tabela-churn'), tabelaTiersEditavelHTML('churn', tiers, CONFIG_TIERS_KPI.churn.campos, nivel));
   document.getElementById('pool-churn').textContent = fmtBRL(pool);
   let total = 0;
@@ -2292,7 +2359,7 @@ function calcularNPS() {
   const nivel = calcularNivelAscendente(nota, tiers);
   const percTotal = nivel ? tiers[nivel].bonus : tiers.padrao;
   const pool = arredondarCentavos(mrrTotal * (percTotal/100));
-  elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Nenhum nível atingido (NPS ${nota})`;
+  elResultado.innerHTML = (nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Nenhum nível atingido (NPS ${nota})`) + avisoMrrTotalVazio();
   atualizarTbodyTiers(document.getElementById('tabela-nps'), tabelaTiersEditavelHTML('nps', tiers, CONFIG_TIERS_KPI.nps.campos, nivel));
   document.getElementById('pool-nps').textContent = fmtBRL(pool);
   let total = 0;
@@ -2314,7 +2381,7 @@ function calcularHealthScore() {
   const nivel = calcularNivelAscendente(nota, tiers);
   const percTotal = nivel ? tiers[nivel].bonus : tiers.padrao;
   const pool = arredondarCentavos(mrrTotal * (percTotal/100));
-  elResultado.innerHTML = nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Nenhum nível atingido (Health Score ${nota})`;
+  elResultado.innerHTML = (nivel ? `Nível: <strong>${nivel}</strong> — Bônus: ${percTotal}%` : `Nenhum nível atingido (Health Score ${nota})`) + avisoMrrTotalVazio();
   atualizarTbodyTiers(document.getElementById('tabela-healthScore'), tabelaTiersEditavelHTML('healthScore', tiers, CONFIG_TIERS_KPI.healthScore.campos, nivel));
   document.getElementById('pool-healthScore').textContent = fmtBRL(pool);
   let total = 0;
@@ -2337,6 +2404,9 @@ async function salvarCS(recarregarHistorico) {
   const btn = document.getElementById('btn-salvar-cs');
   if (!mesReferencia) { statusDiv.className = 'status-msg erro'; statusDiv.textContent = 'Preencha o mês/ano de referência no topo da página.'; return; }
 
+  const erroMrr = erroMrrTotalVazio(resultadosCSAtual, ['churn','nps','healthScore']);
+  if (erroMrr) { statusDiv.className = 'status-msg erro'; statusDiv.textContent = erroMrr; return; }
+  guardarMrrTotalDoMes();
   const nomesEquipe = { upsellEquipe: 'UpSell (Equipe)', churn: 'Churn', nps: 'NPS', healthScore: 'Health Score' };
   const kpisPayload = ['upsellEquipe','churn','nps','healthScore'].map(chave => {
     const r = resultadosCSAtual[chave] || { nivel:'Nenhum', percTotal:0, pool:0 };
@@ -2559,6 +2629,7 @@ async function carregarMesParaEdicao(mes) {
   const restauradoVendasEquipe = restaurarEquipeComercialVendas(mes);
   const restauradoVendasIndiv = restaurarComissaoIndividualVendedores(mes);
   const restauradoUpsellIndiv = restaurarUpsellIndividualCS(mes);
+  restaurarMrrTotal(mes);
   const algumRestaurado = restauradoMRR || restauradoMkt || restauradoCS || restauradoPD || restauradoVendasEquipe || restauradoVendasIndiv || restauradoUpsellIndiv;
   mostrarAvisoEdicao(algumRestaurado);
 }
@@ -2574,6 +2645,9 @@ async function salvarMesInteiro() {
   const statusEl = document.getElementById('status-salvar-mes-inteiro');
   statusEl.className = 'status-msg ok';
   statusEl.style.display = 'block';
+  // Valida ANTES de gravar qualquer área: sem o MRR total, CS e P&D gravariam pools/valores zerados.
+  const erroMrr = erroMrrTotalVazio(resultadosCSAtual, ['churn','nps','healthScore']) || erroMrrTotalVazio(resultadosPDAtual, ['npsPD','healthScorePD','infraestrutura']);
+  if (erroMrr) { statusEl.className = 'status-msg erro'; statusEl.textContent = 'Nada foi salvo. ' + erroMrr; return; }
   statusEl.textContent = 'Salvando todas as áreas...';
   try {
     // false = não recarrega o histórico inteiro depois de cada área (seria 5 recargas

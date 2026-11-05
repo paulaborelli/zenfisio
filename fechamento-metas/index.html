@@ -1676,14 +1676,28 @@ var MAPA_NOMES_CANONICOS = {
   'luana': 'Luana Leonarczyk',
   'jessica': 'Jessica Cristina De Aguiar Wottrich',
   'bianca': 'Bianca da Silva de Araujo',
-  'camila': 'Camila De Oliveira'
+  'camila': 'Camila De Oliveira',
+  'andressa': 'Andressa Freitas Lopes',
+  'cledison': 'Cledison Eduardo Fritzen'
 };
 function _baseNome(s) {
   return String(s).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 }
 function nomeCanonico(s) {
   const base = _baseNome(s);
-  return MAPA_NOMES_CANONICOS[base] || String(s).trim();
+  if (MAPA_NOMES_CANONICOS[base]) return MAPA_NOMES_CANONICOS[base];
+  // Rede de segurança: nome com UMA palavra só (como vem de PDFs/equipes — ex.: "Andressa") que bate com o
+  // primeiro nome de UMA ÚNICA pessoa cadastrada → usa o nome completo dela. Assim uma pessoa nova no PDF
+  // não vira uma linha separada no Dashboard (perdendo UpSell/Churn/etc.). Se houver 2+ pessoas com o mesmo
+  // primeiro nome (ex.: Gustavo), não adivinha.
+  if (base && base.indexOf(' ') === -1) {
+    try {
+      const conhecidos = Object.keys(MAPA_DEPARTAMENTO_POR_PESSOA).concat((equipeBonusGeral || []).map(p => p.nome));
+      const achados = [...new Set(conhecidos.filter(n => _baseNome(n).split(' ')[0] === base))];
+      if (achados.length === 1) return achados[0];
+    } catch (e) {}
+  }
+  return String(s).trim();
 }
 function normalizarNomeMatch(s) {
   return _baseNome(nomeCanonico(s));

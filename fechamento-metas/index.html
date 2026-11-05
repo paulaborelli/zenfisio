@@ -249,6 +249,7 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
         <div class="field"><label>Valor realizado (R$)</label><input type="text" id="mrr-input" placeholder="Ex: 12.168,51" oninput="recalcular()"/></div>
         <div class="resultado-nivel" id="resultado-nivel" style="display:none;">
           <div class="rotulo">Nível atingido</div><div class="valor" id="nivel-atingido-texto">—</div>
+          <div class="hint" id="dica-manual-mrr" style="display:none;margin-top:8px;">Sem nível atingido, o bônus automático fica em R$ 0,00 — mas você pode lançar um valor de exceção nos campos "manual" dos cards de bônus logo abaixo.</div>
         </div>
       </div></div>
 
@@ -258,6 +259,7 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
           <div class="bonus-box"><div class="label">Valor total do bônus (pool)</div><div class="valor" id="pool-geral">R$ 0,00</div></div>
           <div class="bonus-box"><div class="label">Valor por pessoa (dividido igualmente)</div><div class="valor" id="valor-por-pessoa-geral">R$ 0,00</div></div>
         </div>
+        <div class="field" style="margin-top:14px;max-width:360px;"><label>Valor total do bônus — manual (R$, opcional)</label><input type="text" id="pool-geral-manual" placeholder="Em branco = cálculo automático" oninput="recalcular()"/><div class="hint">Se preencher, este valor substitui o pool calculado (e é dividido igualmente). Também dá pra digitar o valor de cada pessoa na tabela abaixo.</div></div>
         <table class="produto-table" style="margin-top:16px;">
           <thead><tr><th>Pessoa</th><th>Valor</th><th></th></tr></thead>
           <tbody id="tbody-bonus-geral"></tbody>
@@ -268,6 +270,7 @@ header { background: var(--accent); color: #fff; padding: 16px 28px; display: fl
       <div class="card" id="card-produto" style="display:none;">
         <h2>Bônus — Produto & Desenvolvimento</h2>
         <div class="bonus-box" style="margin-bottom:16px;"><div class="label">Valor total do bônus (pool)</div><div class="valor" id="pool-produto">R$ 0,00</div></div>
+        <div class="field" style="margin-bottom:16px;max-width:360px;"><label>Valor total do bônus — manual (R$, opcional)</label><input type="text" id="pool-produto-manual" placeholder="Em branco = cálculo automático" oninput="recalcular()"/><div class="hint">Se preencher, substitui o pool calculado (dividido pelos % de cada pessoa). Também dá pra digitar o valor de cada pessoa na tabela abaixo.</div></div>
         <div class="loading-inline" id="produto-loading">Carregando colaboradores...</div>
         <table class="produto-table" id="tabela-produto" style="display:none;">
           <thead><tr><th>Colaborador</th><th>% do bônus</th><th>Valor</th></tr></thead><tbody id="tbody-produto"></tbody>
@@ -652,7 +655,8 @@ function sair() {
 }
 function parseValorBR(str) {
   if (!str) return 0;
-  return parseFloat(String(str).replace(/\./g,'').replace(',', '.')) || 0;
+  // Aceita também texto já formatado ("R$ 1.234,56"): ignora tudo que não for dígito, ponto, vírgula ou sinal.
+  return parseFloat(String(str).replace(/[^\d.,\-]/g,'').replace(/\./g,'').replace(',', '.')) || 0;
 }
 // O pool de cada KPI é arredondado pro centavo ANTES de ser dividido entre as pessoas — igual à
 // planilha de referência ("... = R$ 2.965,58" e, a partir desse valor, R$ 177,93 pra 6%). Sem isso,
@@ -914,6 +918,7 @@ function atualizarValorManualProduto(i, valorTexto) {
   const texto = String(valorTexto).trim();
   if (texto === '') delete colaboradoresProduto[i].valorManual;
   else colaboradoresProduto[i].valorManual = parseValorBR(texto);
+  recalcular(true);
 }
 
 function renderEquipeBonusGeral() {
@@ -922,12 +927,18 @@ function renderEquipeBonusGeral() {
   tbody.innerHTML = equipeBonusGeral.map((p, i) => `
     <tr>
       <td><input type="text" value="${p.nome}" onchange="atualizarBonusGeral(${i}, this.value)"/></td>
-      <td class="num" id="valor-bonus-geral-${i}">R$ 0,00</td>
+      <td><input type="text" class="num" id="valor-bonus-geral-${i}" value="${valorExibicaoInicial(p)}" title="Editável — deixe em branco pra voltar ao cálculo automático" onchange="atualizarValorManualBonusGeral(${i}, this.value)"/></td>
       <td><button class="btn-remover" onclick="removerBonusGeral(${i})">✕</button></td>
     </tr>`).join('');
   recalcular();
 }
 function atualizarBonusGeral(i, valor) { equipeBonusGeral[i].nome = valor; recalcular(); }
+function atualizarValorManualBonusGeral(i, valorTexto) {
+  const texto = String(valorTexto).trim();
+  if (texto === '') delete equipeBonusGeral[i].valorManual;
+  else equipeBonusGeral[i].valorManual = parseValorBR(texto);
+  recalcular(true);
+}
 function removerBonusGeral(i) { equipeBonusGeral.splice(i, 1); renderEquipeBonusGeral(); }
 function adicionarBonusGeral() { equipeBonusGeral.push({ nome: 'Nova pessoa' }); renderEquipeBonusGeral(); }
 
@@ -1022,36 +1033,51 @@ let mrrRestaurado = null;
 // usado só pra mostrar o total de cada vendedor(a) no resumo de Vendas.
 let valorPorPessoaGeralAtual = null;
 
-function recalcular() {
-  if (!niveisExtraidos && !mrrRestaurado) return;
-  const mrrValor = parseValorBR(document.getElementById('mrr-input').value);
+// Pool efetivo de um bônus do MRR: se a Paula digitou um valor manual no card (exceção do mês,
+// por exemplo quando nenhum nível foi atingido), ele substitui o calculado; em branco = automático.
+function poolManualOuCalculado(idCampoManual, calculado) {
+  const el = document.getElementById(idCampoManual);
+  const txt = el ? String(el.value).trim() : '';
+  return txt === '' ? calculado : parseValorBR(txt);
+}
+// Bônus geral efetivo por pessoa, por nome normalizado (usado no resumo de Vendas).
+let valoresBonusGeralAtual = {};
+
+function recalcular(forcar) {
+  const mrrTexto = String(document.getElementById('mrr-input').value || '').trim();
+  const semTabela = !niveisExtraidos && !mrrRestaurado;
+  // Sem tabela de níveis nenhuma (nem PDF, nem manual, nem mês restaurado) só segue se já tem
+  // MRR digitado — aí é tratado como "nenhum nível atingido", mas com os cards abertos pra
+  // permitir um valor manual de exceção.
+  if (semTabela && mrrTexto === '') return;
+  const mrrValor = parseValorBR(mrrTexto);
   document.querySelectorAll('#tbody-niveis tr').forEach(tr => tr.classList.remove('atingido'));
   const resultadoDiv = document.getElementById('resultado-nivel');
   resultadoDiv.style.display = 'block';
+  const dica = document.getElementById('dica-manual-mrr');
+  if (dica) dica.style.display = 'none';
 
   let percBonusGeral, percBonusProduto, textoNivel;
-  if (niveisExtraidos) {
-    const nivelChave = determinarNivel(mrrValor);
+  if (niveisExtraidos || semTabela) {
+    const nivelChave = niveisExtraidos ? determinarNivel(mrrValor) : null;
     const nomesExibicao = { diamante: '💎 Diamante', ouro: '🥇 Ouro', prata: '🥈 Prata', bronze: '🥉 Bronze' };
     if (!nivelChave) {
       resultadoDiv.className = 'resultado-nivel sem-nivel';
-      document.getElementById('nivel-atingido-texto').textContent = 'Nenhum nível atingido este mês';
-      document.getElementById('card-bonus').style.display = 'none';
-      document.getElementById('card-produto').style.display = 'none';
-      document.getElementById('card-salvar').style.display = 'none';
-      mrrRestaurado = null;
-      valorPorPessoaGeralAtual = 0;
-      if (typeof renderResumoVendedores === 'function') renderResumoVendedores();
-      return;
+      textoNivel = semTabela ? 'Sem tabela de níveis carregada' : 'Nenhum nível atingido este mês';
+      if (dica) dica.style.display = 'block';
+      percBonusGeral = 0;
+      percBonusProduto = 0;
+      if (!semTabela) mrrRestaurado = null;
+    } else {
+      resultadoDiv.className = 'resultado-nivel tem-nivel';
+      textoNivel = nomesExibicao[nivelChave];
+      const linha = document.getElementById('linha-nivel-' + nivelChave);
+      if (linha) linha.classList.add('atingido');
+      const nivel = niveisExtraidos[nivelChave];
+      percBonusGeral = nivel.bonusGeral;
+      percBonusProduto = nivel.bonusProduto;
+      mrrRestaurado = null; // um PDF novo tem prioridade sobre o que foi restaurado do mês salvo
     }
-    resultadoDiv.className = 'resultado-nivel tem-nivel';
-    textoNivel = nomesExibicao[nivelChave];
-    const linha = document.getElementById('linha-nivel-' + nivelChave);
-    if (linha) linha.classList.add('atingido');
-    const nivel = niveisExtraidos[nivelChave];
-    percBonusGeral = nivel.bonusGeral;
-    percBonusProduto = nivel.bonusProduto;
-    mrrRestaurado = null; // um PDF novo tem prioridade sobre o que foi restaurado do mês salvo
   } else {
     resultadoDiv.className = 'resultado-nivel tem-nivel';
     textoNivel = (mrrRestaurado.nivelTexto || 'Nenhum') + ' — recuperado do que já estava salvo (reenvie o PDF de metas do MRR se quiser reprocessar as faixas)';
@@ -1062,25 +1088,28 @@ function recalcular() {
   document.getElementById('card-bonus').style.display = 'block';
   document.getElementById('card-produto').style.display = 'block';
   document.getElementById('card-salvar').style.display = 'block';
-  const poolGeral = mrrValor * (percBonusGeral / 100);
+  const poolGeral = poolManualOuCalculado('pool-geral-manual', mrrValor * (percBonusGeral / 100));
   const numPessoas = equipeBonusGeral.length || 1;
   const valorPorPessoaGeral = poolGeral / numPessoas;
   valorPorPessoaGeralAtual = valorPorPessoaGeral;
-  if (typeof renderResumoVendedores === 'function') renderResumoVendedores();
+  valoresBonusGeralAtual = {};
   document.getElementById('pool-geral').textContent = fmtBRL(poolGeral);
   document.getElementById('valor-por-pessoa-geral').textContent = fmtBRL(valorPorPessoaGeral);
   equipeBonusGeral.forEach((p, i) => {
+    const valorPessoa = valorEfetivo(p, valorPorPessoaGeral);
+    valoresBonusGeralAtual[normalizarNomeMatch(p.nome)] = valorPessoa;
     const celula = document.getElementById('valor-bonus-geral-' + i);
-    if (celula) celula.textContent = fmtBRL(valorPorPessoaGeral);
+    if (celula && (forcar === true || document.activeElement !== celula)) celula.value = fmtBRL(valorPessoa);
   });
-  const poolProduto = mrrValor * (percBonusProduto / 100);
+  if (typeof renderResumoVendedores === 'function') renderResumoVendedores();
+  const poolProduto = poolManualOuCalculado('pool-produto-manual', mrrValor * (percBonusProduto / 100));
   document.getElementById('pool-produto').textContent = fmtBRL(poolProduto);
   let totalPercentual = 0;
   colaboradoresProduto.forEach((c, i) => {
     const valorPessoa = valorEfetivo(c, poolProduto * (c.percentual / 100));
     totalPercentual += c.percentual;
     const inp = document.getElementById('valor-produto-' + i);
-    if (inp) inp.value = fmtBRL(valorPessoa);
+    if (inp && (forcar === true || document.activeElement !== inp)) inp.value = fmtBRL(valorPessoa);
   });
   document.getElementById('total-percentual-produto').textContent = totalPercentual.toFixed(2) + '%';
   const badge = document.getElementById('badge-total-produto');
@@ -1115,14 +1144,16 @@ async function salvarFechamento(recarregarHistorico) {
     percBonusProduto = 0;
   }
   const numPessoas = equipeBonusGeral.length || 1;
-  const poolGeral = mrrValor * (percBonusGeral / 100);
-  const poolProduto = mrrValor * (percBonusProduto / 100);
+  // Pool manual (exceção) substitui o calculado quando preenchido; valores por pessoa digitados
+  // na mão (valorManual) vencem sobre a divisão automática — igual ao que aparece na tela.
+  const poolGeral = poolManualOuCalculado('pool-geral-manual', mrrValor * (percBonusGeral / 100));
+  const poolProduto = poolManualOuCalculado('pool-produto-manual', mrrValor * (percBonusProduto / 100));
   const valorPorPessoaGeral = numPessoas ? poolGeral / numPessoas : 0;
   const payload = {
     mesReferencia, mrrValor, nivel: nivelTexto,
     percBonusGeral, percBonusProduto,
     numPessoasGeral: numPessoas, valorPorPessoaGeral: valorPorPessoaGeral,
-    bonusGeralPessoas: equipeBonusGeral.map(p => ({ nome: p.nome, valor: valorPorPessoaGeral })),
+    bonusGeralPessoas: equipeBonusGeral.map(p => ({ nome: p.nome, valor: valorEfetivo(p, valorPorPessoaGeral) })),
     // valorEfetivo protege o valor de cada pessoa: se o mês foi restaurado e ela tem um
     // valor manual/recuperado, ele prevalece mesmo com poolProduto zerado.
     produtoDev: colaboradoresProduto.map(c => ({ nome: c.nome, percentual: c.percentual, valor: valorEfetivo(c, poolProduto * (c.percentual / 100)) }))
@@ -1713,7 +1744,8 @@ function renderResumoVendedores() {
     const valEq = pEq ? arredondarCentavos(valorEfetivo(pEq, poolEq * (pEq.percentual / 100))) : 0;
     const noGeral = equipeBonusGeral.some(p => normalizarNomeMatch(p.nome) === normalizarNomeMatch(v.nome));
     const geralOk = valorPorPessoaGeralAtual !== null && valorPorPessoaGeralAtual !== undefined;
-    const valGeral = (noGeral && geralOk) ? arredondarCentavos(valorPorPessoaGeralAtual) : 0;
+    const valGeralBruto = valoresBonusGeralAtual[normalizarNomeMatch(v.nome)];
+    const valGeral = (noGeral && geralOk) ? arredondarCentavos(valGeralBruto !== undefined ? valGeralBruto : valorPorPessoaGeralAtual) : 0;
     const total = arredondarCentavos(individual + valEq + valGeral);
     somaTotal += total;
     let partes = '';
@@ -2446,6 +2478,14 @@ function restaurarMRR(mes) {
     percBonusGeral: Number(fechamento.percGeral) || 0,
     percBonusProduto: Number(fechamento.percProduto) || 0
   };
+  // Se o mês foi salvo com valor manual (pool de exceção ou valor digitado por pessoa), o
+  // valor salvo difere do automático (MRR × %). Nesses casos o valor salvo é mantido como
+  // valor da pessoa (valorManual) — senão o recálculo o trocaria pelo automático.
+  const mrrSalvo = Number(fechamento.mrrValor) || 0;
+  const autoGeral = equipeBonusGeral.length ? (mrrSalvo * mrrRestaurado.percBonusGeral / 100) / equipeBonusGeral.length : 0;
+  (bonusGeral || []).forEach((d, i) => { if (equipeBonusGeral[i] && Math.abs((Number(d.valor) || 0) - autoGeral) > 0.01) equipeBonusGeral[i].valorManual = Number(d.valor) || 0; });
+  const poolProdAuto = mrrSalvo * mrrRestaurado.percBonusProduto / 100;
+  colaboradoresProduto.forEach(c => { if (c.valorRestaurado !== undefined && Math.abs(c.valorRestaurado - poolProdAuto * (c.percentual / 100)) > 0.01) c.valorManual = c.valorRestaurado; });
   renderTabelaProduto();
   renderEquipeBonusGeral();
   recalcular();

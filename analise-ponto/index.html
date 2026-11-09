@@ -337,7 +337,7 @@
   <div class="header-bar">
     <div class="wrap">
       <h1>Análise de Ponto</h1>
-      <p>ZenFisio · painel de pontualidade e banco de horas</p>
+      <p>ZenFisio · painel de pontualidade e banco de horas · versão 09/11-c</p>
     </div>
   </div>
 
@@ -866,24 +866,28 @@ function parseAjustesNovo(texto) {
 // ---------- Ausências (layout novo: Colaborador | Departamento | Tipo | Motivo | Data [horário] | Duração) ----------
 // O espelho novo só diz "Abono:08:00-12:00" (sem o motivo). O motivo (Atestado Médico, Consulta...) está no
 // relatório de Ausências — aqui juntamos os dois pela pessoa e pelo dia, só para exibir o motivo.
+// Dois nomes são o mesmo colaborador se forem iguais (ignorando acento/caixa) ou se um só tem palavras a mais antes/depois do outro.
+function nomesIguais(a, b) {
+  const ca = canonNome(a), cb = canonNome(b);
+  if (!ca || !cb) return false;
+  return ca === cb || ca.endsWith(' ' + cb) || cb.endsWith(' ' + ca) || ca.startsWith(cb + ' ') || cb.startsWith(ca + ' ');
+}
+function limparNomeRepetido(nome) { return fraseRepetida(nome) || nome; }
+
 function enriquecerAbonosComAusencias(pontualidadePorNome, detalhes) {
-  const porNomeDia = {};
-  for (const d of detalhes || []) {
-    if (d.tipo !== 'Abono' || !d.dataBase) continue;
-    const k = canonNome(d.nome) + '|' + d.dataBase.slice(0, 5);
-    (porNomeDia[k] = porNomeDia[k] || []).push(d);
-  }
+  const abonos = (detalhes || []).filter(d => d.tipo === 'Abono' && d.dataBase);
+  if (!abonos.length) return;
   const motivos = lista => [...new Set(lista.map(x => String(x.motivoOriginal || '').replace(/^Abono\s+/i, '').trim()).filter(Boolean))].join(' / ');
+  const doDia = (nome, dia) => abonos.filter(d => d.dataBase.slice(0, 5) === dia && nomesIguais(d.nome, nome));
   for (const p of Object.values(pontualidadePorNome)) {
-    const ck = canonNome(p.nome);
     for (const ev of (p.eventos || [])) {
       if (ev.tipo !== 'Abono') continue;
-      const lista = porNomeDia[ck + '|' + ev.dia];
-      if (lista) { ev.motivo = motivos(lista) || ev.motivo; ev.categoria = lista[0].categoria || ev.categoria; }
+      const lista = doDia(p.nome, ev.dia);
+      if (lista.length) { ev.motivo = motivos(lista) || ev.motivo; ev.categoria = lista[0].categoria || ev.categoria; }
     }
     for (const d of (p.abonoParcialDias || [])) {
-      const lista = porNomeDia[ck + '|' + d.dia];
-      if (lista) d.motivo = motivos(lista);
+      const lista = doDia(p.nome, d.dia);
+      if (lista.length) d.motivo = motivos(lista);
     }
   }
 }
@@ -894,7 +898,7 @@ function parseAusenciasNovo(texto) {
   const detalhes = [], categorias = {}, todas = [];
   let m;
   while ((m = re.exec(t)) !== null) {
-    const nome = m[1].trim(), tipo = m[3], motivoBruto = m[4].trim(), data = m[5], horario = m[6] || null;
+    const nome = limparNomeRepetido(m[1].trim()), tipo = m[3], motivoBruto = m[4].trim(), data = m[5], horario = m[6] || null;
     todas.push({ nome, tipo });
     if (tipo === 'Feriado') continue; // feriado não é ausência pessoal
     const generico = /^n[ãa]o informado motivo/i.test(motivoBruto);
@@ -1517,15 +1521,17 @@ function conferirEspelho(nomeArquivo, texto, resultado, agregados) {
 
   // ----- cruzamento com os relatórios agregados do mesmo mês -----
   if (agregados && resultado.layout === 'novo' && Array.isArray(agregados.ausenciasDetalhes) && agregados.ausenciasDetalhes.some(d => d.tipo)) {
-    const c = canonNome(resultado.nome);
-    const doRelatorio = agregados.ausenciasDetalhes.filter(d => d.tipo === 'Abono' && d.horario && canonNome(d.nome) === c);
+    const doRelatorio = agregados.ausenciasDetalhes.filter(d => d.tipo === 'Abono' && d.horario && nomesIguais(d.nome, resultado.nome));
     const minRel = doRelatorio.reduce((a, d) => { const [i, f] = d.horario.split('-'); return a + (paraMinutosDoDia(f) - paraMinutosDoDia(i)); }, 0);
     const minEsp = (resultado.abonoParcialMin || 0) + (resultado.eventos || []).filter(e => e.tipo === 'Abono').reduce((a, e) => a + (e.minutos || 0), 0);
-    const diasFaltaRel = agregados.ausenciasDetalhes.filter(d => d.tipo === 'Falta' && canonNome(d.nome) === c).reduce((a, d) => a + (d.dias || 1), 0);
+    const diasFaltaRel = agregados.ausenciasDetalhes.filter(d => d.tipo === 'Falta' && nomesIguais(d.nome, resultado.nome)).reduce((a, d) => a + (d.dias || 1), 0);
     const diasFaltaEsp = (resultado.faltasDias || []).length;
     if (diasFaltaRel !== diasFaltaEsp) avisos.push(`O espelho tem ${diasFaltaEsp} dia(s) de falta, mas o relatório de Ausências registra ${diasFaltaRel} para esta pessoa.`);
     const relatorioTemAbonoComHorario = agregados.ausenciasDetalhes.some(d => d.tipo === 'Abono' && d.horario);
-    if (relatorioTemAbonoComHorario && minRel !== minEsp) avisos.push(`Os abonos do espelho somam ${formatarMinutos(minEsp)}, mas o relatório de Ausências registra ${formatarMinutos(minRel)} de abono para esta pessoa.`);
+    if (relatorioTemAbonoComHorario && minEsp > 0 && doRelatorio.length === 0) {
+      const amostra = [...new Set(agregados.ausenciasDetalhes.filter(d => d.tipo === 'Abono').map(d => d.nome))].slice(0, 3).join('; ');
+      avisos.push(`Os abonos do espelho somam ${formatarMinutos(minEsp)}, mas não achei esta pessoa entre os abonos do relatório de Ausências. Nomes lidos lá, por exemplo: ${amostra}.`);
+    } else if (relatorioTemAbonoComHorario && minRel !== minEsp) avisos.push(`Os abonos do espelho somam ${formatarMinutos(minEsp)}, mas o relatório de Ausências registra ${formatarMinutos(minRel)} de abono para esta pessoa.`);
   }
   if (agregados) {
     const achar = dict => { const c = canonNome(resultado.nome); return Object.keys(dict || {}).find(k => canonNome(k) === c); };

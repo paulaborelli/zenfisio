@@ -696,6 +696,42 @@ function ehLayoutEspelhoNovo(texto) {
   return /^(?:Seg|Ter|Qua|Qui|Sex|S[áa]b|Dom),\d{2}\/\d{2}\s/mi.test(texto);
 }
 
+// Descobre o texto que se repete em cada coluna de horário (ex: "Aus. Comp." x4). null se não for repetição.
+function fraseRepetida(meio) {
+  const palavras = meio.split(/\s+/);
+  const total = palavras.length;
+  for (let periodo = 1; periodo <= total; periodo++) {
+    if (total % periodo !== 0) continue;
+    const repeticoes = total / periodo;
+    if (repeticoes < 2) break;
+    const candidata = palavras.slice(0, periodo).join(' ');
+    if (Array(repeticoes).fill(candidata).join(' ') === meio) return candidata;
+  }
+  return null;
+}
+
+// Layout ANTIGO: dia útil sem batida, com o texto repetido nas colunas e débito do dia inteiro
+// (ex: "07/07 ter Aus. Comp. Aus. Comp. Aus. Comp. Aus. Comp. 08:00 -08:00"). É falta, não abono.
+function parseFaltasCompensadasAntigo(texto) {
+  let t = texto.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+  const fim = t.search(/Previstas:\s*-?\d/i);
+  if (fim > -1) t = t.slice(0, fim);
+  const marcadorRe = /(\d{2}\/\d{2})\s+(seg|ter|qua|qui|sex)\s+/gi; // fim de semana não tem jornada prevista
+  const marcadores = [];
+  let mm;
+  while ((mm = marcadorRe.exec(t)) !== null) marcadores.push({ dia: mm[1], diaSemana: mm[2].toLowerCase(), ini: marcadorRe.lastIndex, marca: mm.index });
+  const faltas = [];
+  for (let i = 0; i < marcadores.length; i++) {
+    const trecho = t.slice(marcadores[i].ini, i + 1 < marcadores.length ? marcadores[i + 1].marca : t.length).trim();
+    const m = trecho.match(/^([^\d]*[A-Za-zÀ-ÿ][^\d]*?)\s+(\d{1,2}:\d{2})\s+(-\d{1,3}:\d{2})$/);
+    if (!m) continue;
+    const prev = paraMinutos(m[2]);
+    if (prev <= 0 || Math.abs(paraMinutos(m[3])) !== prev) continue; // só falta do dia inteiro
+    faltas.push({ dia: marcadores[i].dia, diaSemana: marcadores[i].diaSemana, minutos: prev, motivo: fraseRepetida(m[1].trim()) || m[1].trim() });
+  }
+  return faltas;
+}
+
 function parseIndividualNovo(texto) {
   const nomeMatch = texto.match(/Colaborador:\s*([^\n]+)/);
   const nome = nomeMatch ? nomeMatch[1].replace(/\s+/g, ' ').trim() : null;
@@ -705,7 +741,7 @@ function parseIndividualNovo(texto) {
   let diasAtraso = 0, minutosAtrasoTotal = 0, diasSaidaAntecipada = 0, minutosSaidaTotal = 0, diasCompletos = 0;
   let previstasSoma = 0, diurnasSoma = 0, creditoSoma = 0, debitoSoma = 0, faltasSoma = 0, diasLidos = 0;
   let abonoParcialMin = 0;
-  const abonoParcialDias = [], eventos = [], linhasIgnoradas = [];
+  const abonoParcialDias = [], eventos = [], linhasIgnoradas = [], faltasDias = [];
 
   for (const linhaRaw of texto.split('\n')) {
     const linha = linhaRaw.trim().replace(/\s+/g, ' ');
@@ -729,6 +765,12 @@ function parseIndividualNovo(texto) {
     const periodos = [];
     resto = resto.replace(/(\d{1,2}:\d{2})[~*^]?\s*-\s*(\d{1,2}:\d{2})[~*^]?/g, (_, a, b) => { periodos.push({ ini: paraMinutosDoDia(a), fim: paraMinutosDoDia(b) }); return ' '; });
     const sobra = resto.replace(/[|\-\s]+/g, ' ').trim();
+
+    // Dia com jornada prevista, sem nenhuma batida e sem rótulo (Feriado/Férias/Abono): é falta (ex: "Aus. Comp.").
+    // As horas já estão no Débito (Faltas/Atrasos); aqui só registramos o dia para listar no detalhamento — NÃO é abono.
+    if (prev > 0 && !/\d{1,2}:\d{2}/.test(tokens.slice(0, -6).join(' ')) && !rotulos.length) {
+      faltasDias.push({ dia, diaSemana, minutos: prev, motivo: sobra });
+    }
 
     // Atraso / saída antecipada: só em dia com jornada prevista e com os dois períodos trabalhados.
     if (prev > 0 && periodos.length >= 2) {
@@ -775,6 +817,7 @@ function parseIndividualNovo(texto) {
     faltasMin: faltasTotalMin,
     jornadaPadraoMin: jornada.padraoMin || null,
     abonoParcialMin, abonoParcialDias, eventos,
+    ...(faltasDias.length ? { faltasDias } : {}),
     diasLidos, linhasIgnoradas,
     somas: { diurnas: diurnasSoma, credito: creditoSoma, debito: debitoSoma, faltas: faltasSoma }
   };
@@ -861,7 +904,7 @@ function parseAusenciasNovo(texto) {
     else if (tipo === 'Afastamento') { categoria = /antecipa/i.test(motivoBruto) ? 'Antecipação de férias' : 'Afastamento'; motivo = `Afastamento – ${motivoBruto}`; }
     else { const c = categorizarMotivo(motivoBruto); categoria = (c === 'Outros' || c === 'Feriado / abono') ? 'Abono' : c; motivo = `Abono – ${motivoBruto}`; }
     categorias[categoria] = (categorias[categoria] || 0) + 1;
-    detalhes.push({ nome, tipo, motivo, categoria, motivoOriginal: motivoBruto, data: horario ? `${data} ${horario}` : data, dataBase: data, horario });
+    detalhes.push({ nome, tipo, motivo, categoria, motivoOriginal: motivoBruto, data: horario ? `${data} ${horario}` : data, dataBase: data, horario, dias: Number(m[7]) });
   }
   const totalDeclarado = (t.match(/total (\d+) aus[êe]ncias/i) || [])[1];
   return { categorias, detalhes, lidas: todas.length, totalDeclarado: totalDeclarado ? Number(totalDeclarado) : null, layout: 'novo' };
@@ -919,6 +962,8 @@ function parseAjustes(texto) {
 }
 function parseAusencias(texto, nomesConhecidos) {
   if (/Departamento\s+Tipo\s+Motivo/.test(texto)) return parseAusenciasNovo(texto); // layout novo
+  const tentativaNova = parseAusenciasNovo(texto);
+  if (tentativaNova.lidas >= 3) return tentativaNova; // layout novo reconhecido pelas linhas, mesmo com o cabeçalho diferente
   const nomesOrdenados = [...nomesConhecidos].sort((a, b) => b.length - a.length);
   const textoUnico = texto.replace(/\n/g, ' ').replace(/\s+/g, ' ');
   const categorias = {};
@@ -1109,6 +1154,7 @@ function parseIndividual(texto) {
   const eventos = parseEventosDia(texto);
   const jornadaPadraoMin = jornada.padraoMin || null;
   const abonoParcial = parseAbonoParcial(texto, jornadaPadraoMin);
+  const faltasDias = parseFaltasCompensadasAntigo(texto);
 
   return {
     nome, diasAtraso, minutosAtrasoTotal, diasSaidaAntecipada, minutosSaidaTotal, diasCompletos,
@@ -1121,7 +1167,8 @@ function parseIndividual(texto) {
     jornadaPadraoMin,
     abonoParcialMin: abonoParcial.totalMin,
     abonoParcialDias: abonoParcial.dias,
-    eventos
+    eventos,
+    ...(faltasDias.length ? { faltasDias } : {})
   };
 }
 
@@ -1228,6 +1275,16 @@ function construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nome
     }
   }
 
+  // Faltas (dia com jornada prevista sem batida, ex: "Aus. Comp."): são ausências e aparecem no detalhamento,
+  // mas NÃO contam como abono — as horas já estão em Faltas/Atrasos (via Débito).
+  const faltasBrutas = [];
+  for (const nomeChave in pontualidadePorNome) {
+    const p = pontualidadePorNome[nomeChave];
+    if (!p.faltasDias) continue;
+    for (const f of p.faltasDias) faltasBrutas.push({ nome: p.nome, motivo: f.motivo ? `Falta – ${f.motivo}` : 'Falta', data: f.dia });
+  }
+  const faltasDetalhes = consolidarPorIntervalo(faltasBrutas);
+
   // 4. Para quem NÃO tem ponto individual neste mês, mantém o método antigo
   // (cruzamento por nome com o relatório de Ausências agregado) como fallback.
   const nomesComIndividual = new Set(Object.keys(pontualidadePorNome));
@@ -1239,10 +1296,11 @@ function construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nome
     ausenciasAntigasCategorias[categoria] = (ausenciasAntigasCategorias[categoria] || 0) + 1;
   }
 
-  const ausenciasDetalhesFinal = [...consolidarPorIntervalo(ausenciasIndividuaisDetalhes), ...abonosParciaisDetalhes, ...ausenciasAntigasDetalhes];
+  const ausenciasDetalhesFinal = [...consolidarPorIntervalo(ausenciasIndividuaisDetalhes), ...abonosParciaisDetalhes, ...faltasDetalhes, ...ausenciasAntigasDetalhes];
   const ausenciasCategoriasFinal = {};
   for (const [cat, n] of Object.entries(ausenciasIndividuaisCategorias)) ausenciasCategoriasFinal[cat] = (ausenciasCategoriasFinal[cat] || 0) + n;
   if (abonosParciaisDetalhes.length) ausenciasCategoriasFinal['Abono parcial'] = abonosParciaisDetalhes.length;
+  if (faltasBrutas.length) ausenciasCategoriasFinal['Falta'] = (ausenciasCategoriasFinal['Falta'] || 0) + faltasBrutas.length;
   for (const [cat, n] of Object.entries(ausenciasAntigasCategorias)) ausenciasCategoriasFinal[cat] = (ausenciasCategoriasFinal[cat] || 0) + n;
 
   const employees = nomes.map(n => {
@@ -1323,6 +1381,7 @@ function construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nome
 // dado salvo no histórico e nenhuma função existente.
 let conferenciaImportacao = [];
 let conferenciaAgregados = [];
+let periodosAgregados = [];
 
 function escaparHtmlConf(s) {
   return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -1337,6 +1396,16 @@ function extrairPeriodoEspelho(texto) {
   const fim = new Date(Number(m[6]), Number(m[5]) - 1, Number(m[4]));
   const dias = Math.round((fim - ini) / 86400000) + 1;
   return { mes: Number(m[2]), ano: Number(m[3]), inicio: `${m[1]}/${m[2]}/${m[3]}`, fim: `${m[4]}/${m[5]}/${m[6]}`, dias };
+}
+
+// Período (mês/ano) que o próprio relatório diz ter — "Período: 01/10/2026 a 31/10/2026" ou, no Saldo Geral, "Data de referência: 31/10/2026".
+function periodoDoRelatorio(texto) {
+  const t = String(texto || '').replace(/\s+/g, ' ');
+  let m = t.match(/Per[ií]odo:\s*(\d{2})\/(\d{2})\/(\d{4})\s*(?:a|-|até)\s*\d{2}\/\d{2}\/\d{4}/i);
+  if (m) return { mes: Number(m[2]), ano: Number(m[3]) };
+  m = t.match(/Data de refer[êe]ncia:\s*(\d{2})\/(\d{2})\/(\d{4})/i);
+  if (m) return { mes: Number(m[2]), ano: Number(m[3]) };
+  return null;
 }
 
 // Confere se cada relatório agregado foi realmente lido (foi isto que faltou quando o sistema de ponto mudou o layout).
@@ -1447,12 +1516,16 @@ function conferirEspelho(nomeArquivo, texto, resultado, agregados) {
   }
 
   // ----- cruzamento com os relatórios agregados do mesmo mês -----
-  if (agregados && resultado.layout === 'novo' && Array.isArray(agregados.ausenciasDetalhes)) {
+  if (agregados && resultado.layout === 'novo' && Array.isArray(agregados.ausenciasDetalhes) && agregados.ausenciasDetalhes.some(d => d.tipo)) {
     const c = canonNome(resultado.nome);
     const doRelatorio = agregados.ausenciasDetalhes.filter(d => d.tipo === 'Abono' && d.horario && canonNome(d.nome) === c);
     const minRel = doRelatorio.reduce((a, d) => { const [i, f] = d.horario.split('-'); return a + (paraMinutosDoDia(f) - paraMinutosDoDia(i)); }, 0);
     const minEsp = (resultado.abonoParcialMin || 0) + (resultado.eventos || []).filter(e => e.tipo === 'Abono').reduce((a, e) => a + (e.minutos || 0), 0);
-    if (minRel !== minEsp) avisos.push(`Os abonos do espelho somam ${formatarMinutos(minEsp)}, mas o relatório de Ausências registra ${formatarMinutos(minRel)} de abono para esta pessoa.`);
+    const diasFaltaRel = agregados.ausenciasDetalhes.filter(d => d.tipo === 'Falta' && canonNome(d.nome) === c).reduce((a, d) => a + (d.dias || 1), 0);
+    const diasFaltaEsp = (resultado.faltasDias || []).length;
+    if (diasFaltaRel !== diasFaltaEsp) avisos.push(`O espelho tem ${diasFaltaEsp} dia(s) de falta, mas o relatório de Ausências registra ${diasFaltaRel} para esta pessoa.`);
+    const relatorioTemAbonoComHorario = agregados.ausenciasDetalhes.some(d => d.tipo === 'Abono' && d.horario);
+    if (relatorioTemAbonoComHorario && minRel !== minEsp) avisos.push(`Os abonos do espelho somam ${formatarMinutos(minEsp)}, mas o relatório de Ausências registra ${formatarMinutos(minRel)} de abono para esta pessoa.`);
   }
   if (agregados) {
     const achar = dict => { const c = canonNome(resultado.nome); return Object.keys(dict || {}).find(k => canonNome(k) === c); };
@@ -1477,7 +1550,7 @@ function conferirEspelho(nomeArquivo, texto, resultado, agregados) {
 function renderConferenciaImportacao() {
   const el = document.getElementById('conferenciaImportacao');
   if (!el) return;
-  if (!conferenciaImportacao.length && !conferenciaAgregados.length) { el.classList.add('hidden'); el.innerHTML = ''; return; }
+  if (!conferenciaImportacao.length && !conferenciaAgregados.length && !periodosAgregados.length) { el.classList.add('hidden'); el.innerHTML = ''; return; }
   const mesSel = Number(document.getElementById('selMes').value);
   const anoSel = Number(document.getElementById('selAno').value);
   const pad = n => String(n).padStart(2, '0');
@@ -1492,14 +1565,17 @@ function renderConferenciaImportacao() {
   const contagem = {};
   itens.forEach(i => { if (i.periodo) { const k = pad(i.periodo.mes) + '/' + i.periodo.ano; contagem[k] = (contagem[k] || 0) + 1; } });
   const periodos = Object.entries(contagem).map(([k, n]) => `${k} (${n} arquivo${n > 1 ? 's' : ''})`).join(', ') || 'não identificado';
-  const ok = comAviso.length === 0 && conferenciaAgregados.length === 0;
+  const avisosAgregados = conferenciaAgregados.slice();
+  periodosAgregados.forEach(p => { if (mesSel && anoSel && (p.mes !== mesSel || p.ano !== anoSel)) avisosAgregados.push(`${p.rotulo}: o relatório é de ${pad(p.mes)}/${p.ano}, mas você está salvando como ${pad(mesSel)}/${anoSel}.`); });
+  if (!itens.length && !avisosAgregados.length) { el.classList.add('hidden'); el.innerHTML = ''; return; }
+  const ok = comAviso.length === 0 && avisosAgregados.length === 0;
   const estilo = ok
     ? 'background:#EAF3DE; color:#27500A; border:1px solid #CFE3B8;'
     : 'background:#FAEEDA; color:#854F0B; border:1px solid #F0D9AE;';
   let html = `<div style="${estilo} border-radius:10px; padding:12px 16px; margin-bottom:1.25rem; font-size:0.85rem;">`;
-  if (conferenciaAgregados.length) {
+  if (avisosAgregados.length) {
     html += `<div style="font-weight:600; margin-bottom:4px;">⚠️ Conferência dos relatórios do mês</div><ul style="margin:0 0 10px; padding-left:18px;">`;
-    conferenciaAgregados.forEach(a => { html += `<li style="margin-bottom:3px;">${escaparHtmlConf(a)}</li>`; });
+    avisosAgregados.forEach(a => { html += `<li style="margin-bottom:3px;">${escaparHtmlConf(a)}</li>`; });
     html += '</ul>';
   }
   if (itens.length) {
@@ -1545,6 +1621,7 @@ async function processarArquivos() {
   const pontualidadePorNome = {};
   conferenciaImportacao = [];
   conferenciaAgregados = [];
+  periodosAgregados = [];
   const espelhosLidos = [];
   if (arquivosIndividuais.length) {
     statusMsg.textContent = `Lendo ${arquivosIndividuais.length} ponto(s) individual(is)...`;
@@ -1578,6 +1655,20 @@ async function processarArquivos() {
 
   // Conferência (somente leitura): relatórios agregados e espelhos individuais.
   try { conferenciaAgregados = conferirRelatoriosAgregados(dados, { absenteismo, sintetico, saldo, ajustes, ausencias }); } catch (eCa) { console.warn('Conferência dos relatórios falhou', eCa); }
+  try {
+    const rotulosRel = { absenteismo: 'Absenteísmo', ajustes: 'Ajustes', ausencias: 'Ausências', banco: 'Banco de Horas', sintetico: 'Ponto Sintético', saldo: 'Saldo Geral' };
+    for (const k of Object.keys(rotulosRel)) { const p = dados[k] ? periodoDoRelatorio(dados[k]) : null; if (p) periodosAgregados.push({ rotulo: rotulosRel[k], mes: p.mes, ano: p.ano }); }
+    // Espelhos no layout novo + relatório de Ausências: ele precisa ter sido lido no layout novo e ter os abonos.
+    if (dados.ausencias && espelhosLidos.some(l => l.resultado && l.resultado.layout === 'novo')) {
+      if (ausencias.layout !== 'novo') {
+        conferenciaAgregados.push('Ausências: não reconheci o formato deste relatório (o layout novo). Por isso os motivos dos abonos e a conferência de abonos/faltas com os espelhos ficam indisponíveis. Os espelhos em si foram lidos normalmente.');
+      } else {
+        const totalEsp = espelhosLidos.reduce((a, l) => a + (l.resultado && l.resultado.layout === 'novo' ? (l.resultado.abonoParcialMin || 0) + (l.resultado.eventos || []).filter(e => e.tipo === 'Abono').reduce((x, e) => x + (e.minutos || 0), 0) : 0), 0);
+        const linhasAbono = (ausencias.detalhes || []).filter(d => d.tipo === 'Abono' && d.horario).length;
+        if (totalEsp > 0 && linhasAbono === 0) conferenciaAgregados.push(`Os espelhos têm ${formatarMinutos(totalEsp)} de abono no total, mas não encontrei nenhum abono com horário no relatório de Ausências (li ${ausencias.lidas} linhas). Confira se é o relatório do mês certo.`);
+      }
+    }
+  } catch (eAg) { console.warn('Conferência dos agregados (período/abonos) falhou', eAg); }
   for (const l of espelhosLidos) {
     try { conferenciaImportacao.push(conferirEspelho(l.nome, l.texto, l.resultado, { sintetico, saldo, ausenciasDetalhes: ausencias.detalhes })); } catch (eConf) { console.warn('Conferência falhou', l.nome, eConf); }
   }
@@ -1707,8 +1798,11 @@ function renderCardsColaboradores(resumo) {
   if (!resumo) { grid.innerHTML = ''; return; }
   grid.innerHTML = resumo.employees.map(e => {
     const eventos = (resumo.ausenciasDetalhes || []).filter(d => d.nome && chave(d.nome) === chave(e.nome));
+    const ev0 = eventos.find(d => /^Falta\b/i.test(d.motivo)) || eventos[0];
     const status = eventos.length
-      ? `<span class="colab-status-pill abono">📄 Abono: ${eventos[0].motivo} · ${eventos[0].data}</span>`
+      ? (/^Falta\b/i.test(ev0.motivo)
+          ? `<span class="colab-status-pill alerta">⚠️ ${ev0.motivo} · ${ev0.data}</span>`
+          : `<span class="colab-status-pill abono">📄 Abono: ${ev0.motivo} · ${ev0.data}</span>`)
       : `<span class="colab-status-pill ok">✓ Sem ausências registradas</span>`;
 
     if (e.previstaMin === undefined) {

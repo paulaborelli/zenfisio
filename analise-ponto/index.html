@@ -337,7 +337,7 @@
   <div class="header-bar">
     <div class="wrap">
       <h1>Análise de Ponto</h1>
-      <p>ZenFisio · painel de pontualidade e banco de horas · versão 09/11-c</p>
+      <p>ZenFisio · painel de pontualidade e banco de horas · versão 09/11-d</p>
     </div>
   </div>
 
@@ -1207,13 +1207,13 @@ function consolidarPorIntervalo(eventos) {
   return resultado;
 }
 
-// Feriados NACIONAIS reconhecidos pelo nome impresso no espelho (ex: "Independência
-// do Brasil", "Tiradentes"). São sempre feriado, mesmo com poucos espelhos no
-// lote — não dependem de aparecer pra várias pessoas. Feriados estaduais e
-// municipais ficam de fora de propósito: quando o expediente é só meio turno e
-// o outro é abonado, isso aparece como abono parcial (e deve contar como abono).
+// Feriados reconhecidos pelo nome impresso no espelho: os NACIONAIS (ex: "Independência
+// do Brasil", "Tiradentes") e o "Dia do Município" (o próprio sistema de ponto o classifica como
+// Feriado no relatório de Ausências). São sempre feriado, mesmo com poucos espelhos no lote — não
+// dependem de aparecer pra várias pessoas. Os demais feriados estaduais/municipais ficam de fora:
+// quando o expediente é só meio turno e o outro é abonado, isso aparece como abono parcial.
 function ehFeriadoNacionalPorNome(motivo) {
-  return /confraterniza[çc][ãa]o universal|ano novo|tiradentes|dia (mundial )?do trabalh|independ[êe]ncia|nossa senhora ap|\bfinados\b|proclama[çc][ãa]o da rep|consci[êe]ncia negra|\bnatal\b|paix[ãa]o de cristo|sexta-feira santa/i.test(motivo || '');
+  return /confraterniza[çc][ãa]o universal|ano novo|tiradentes|dia (mundial )?do trabalh|independ[êe]ncia|nossa senhora ap|\bfinados\b|proclama[çc][ãa]o da rep|consci[êe]ncia negra|\bnatal\b|paix[ãa]o de cristo|sexta-feira santa|dia do munic[ií]pio/i.test(motivo || '');
 }
 
 function construirResumo(absenteismo, sintetico, saldo, ajustes, ausencias, nomes, pontualidadePorNome) {

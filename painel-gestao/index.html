@@ -87,6 +87,7 @@
 <body>
 
 <!-- LOGIN -->
+<a href="../index.html" style="position:fixed;top:1rem;right:1rem;z-index:9999;display:inline-flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;font-size:0.82rem;font-weight:600;color:#4A7C59;text-decoration:none;background:#fff;border:1px solid #4A7C59;border-radius:8px;padding:6px 12px;">← Início</a>
 <div class="login-wrap" id="login-wrap">
   <div class="login-card">
     <h1>🔒 Painel de Gestão</h1>
@@ -200,6 +201,7 @@
   </div>
 </div>
 
+<script src="../assets/zf-auth.js"></script>
 <script>
   const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzblEIQor7UuPFzO6Ga2UREXjYYkeiCNXtsom4XjCFSUbb9hI7S-djhgi6WioNGSJ2k/exec';
   const CORES = ['#4A7C59','#6aab7e','#9fc5b0','#d5ece0','#2d5438','#b2d9c2','#5c9474','#3d7a5a','#8dc4a0','#1a3d28'];
@@ -347,6 +349,8 @@
         plugins: { legend: { position: 'bottom', labels: { font: { family: 'DM Sans', size: 11 }, padding: 12, boxWidth: 12 } } } }
     });
   }
+
+ZFAuth.esqueci(SCRIPT_URL, document.querySelector('.btn-login'), () => document.getElementById('login-user').value.trim());
 </script>
 </body>
 </html>

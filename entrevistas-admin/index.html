@@ -159,20 +159,9 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="../assets/zf-auth.js"></script>
 <script>
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyYOEGropdzHP5V_nuR29qP7KNDEvFfNIV4JtDifPDZxIG1gX5T9buFyn361K_GISvvkQ/exec';
-
-const USUARIOS = {
-  'cledison':  { senha: 'zen@cledison',  nome: 'Cledison',  cargo: 'Diretor',              perfil: 'rh'    },
-  'taiz':      { senha: 'zen@taiz',      nome: 'Taiz',      cargo: 'Analista de CS',        perfil: 'lider' },
-  'juliana':   { senha: 'zen@juliana',   nome: 'Juliana',   cargo: 'Analista de Marketing', perfil: 'lider' },
-  'gustavo':   { senha: 'zen@gustavo',   nome: 'Gustavo',   cargo: 'Analista de Produto',   perfil: 'lider' },
-  'lucas':     { senha: 'zen@lucas',     nome: 'Lucas',     cargo: 'Analista de Produto',   perfil: 'lider' },
-  'anderson':  { senha: 'zen@anderson',  nome: 'Anderson',  cargo: 'Analista de Produto',   perfil: 'lider' },
-  'guilherme': { senha: 'zen@guilherme', nome: 'Guilherme', cargo: 'Analista de Negócio',   perfil: 'lider' },
-  'viviane':   { senha: 'zen@viviane',   nome: 'Viviane',   cargo: 'Analista de Marketing', perfil: 'lider' },
-  'rh':        { senha: 'zen@rh',        nome: 'RH',        cargo: 'Gestão de Pessoas',     perfil: 'rh'    },
-};
 
 let usuarioLogado = null;
 let tipoAtual = 'colaborador';
@@ -181,14 +170,18 @@ let registroAtual = null;
 let modoEdicao = false;
 
 // ── LOGIN ────────────────────────────────────────────────────
-function fazerLogin() {
-  const u = document.getElementById('inp-usuario').value.trim().toLowerCase();
-  const s = document.getElementById('inp-senha').value;
+async function fazerLogin() {
+  const u = document.getElementById('inp-usuario').value.trim();
+  const sn = document.getElementById('inp-senha').value;
   const erro = document.getElementById('login-erro');
-  const usr = USUARIOS[u];
-  if (!usr || usr.senha !== s) { erro.style.display = 'block'; return; }
+  if (!u || !sn) return;
+  let d;
+  try { d = await ZFAuth.login(SCRIPT_URL, u, sn); }
+  catch (e) { erro.textContent = 'Não foi possível entrar agora. Tente de novo.'; erro.style.display = 'block'; return; }
+  if (!d || !d.ok) { erro.textContent = (d && d.erro) || 'Usuário ou senha incorretos.'; erro.style.display = 'block'; return; }
   erro.style.display = 'none';
-  usuarioLogado = { ...usr, usuario: u };
+  const usr = { nome: d.nome, perfil: d.perfil, cargo: d.perfil === 'rh' ? 'Gestão de Pessoas' : 'Liderança' };
+  usuarioLogado = { ...usr, usuario: d.usuario };
   document.getElementById('tela-login').style.display = 'none';
   document.getElementById('tela-painel').style.display = 'block';
   document.getElementById('nome-usuario').textContent = usr.nome;
@@ -197,6 +190,7 @@ function fazerLogin() {
 }
 
 function sair() {
+  ZFAuth.sair(SCRIPT_URL);
   usuarioLogado = null; todosRegistros = [];
   document.getElementById('tela-painel').style.display = 'none';
   document.getElementById('tela-login').style.display = 'flex';
@@ -220,8 +214,9 @@ function podeEditar(registro) {
 async function carregar() {
   document.getElementById('lista-wrap').innerHTML = '<div class="loading">Carregando...</div>';
   try {
-    const resp = await fetch(SCRIPT_URL + '?acao=listar&tipo=' + tipoAtual);
+    const resp = await fetch(ZFAuth.urlGet(SCRIPT_URL, {acao:'listar', tipo:tipoAtual}));
     const json = await resp.json();
+    if (ZFAuth.negado(json)) { mostrarToast('Sua sessão expirou. Entre novamente.', true); sair(); return; }
     if (!json.ok) throw new Error(json.erro);
     let dados = json.dados || [];
     if (usuarioLogado.perfil === 'lider' && tipoAtual === 'lider') {
@@ -557,7 +552,16 @@ async function salvarEdicao() {
   btn.disabled = true; btn.textContent = 'Salvando...';
 
   try {
-    await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(dados) });
+    let resp = null;
+    try {
+      const rr = await fetch(SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(ZFAuth.comSessao(SCRIPT_URL, dados)) });
+      resp = await rr.json();
+    } catch (eLeitura) { resp = null; }
+    if (resp && (ZFAuth.negado(resp) || resp.ok === false)) {
+      mostrarToast(ZFAuth.negado(resp) ? 'Você não tem permissão para salvar este registro (ou a sessão expirou).' : (resp.erro || 'Erro ao salvar.'), true);
+      btn.disabled = false; btn.textContent = '💾 Salvar';
+      return;
+    }
 
     const novaEntradaHist = `[${dados.editado_em}] ${dados.editado_por}: campos editados`;
 
@@ -638,7 +642,10 @@ function mostrarToast(msg, erro) {
   setTimeout(() => t.classList.remove('show'), 3500);
 }
 
-window.onload = () => document.getElementById('inp-usuario').focus();
+window.onload = () => {
+  document.getElementById('inp-usuario').focus();
+  ZFAuth.esqueci('https://script.google.com/macros/s/AKfycbyzI5AplyuA2-mc8G8S2zCiC1yj-g60zCJ30YdS8S4IlyXNz_Rg_fuqXmkMnLN_5jcbhQ/exec', document.querySelector('.login-btn'), () => document.getElementById('inp-usuario').value.trim());
+};
 </script>
 </body>
 </html>

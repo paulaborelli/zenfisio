@@ -357,6 +357,7 @@
   </button>
 </div>
 
+<script src="../assets/zf-auth.js"></script>
 <script>
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx6jSF6uqsxoA1a4iJtLMqcIDenmOszini4Z3BuXqA77ENbqWC4QuyKHRrIOqRnKKxn-Q/exec';
 const GRUPOS = { docs: 14, sign: 6, reg: 8 };
@@ -370,8 +371,9 @@ async function loadColabs() {
   const btn = document.querySelector('.btn-outline-green');
   btn.classList.add('loading'); btn.disabled = true;
   try {
-    const res = await fetch(SCRIPT_URL);
+    const res = await fetch(ZFAuth.urlGet(SCRIPT_URL, {}));
     const data = await res.json();
+    if (ZFAuth.negado(data)) { ZFAuth.expirou(SCRIPT_URL); return; }
     const sel = document.getElementById('selectColab');
     sel.innerHTML = '<option value="">— Selecione um colaborador —</option>';
     const list = data.dados || [];
@@ -407,9 +409,10 @@ async function onColabChange() {
 
   // Busca dados admin (cargo, admissão, departamento)
   try {
-    const url = SCRIPT_URL + '?acao=getDadosAdmin&colaborador=' + encodeURIComponent(opt.value);
+    const url = ZFAuth.urlGet(SCRIPT_URL, {acao:'getDadosAdmin', colaborador:opt.value});
     const res = await fetch(url);
     const data = await res.json();
+    if (ZFAuth.negado(data)) { ZFAuth.expirou(SCRIPT_URL); return; }
     if (data.dados) {
       const d = data.dados;
       currentColab.cargo = d['Função'] || d['Funcao'] || d['função'] || d['funcao'] || d['Cargo'] || '';
@@ -445,9 +448,10 @@ async function onColabChange() {
 async function loadSavedState() {
   setSaveStatus('saving', '⏳ Carregando...');
   try {
-    const url = SCRIPT_URL + '?acao=getChecklist&colaborador=' + encodeURIComponent(currentColab.nome) + '&tipo=contratacao';
+    const url = ZFAuth.urlGet(SCRIPT_URL, {acao:'getChecklist', colaborador:currentColab.nome, tipo:'contratacao'});
     const res = await fetch(url);
     const data = await res.json();
+    if (ZFAuth.negado(data)) { ZFAuth.expirou(SCRIPT_URL); return; }
     if (data.checklist) {
       applyState(data.checklist);
       setSaveStatus('saved', '✓ Atualizado');
@@ -556,13 +560,13 @@ async function saveProgress() {
     progressoRegistros: state.reg.filter(Boolean).length+'/'+GRUPOS.reg
   };
   try {
-    await fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+    await fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify(ZFAuth.comSessao(SCRIPT_URL, payload)) });
     setSaveStatus('saved','✓ Salvo');
   } catch(e) { setSaveStatus('error','✗ Erro ao salvar'); }
   btn.classList.remove('loading'); btn.disabled = false;
 }
 
-loadColabs();
+ZFAuth.exigirLogin(SCRIPT_URL, { perfis: ['rh'], titulo: 'Checklist de Contratação', aoEntrar: loadColabs });
 </script>
 </body>
 </html>

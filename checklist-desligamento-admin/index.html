@@ -228,6 +228,7 @@
   </button>
 </div>
 
+<script src="../assets/zf-auth.js"></script>
 <script>
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx6jSF6uqsxoA1a4iJtLMqcIDenmOszini4Z3BuXqA77ENbqWC4QuyKHRrIOqRnKKxn-Q/exec';
 const TOTAL = 7;
@@ -238,8 +239,9 @@ async function loadColabs() {
   const btn = document.querySelector('.btn-outline');
   btn.classList.add('loading'); btn.disabled = true;
   try {
-    const res = await fetch(SCRIPT_URL);
+    const res = await fetch(ZFAuth.urlGet(SCRIPT_URL, {}));
     const data = await res.json();
+    if (ZFAuth.negado(data)) { ZFAuth.expirou(SCRIPT_URL); return; }
     const sel = document.getElementById('selectColab');
     sel.innerHTML = '<option value="">— Selecione um colaborador —</option>';
     (data.fichas || []).forEach(c => {
@@ -271,9 +273,10 @@ async function onColabChange() {
 
   // Busca dados admin (cargo, admissão, departamento)
   try {
-    const url = SCRIPT_URL + '?acao=getDadosAdmin&colaborador=' + encodeURIComponent(opt.value);
+    const url = ZFAuth.urlGet(SCRIPT_URL, {acao:'getDadosAdmin', colaborador:opt.value});
     const res = await fetch(url);
     const data = await res.json();
+    if (ZFAuth.negado(data)) { ZFAuth.expirou(SCRIPT_URL); return; }
     if (data.dados) {
       const d = data.dados;
       currentColab.cargo = d['Função'] || d['Funcao'] || d['função'] || d['funcao'] || d['Cargo'] || '';
@@ -309,9 +312,10 @@ async function onColabChange() {
 async function loadSavedState() {
   setSaveStatus('saving', '⏳ Carregando...');
   try {
-    const url = SCRIPT_URL + '?acao=getChecklist&colaborador=' + encodeURIComponent(currentColab.nome) + '&tipo=desligamento';
+    const url = ZFAuth.urlGet(SCRIPT_URL, {acao:'getChecklist', colaborador:currentColab.nome, tipo:'desligamento'});
     const res = await fetch(url);
     const data = await res.json();
+    if (ZFAuth.negado(data)) { ZFAuth.expirou(SCRIPT_URL); return; }
     if (data.checklist && data.checklist.desl) {
       resetItems();
       data.checklist.desl.forEach((v,i) => { if(v) markItem(i, true); });
@@ -379,13 +383,13 @@ async function saveProgress() {
     progressoDesligamento: state.filter(Boolean).length+'/'+TOTAL
   };
   try {
-    await fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+    await fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify(ZFAuth.comSessao(SCRIPT_URL, payload)) });
     setSaveStatus('saved','✓ Salvo');
   } catch(e) { setSaveStatus('error','✗ Erro ao salvar'); }
   btn.classList.remove('loading'); btn.disabled = false;
 }
 
-loadColabs();
+ZFAuth.exigirLogin(SCRIPT_URL, { perfis: ['rh'], titulo: 'Checklist de Desligamento', aoEntrar: loadColabs });
 </script>
 </body>
 </html>

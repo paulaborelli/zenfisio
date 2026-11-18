@@ -6,6 +6,7 @@
 <title>Análise de Ponto — ZenFisio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="../assets/zf-auth.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
@@ -516,24 +517,27 @@
 const SCRIPT_ANALISE_PONTO = 'https://script.google.com/macros/s/AKfycbz83lEelyV1VIbZdz4XjbKYYow6f6nyz0Nsy-d4eU_abDjz4MmnWOLYnAzd3aaKIsr7/exec';
 
 // ---------- LOGIN ----------
-const CREDENCIAIS = { 'rh': 'zen@rh', 'cledison': 'zen@cledison' };
-
-function tentarLogin() {
-  const u = document.getElementById('loginUser').value.trim().toLowerCase();
+async function tentarLogin() {
+  const u = document.getElementById('loginUser').value.trim();
   const p = document.getElementById('loginPass').value;
-  if (CREDENCIAIS[u] && CREDENCIAIS[u] === p) {
-    sessionStorage.setItem('zf_analise_ponto_auth', u);
-    mostrarApp();
-  } else {
-    document.getElementById('loginError').textContent = 'Usuário ou senha incorretos.';
-  }
+  const err = document.getElementById('loginError');
+  if (!u || !p) return;
+  try {
+    const d = await ZFAuth.login(SCRIPT_ANALISE_PONTO, u, p);
+    if (d && d.ok && d.perfil === 'rh') { err.textContent = ''; mostrarApp(); }
+    else { ZFAuth.sair(SCRIPT_ANALISE_PONTO); err.textContent = (d && d.ok) ? 'Sem permissão para esta página.' : ((d && d.erro) || 'Usuário ou senha incorretos.'); }
+  } catch (e) { err.textContent = 'Não foi possível entrar agora. Tente de novo.'; }
 }
 function mostrarApp() {
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('appScreen').classList.remove('hidden');
   carregarHistorico();
 }
-if (sessionStorage.getItem('zf_analise_ponto_auth')) mostrarApp();
+(function () {
+  const sess = ZFAuth.dados(SCRIPT_ANALISE_PONTO);
+  if (sess && sess.sessao && sess.perfil === 'rh') mostrarApp();
+  ZFAuth.esqueci(ZFAuth.urlEsqueci, document.querySelector('#loginScreen button'), () => document.getElementById('loginUser').value.trim());
+})();
 document.getElementById('loginPass')?.addEventListener('keydown', e => { if (e.key === 'Enter') tentarLogin(); });
 
 // ---------- CONFIG DOS TIPOS DE RELATÓRIO ----------
@@ -1716,7 +1720,7 @@ async function salvarMesAtual() {
   try {
     await fetch(SCRIPT_ANALISE_PONTO, {
       method: 'POST', mode: 'no-cors',
-      body: JSON.stringify({ mesAno, resumo: resumoPendente })
+      body: JSON.stringify(ZFAuth.comSessao(SCRIPT_ANALISE_PONTO, { mesAno, resumo: resumoPendente }))
     });
     salvarStatus.textContent = 'Mês salvo no histórico.';
   } catch (e) {
@@ -1750,8 +1754,9 @@ async function carregarHistorico() {
   const aviso = document.getElementById('avisoCarregandoHistorico');
   aviso.classList.remove('hidden');
   try {
-    const resp = await fetch(SCRIPT_ANALISE_PONTO);
+    const resp = await fetch(ZFAuth.urlGet(SCRIPT_ANALISE_PONTO, {}));
     const json = await resp.json();
+    if (ZFAuth.negado(json)) { ZFAuth.expirou(SCRIPT_ANALISE_PONTO); return; }
     for (const row of json) {
       try {
         const chaveMes = normalizarMesAno(row.mesAno);
@@ -2012,7 +2017,7 @@ async function dispararRelatorio() {
   try {
     await fetch(SCRIPT_ANALISE_PONTO, {
       method: 'POST', mode: 'no-cors',
-      body: JSON.stringify({ acao: 'enviarRelatorio', mesAno: mesAtivo, resumo: historico[mesAtivo] })
+      body: JSON.stringify(ZFAuth.comSessao(SCRIPT_ANALISE_PONTO, { acao: 'enviarRelatorio', mesAno: mesAtivo, resumo: historico[mesAtivo] }))
     });
     statusEl.textContent = `Relatório de ${formatarLabelMes(mesAtivo)} enviado para rh@zenfisio.com.`;
   } catch (e) {

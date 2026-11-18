@@ -170,14 +170,9 @@
   </div>
 </div>
 
+<script src="../assets/zf-auth.js"></script>
 <script>
-const SHEET_ID_OUVIDORIA = '1zVjc3Vd0BXP1tuWhkb_Vu_q7XozLKCPbscUgi-UNW30';
-const GID_RESPOSTAS      = '1400704772';
-
-const USUARIOS = {
-  'cledison': { senha: 'zen@cledison', nome: 'Cledison', perfil: 'rh' },
-  'rh':       { senha: 'zen@rh',       nome: 'RH',       perfil: 'rh' },
-};
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyhtNE9aZqBr1N7cERxpghKKCBCOgG66PgtWOel303VoTryvq9Zit7_tzD9QvHlXFP-/exec';
 
 let usuarioLogado  = null;
 let todosRegistros = [];
@@ -185,23 +180,25 @@ let categoriaAtiva = 'Todos';
 let registroAtual  = null;
 
 // ── LOGIN ────────────────────────────────────────────────────
-function fazerLogin() {
-  const u   = document.getElementById('inp-usuario').value.trim().toLowerCase();
-  const s   = document.getElementById('inp-senha').value;
-  const usr = USUARIOS[u];
-  if (!usr || usr.senha !== s) {
-    document.getElementById('login-erro').style.display = 'block';
-    return;
-  }
-  document.getElementById('login-erro').style.display = 'none';
-  usuarioLogado = { ...usr, usuario: u };
+async function fazerLogin() {
+  const u = document.getElementById('inp-usuario').value.trim();
+  const sn = document.getElementById('inp-senha').value;
+  const erro = document.getElementById('login-erro');
+  if (!u || !sn) return;
+  let d;
+  try { d = await ZFAuth.login(SCRIPT_URL, u, sn); }
+  catch (e) { erro.textContent = 'Não foi possível entrar agora. Tente de novo.'; erro.style.display = 'block'; return; }
+  if (!d || !d.ok || d.perfil !== 'rh') { erro.textContent = (d && d.ok) ? 'Sem permissão para este painel.' : ((d && d.erro) || 'Usuário ou senha incorretos.'); erro.style.display = 'block'; ZFAuth.sair(SCRIPT_URL); return; }
+  erro.style.display = 'none';
+  usuarioLogado = { nome: d.nome, perfil: d.perfil, usuario: d.usuario };
   document.getElementById('tela-login').style.display  = 'none';
   document.getElementById('tela-painel').style.display = 'block';
-  document.getElementById('nome-usuario').textContent  = usr.nome;
+  document.getElementById('nome-usuario').textContent  = d.nome;
   carregar();
 }
 
 function sair() {
+  ZFAuth.sair(SCRIPT_URL);
   usuarioLogado = null;
   document.getElementById('tela-painel').style.display = 'none';
   document.getElementById('tela-login').style.display  = 'flex';
@@ -233,21 +230,11 @@ function parseCSVLine(linha) {
 async function carregar() {
   document.getElementById('lista-wrap').innerHTML = '<div class="loading">Carregando...</div>';
   try {
-    const url  = `https://docs.google.com/spreadsheets/d/${SHEET_ID_OUVIDORIA}/export?format=csv&gid=${GID_RESPOSTAS}`;
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    const text   = await resp.text();
-    const linhas = text.trim().split('\n').slice(1);
-    todosRegistros = linhas
-      .map(l => {
-        const cols = parseCSVLine(l);
-        return {
-          data:      cols[0] || '',
-          nome:      cols[1] || '',
-          categorias: cols[2] || '',
-          mensagem:  cols[3] || '',
-        };
-      })
+    const resp = await fetch(ZFAuth.urlGet(SCRIPT_URL, {acao:'listar'}));
+    const json = await resp.json();
+    if (ZFAuth.negado(json)) { sair(); return; }
+    if (!json.ok) throw new Error(json.erro || 'erro');
+    todosRegistros = (json.dados || [])
       .filter(r => r.data)
       .reverse();
     renderLista();
@@ -378,6 +365,7 @@ function imprimirMensagem() {
 }
 
 window.onload = () => document.getElementById('inp-usuario').focus();
+ZFAuth.esqueci('https://script.google.com/macros/s/AKfycbyzI5AplyuA2-mc8G8S2zCiC1yj-g60zCJ30YdS8S4IlyXNz_Rg_fuqXmkMnLN_5jcbhQ/exec', document.querySelector('#tela-login button'), () => document.getElementById('inp-usuario').value.trim());
 </script>
 </body>
 </html>

@@ -204,6 +204,7 @@
   const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzblEIQor7UuPFzO6Ga2UREXjYYkeiCNXtsom4XjCFSUbb9hI7S-djhgi6WioNGSJ2k/exec';
   const CORES = ['#4A7C59','#6aab7e','#9fc5b0','#d5ece0','#2d5438','#b2d9c2','#5c9474','#3d7a5a','#8dc4a0','#1a3d28'];
   let usuarioLogado = null;
+  let credenciais = null; // fica só na memória da aba; some ao sair ou fechar
   let chartRemAtual = null;
 
   // ── LOGIN ─────────────────────────────────────────────────
@@ -216,6 +217,7 @@
       const data = await r.json();
       if (data.ok) {
         usuarioLogado = data.user;
+        credenciais = { user: user, pass: pass };
         document.getElementById('login-wrap').style.display = 'none';
         document.getElementById('painel-wrap').style.display = 'block';
         document.getElementById('header-user').textContent = user;
@@ -230,6 +232,7 @@
 
   function sair() {
     usuarioLogado = null;
+    credenciais = null;
     document.getElementById('login-wrap').style.display = 'flex';
     document.getElementById('painel-wrap').style.display = 'none';
     document.getElementById('login-user').value = '';
@@ -251,10 +254,12 @@
     document.getElementById('loading').style.display = 'block';
     document.getElementById('conteudo').style.display = 'none';
     try {
+      const auth = `&user=${encodeURIComponent(credenciais.user)}&pass=${encodeURIComponent(credenciais.pass)}`;
       const [rPub, rRes] = await Promise.all([
-        fetch(`${SCRIPT_URL}?acao=publico`).then(r => r.json()),
-        fetch(`${SCRIPT_URL}?acao=restrito`).then(r => r.json())
+        fetch(`${SCRIPT_URL}?acao=publico${auth}`).then(r => r.json()),
+        fetch(`${SCRIPT_URL}?acao=restrito${auth}`).then(r => r.json())
       ]);
+      if (!rPub.ok || !rRes.ok) throw new Error(rPub.erro || rRes.erro || 'Acesso negado');
       document.getElementById('loading').style.display = 'none';
       document.getElementById('conteudo').style.display = 'block';
       renderPerfil(rPub);

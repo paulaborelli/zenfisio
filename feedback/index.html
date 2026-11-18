@@ -929,7 +929,7 @@
         tipo_feedback: document.getElementById('tipo').value || '—',
         colaborador: nome,
         cargo: document.getElementById('cargo').value,
-        responsavel: document.getElementById('responsavel').value,
+        responsavel: (ZFAuth.dados(SCRIPT_URL) && ZFAuth.dados(SCRIPT_URL).perfil === 'lider') ? ZFAuth.dados(SCRIPT_URL).nome : document.getElementById('responsavel').value,
         formato: document.getElementById('formato').value,
         motivo: rteValor('motivo'),
         acertado: rteValor('acertado'),
@@ -945,9 +945,10 @@
         const resp = await fetch(SCRIPT_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify(r),
+          body: JSON.stringify(ZFAuth.comSessao(SCRIPT_URL, r)),
         });
         json = await resp.json();
+        if (ZFAuth.negado(json)) throw new Error('Sua sessão expirou. Recarregue a página e entre novamente.');
       } catch (eRede) {
         throw new Error('SEM_CONFIRMACAO');
       }
@@ -1024,6 +1025,7 @@
 
   function limpar() {
     ['colaborador','cargo','responsavel','link-titulo','link-url'].forEach(id => document.getElementById(id).value = '');
+    if (typeof prefillResponsavel === 'function') prefillResponsavel();
     ['motivo','acertado','obs-final'].forEach(rteLimpar);
     ['tipo','formato'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('data').valueAsDate = new Date();
@@ -1089,7 +1091,7 @@
     btn.textContent = 'Carregando...'; btn.disabled = true;
     lista.innerHTML = '<div style="text-align:center;padding:1.5rem;color:#9AA394;font-size:0.9rem;">Buscando registros...</div>';
     try {
-      const resp = await fetch(SCRIPT_URL_FB + '?acao=listar');
+      const resp = await fetch(ZFAuth.urlGet(SCRIPT_URL_FB, {acao:'listar'}));
       const json = await resp.json();
       if (!json.ok) throw new Error(json.erro);
       todosFeedbacks = (json.dados || []).reverse();
@@ -1321,30 +1323,27 @@
 </script>
 
 </div>
+<script src="../assets/zf-auth.js"></script>
 <script>
-const USUARIOS_VALIDOS = {
-  'cledison':  { senha: 'zen@cledison',  nome: 'Cledison',  perfil: 'rh'    },
-  'taiz':      { senha: 'zen@taiz',      nome: 'Taiz',      perfil: 'lider' },
-  'juliana':   { senha: 'zen@juliana',   nome: 'Juliana',   perfil: 'lider' },
-  'gustavo':   { senha: 'zen@gustavo',   nome: 'Gustavo',   perfil: 'lider' },
-  'lucas':     { senha: 'zen@lucas',     nome: 'Lucas',     perfil: 'lider' },
-  'anderson':  { senha: 'zen@anderson',  nome: 'Anderson',  perfil: 'lider' },
-  'guilherme': { senha: 'zen@guilherme', nome: 'Guilherme', perfil: 'lider' },
-  'viviane':   { senha: 'zen@viviane',   nome: 'Viviane',   perfil: 'lider' },
-  'rh':        { senha: 'zen@rh',        nome: 'RH',        perfil: 'rh'    },
-};
-function fazerLogin() {
-  const u = document.getElementById('inp-usuario').value.trim().toLowerCase();
+const SCRIPT_URL_LOGIN = 'https://script.google.com/macros/s/AKfycbydGp7T9oQtr5Ii8uY08CiwCBNNd6L9rC0nYegtwzoI-otVQFZSXOKc8XzW5esGyAelVA/exec';
+function prefillResponsavel() {
+  const d = ZFAuth.dados(SCRIPT_URL_LOGIN);
+  const el = document.getElementById('responsavel');
+  if (d && d.perfil === 'lider' && el) { el.value = d.nome; el.readOnly = true; el.style.background = '#F2F4EF'; }
+}
+async function fazerLogin() {
+  const u = document.getElementById('inp-usuario').value.trim();
   const s = document.getElementById('inp-senha').value;
-  const usr = USUARIOS_VALIDOS[u];
-  if (!usr || usr.senha !== s) {
-    document.getElementById('login-erro').style.display = 'block';
-    return;
-  }
-  document.getElementById('login-erro').style.display = 'none';
+  const erro = document.getElementById('login-erro');
+  if (!u || !s) return;
+  let d;
+  try { d = await ZFAuth.login(SCRIPT_URL_LOGIN, u, s); }
+  catch (e) { erro.textContent = 'Não foi possível entrar agora. Tente de novo.'; erro.style.display = 'block'; return; }
+  if (!d || !d.ok) { erro.textContent = (d && d.erro) || 'Usuário ou senha incorretos.'; erro.style.display = 'block'; return; }
+  erro.style.display = 'none';
   document.getElementById('tela-login').style.display = 'none';
   document.getElementById('tela-conteudo').style.display = 'block';
-  // Oculta histórico local imediatamente após login
+  prefillResponsavel();
   setTimeout(() => {
     const h = document.querySelector('.historico-section');
     if (h) h.style.display = 'none';
@@ -1353,6 +1352,8 @@ function fazerLogin() {
 document.addEventListener('DOMContentLoaded', () => {
   const inp = document.getElementById('inp-usuario');
   if (inp) inp.focus();
+  const botao = document.querySelector('#tela-login button');
+  ZFAuth.esqueci('https://script.google.com/macros/s/AKfycbyzI5AplyuA2-mc8G8S2zCiC1yj-g60zCJ30YdS8S4IlyXNz_Rg_fuqXmkMnLN_5jcbhQ/exec', botao, () => document.getElementById('inp-usuario').value.trim());
 });
 </script>
 </body>

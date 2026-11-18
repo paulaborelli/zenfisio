@@ -35,6 +35,53 @@
     // Se o servidor respondeu "Acesso negado", a sessão expirou: volta para o login
     negado: function (json) { return !!(json && json.semAcesso); },
 
+    // Endereço padrão usado pelo "Esqueci a senha" (script do Calendário, que tem e-mail e planilha de acessos)
+    urlEsqueci: 'https://script.google.com/macros/s/AKfycbyzI5AplyuA2-mc8G8S2zCiC1yj-g60zCJ30YdS8S4IlyXNz_Rg_fuqXmkMnLN_5jcbhQ/exec',
+
+    // Sessão expirou: limpa e recarrega a página (volta para a tela de login)
+    expirou: function (url) { ZFAuth.sair(url); alert('Sua sessão expirou. Entre novamente.'); location.reload(); },
+
+    // Tela de login em tela cheia para páginas que não têm uma.
+    // opts: { perfis: ['rh'], titulo: 'Texto', aoEntrar: function (dados) {} }
+    exigirLogin: function (url, opts) {
+      opts = opts || {};
+      var perfis = opts.perfis || ['rh'];
+      var s = lerSessao(url);
+      if (s && s.sessao && perfis.indexOf(s.perfil) >= 0) { if (opts.aoEntrar) opts.aoEntrar(s); return; }
+      var estilo = 'font-family:inherit;font-size:14px;';
+      var ov = document.createElement('div');
+      ov.id = 'zf-login-overlay';
+      ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#F2F4F0;display:flex;align-items:center;justify-content:center;padding:1.5rem;' + estilo;
+      ov.innerHTML =
+        '<div style="background:#fff;border:1px solid #DDE0D8;border-radius:14px;padding:32px 28px;width:100%;max-width:360px;box-sizing:border-box;">' +
+        '<a href="../index.html" style="display:inline-block;margin-bottom:14px;color:#4A7C59;font-size:13px;font-weight:600;text-decoration:none;">&larr; Início</a>' +
+        '<div style="font-weight:700;font-size:18px;color:#2D5438;margin-bottom:4px;">' + (opts.titulo || 'Acesso restrito') + '</div>' +
+        '<div style="color:#9AA394;font-size:13px;margin-bottom:18px;">ZenFisio · Gestão de Pessoas</div>' +
+        '<input id="zf-l-user" type="text" placeholder="usuário" autocomplete="username" style="width:100%;padding:10px 12px;border:1px solid #DDE0D8;border-radius:8px;margin-bottom:10px;box-sizing:border-box;' + estilo + '">' +
+        '<input id="zf-l-pass" type="password" placeholder="senha" autocomplete="current-password" style="width:100%;padding:10px 12px;border:1px solid #DDE0D8;border-radius:8px;margin-bottom:12px;box-sizing:border-box;' + estilo + '">' +
+        '<button id="zf-l-ok" type="button" style="width:100%;padding:11px;background:#4A7C59;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;' + estilo + '">Entrar</button>' +
+        '<div id="zf-l-erro" style="display:none;margin-top:10px;color:#9b3a2e;font-size:13px;text-align:center;"></div></div>';
+      document.body.appendChild(ov);
+      var $ = function (id) { return document.getElementById(id); };
+      var erro = function (t) { var e = $('zf-l-erro'); e.textContent = t; e.style.display = 'block'; };
+      var entrar = async function () {
+        var u = $('zf-l-user').value.trim(), p = $('zf-l-pass').value;
+        if (!u || !p) return;
+        $('zf-l-ok').disabled = true;
+        try {
+          var d = await ZFAuth.login(url, u, p);
+          if (!d || !d.ok) { erro((d && d.erro) || 'Usuário ou senha incorretos.'); }
+          else if (perfis.indexOf(d.perfil) < 0) { ZFAuth.sair(url); erro('Sem permissão para esta página.'); }
+          else { ov.remove(); if (opts.aoEntrar) opts.aoEntrar(d); }
+        } catch (e) { erro('Não foi possível entrar agora. Tente de novo.'); }
+        $('zf-l-ok').disabled = false;
+      };
+      $('zf-l-ok').onclick = entrar;
+      $('zf-l-pass').onkeydown = function (ev) { if (ev.key === 'Enter') entrar(); };
+      ZFAuth.esqueci(ZFAuth.urlEsqueci, $('zf-l-ok'), function () { return $('zf-l-user').value.trim(); });
+      $('zf-l-user').focus();
+    },
+
     // Cria o link "Esqueci a senha" logo depois do elemento ancora e o painel de redefinição.
     esqueci: function (url, ancora, getUsuario) {
       if (!ancora || document.getElementById('zf-esqueci-link')) return;

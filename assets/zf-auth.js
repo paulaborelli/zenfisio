@@ -11,14 +11,26 @@
   }
 
   var ZFAuth = {
+    // "Acorda" o script do Google (o primeiro acesso do dia demora alguns segundos)
+    aquecer: function (url) {
+      try { fetch(url + '?acao=ping', { mode: 'no-cors' }).catch(function () {}); } catch (e) {}
+    },
     // Entra. Retorna o JSON do servidor ({ok, usuario, nome, perfil, sessao} ou {ok:false, erro})
     login: async function (url, user, pass) {
-      var r = await fetch(url + '?acao=login&user=' + enc(user) + '&pass=' + enc(pass));
-      var d = await r.json();
-      if (d && d.ok && d.sessao) {
-        try { sessionStorage.setItem(K(url), JSON.stringify({ sessao: d.sessao, nome: d.nome, perfil: d.perfil, usuario: d.usuario })); } catch (e) {}
+      // Mostra "Entrando..." no botão clicado e evita clique duplo
+      var btn = document.activeElement, texto = '';
+      var temBtn = btn && btn.tagName === 'BUTTON' && !btn.disabled;
+      if (temBtn) { texto = btn.textContent; btn.textContent = 'Entrando...'; btn.disabled = true; }
+      try {
+        var r = await fetch(url + '?acao=login&user=' + enc(user) + '&pass=' + enc(pass));
+        var d = await r.json();
+        if (d && d.ok && d.sessao) {
+          try { sessionStorage.setItem(K(url), JSON.stringify({ sessao: d.sessao, nome: d.nome, perfil: d.perfil, usuario: d.usuario })); } catch (e) {}
+        }
+        return d;
+      } finally {
+        if (temBtn) { btn.textContent = texto; btn.disabled = false; }
       }
-      return d;
     },
     dados: function (url) { return lerSessao(url); },
     sessao: function (url) { var s = lerSessao(url); return s ? s.sessao : ''; },
@@ -48,6 +60,7 @@
       var perfis = opts.perfis || ['rh'];
       var s = lerSessao(url);
       if (s && s.sessao && perfis.indexOf(s.perfil) >= 0) { if (opts.aoEntrar) opts.aoEntrar(s); return; }
+      ZFAuth.aquecer(url);
       var estilo = 'font-family:inherit;font-size:14px;';
       var ov = document.createElement('div');
       ov.id = 'zf-login-overlay';
@@ -82,9 +95,10 @@
       $('zf-l-user').focus();
     },
 
-    // Cria o link "Esqueci a senha" logo depois do elemento ancora e o painel de redefinição.
+    // Cria o link "Esqueci a senha" logo depois do elemento `ancora` e o painel de redefinição.
     esqueci: function (url, ancora, getUsuario) {
       if (!ancora || document.getElementById('zf-esqueci-link')) return;
+      ZFAuth.aquecer(url);
       var estilo = 'font-family:inherit;font-size:13px;';
       var link = document.createElement('a');
       link.id = 'zf-esqueci-link'; link.href = '#'; link.textContent = 'Esqueci a senha';
@@ -103,7 +117,14 @@
       ancora.parentNode.insertBefore(link, ancora.nextSibling);
       link.parentNode.insertBefore(box, link.nextSibling);
       var $ = function (id) { return document.getElementById(id); };
-      var msg = function (t, erro) { var m = $('zf-e-msg'); m.textContent = t; m.style.color = erro ? '#9b3a2e' : '#2D5438'; };
+      var msg = function (t, erro) {
+        var m = $('zf-e-msg'); m.textContent = t;
+        m.style.color = erro ? '#9b3a2e' : '#2D5438';
+        m.style.fontWeight = '700';
+        m.style.background = erro ? '#fbeceb' : '#e6f1e8';
+        m.style.padding = '8px 10px'; m.style.borderRadius = '8px';
+        try { m.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
+      };
       link.onclick = function (ev) {
         ev.preventDefault();
         box.style.display = box.style.display === 'none' ? 'block' : 'none';
@@ -112,26 +133,35 @@
       $('zf-e-pedir').onclick = async function () {
         var u = $('zf-e-user').value.trim();
         if (!u) { msg('Digite seu usuário.', true); return; }
-        $('zf-e-pedir').disabled = true;
+        $('zf-e-pedir').disabled = true; $('zf-e-pedir').textContent = 'Enviando...';
         try {
           var r = await (await fetch(url + '?acao=esqueci&user=' + enc(u))).json();
           msg(r.msg || 'Pedido enviado. Peça o código ao RH.', !r.ok);
           if (r.ok) $('zf-e-passo2').style.display = 'block';
         } catch (e) { msg('Não foi possível enviar agora. Tente de novo.', true); }
-        $('zf-e-pedir').disabled = false;
+        $('zf-e-pedir').disabled = false; $('zf-e-pedir').textContent = 'Enviar código ao RH';
       };
       $('zf-e-salvar').onclick = async function () {
         var u = $('zf-e-user').value.trim(), c = $('zf-e-cod').value.trim(), n = $('zf-e-nova').value;
         if (!u || !c || !n) { msg('Preencha usuário, código e nova senha.', true); return; }
-        $('zf-e-salvar').disabled = true;
+        if (n.length < 10) { msg('A nova senha precisa ter pelo menos 10 caracteres.', true); return; }
+        $('zf-e-salvar').disabled = true; $('zf-e-salvar').textContent = 'Salvando...';
         try {
           var r = await (await fetch(url + '?acao=redefinir&user=' + enc(u) + '&codigo=' + enc(c) + '&nova=' + enc(n))).json();
-          msg(r.ok ? (r.msg || 'Senha redefinida.') : (r.erro || 'Não foi possível redefinir.'), !r.ok);
+          msg(r.ok ? 'Senha alterada com sucesso. Agora é só entrar com a nova senha.' : (r.erro || 'Não foi possível redefinir.'), !r.ok);
           if (r.ok) { $('zf-e-passo2').style.display = 'none'; $('zf-e-nova').value = ''; $('zf-e-cod').value = ''; }
         } catch (e) { msg('Não foi possível salvar agora. Tente de novo.', true); }
-        $('zf-e-salvar').disabled = false;
+        $('zf-e-salvar').disabled = false; $('zf-e-salvar').textContent = 'Salvar nova senha';
       };
     }
   };
   window.ZFAuth = ZFAuth;
+  // Ao abrir a página, "acorda" os scripts do Google usados nela (o login fica mais rápido)
+  document.addEventListener('DOMContentLoaded', function () {
+    var vistos = {};
+    Array.prototype.forEach.call(document.scripts, function (sc) {
+      var achados = (sc.textContent || '').match(/https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec/g) || [];
+      achados.forEach(function (u) { if (!vistos[u]) { vistos[u] = 1; ZFAuth.aquecer(u); } });
+    });
+  });
 })();
